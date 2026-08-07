@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; background:#E8ECF0; font-family:'Poppins',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; overflow:hidden; }
+    @keyframes fadeIn { 0%{opacity:0;transform:translateY(16px)} 100%{opacity:1;transform:translateY(0)} }
+    @keyframes fadeSlideUp { 0%{opacity:0;transform:translateY(24px)} 100%{opacity:1;transform:translateY(0)} }
+    @keyframes progressFill { 0%{width:0%} 100%{width:100%} }
+    @keyframes pulseRing { 0%{transform:scale(0.85);opacity:0.8} 50%{transform:scale(1.1);opacity:0.2} 100%{transform:scale(0.85);opacity:0.8} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    a{color:#1A6DFF}a:hover{color:#0050D0}
+    input::placeholder{color:#B0B8C4;font-family:'Poppins',sans-serif}
+  </style>
+</helmet>
+
+<div style="zoom:{{ deviceScale }};width:402px;height:874px;flex-shrink:0">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+
+<!-- ══════════ SPLASH ══════════ -->
+<div style="position:absolute;inset:0;z-index:{{ splashZ }};opacity:{{ splashOpacity }};transition:opacity 0.8s ease;pointer-events:{{ splashPointer }}">
+  <div style="width:100%;height:100%;position:relative;overflow:hidden">
+    <!-- Full-bleed photo -->
+    <img src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+    <!-- Dark overlay gradient -->
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,22,40,0.3) 0%,rgba(10,22,40,0.6) 50%,rgba(10,22,40,0.92) 100%)"></div>
+    <!-- Content -->
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 32px 100px">
+      <!-- Logo mark -->
+      <div style="margin-bottom:16px;position:relative">
+        <div style="position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(255,213,79,0.15);animation:pulseRing 3s ease-in-out infinite"></div>
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#FFD54F,#FFAB00);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(255,171,0,0.3)">
+          <svg viewBox="0 0 32 32" style="width:28px;height:28px"><circle cx="16" cy="16" r="13" fill="none" stroke="white" stroke-width="1.5"/><path d="M16 10 L20 13 L19 19 L13 19 L12 13 Z" fill="none" stroke="white" stroke-width="1.2"/><circle cx="16" cy="16" r="2.5" fill="white"/></svg>
+        </div>
+      </div>
+      <div style="font-size:28px;font-weight:800;color:white;letter-spacing:6px;text-transform:uppercase">MATOBEV</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);letter-spacing:3px;margin-top:4px;font-weight:400">FOOTBALL TALENT</div>
+      <!-- Loading -->
+      <div style="width:120px;height:2px;background:rgba(255,255,255,0.1);border-radius:1px;overflow:hidden;margin-top:32px">
+        <div style="height:100%;background:linear-gradient(90deg,#FFD54F,#FFAB00);border-radius:1px;animation:progressFill 3s ease-in-out forwards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ONBOARDING ══════════ -->
+<div style="position:absolute;inset:0;z-index:{{ onboardingZ }};opacity:{{ onboardingOpacity }};transition:opacity 0.5s ease;pointer-events:{{ onboardingPointer }}">
+  <div style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff;position:relative;overflow:hidden">
+    <!-- Image area -->
+    <div style="flex:0 0 58%;position:relative;overflow:hidden">
+      <!-- Slide 1: Stadium -->
+      <div style="position:absolute;inset:0;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1),opacity 0.4s ease;transform:translateX({{ slide1X }});opacity:{{ slide1Op }}">
+        <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.15) 100%)"></div>
+      </div>
+      <!-- Slide 2: Player action -->
+      <div style="position:absolute;inset:0;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1),opacity 0.4s ease;transform:translateX({{ slide2X }});opacity:{{ slide2Op }}">
+        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.15) 100%)"></div>
+      </div>
+      <!-- Slide 3: Soccer ball close-up -->
+      <div style="position:absolute;inset:0;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1),opacity 0.4s ease;transform:translateX({{ slide3X }});opacity:{{ slide3Op }}">
+        <img src="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.15) 100%)"></div>
+      </div>
+      <!-- Curved bottom -->
+      <div style="position:absolute;bottom:-1px;left:0;right:0;height:40px;background:white;border-radius:28px 28px 0 0"></div>
+    </div>
+    <!-- Text + nav -->
+    <div style="flex:1;padding:20px 28px 24px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:white">
+      <div style="text-align:center;max-width:300px">
+        <div style="font-size:22px;font-weight:700;color:#111;margin-bottom:8px;line-height:1.25">{{ onboardingTitle }}</div>
+        <div style="font-size:13px;color:#7A8494;line-height:1.55">{{ onboardingSubtext }}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin:12px 0">
+        <div style="width:{{ dot1W }};height:6px;border-radius:3px;background:{{ dot1Color }};transition:all 0.35s ease"></div>
+        <div style="width:{{ dot2W }};height:6px;border-radius:3px;background:{{ dot2Color }};transition:all 0.35s ease"></div>
+        <div style="width:{{ dot3W }};height:6px;border-radius:3px;background:{{ dot3Color }};transition:all 0.35s ease"></div>
+      </div>
+      <div style="width:100%;display:flex;justify-content:{{ navJustify }};align-items:center">
+        <sc-if value="{{ showSkip }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:14px;color:#7A8494;cursor:pointer;padding:8px 0;font-weight:500" onClick="{{ skipOnboarding }}" style-hover="color:#111">Skip</div>
+        </sc-if>
+        <sc-if value="{{ showNextBtn }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ nextSlide }}" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 20px rgba(26,109,255,0.35)" style-hover="transform:scale(1.06);box-shadow:0 8px 28px rgba(26,109,255,0.4)" style-active="transform:scale(0.95)">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </sc-if>
+        <sc-if value="{{ showGetStarted }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ skipOnboarding }}" style="width:100%;height:54px;border-radius:16px;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:600;color:white;box-shadow:0 6px 20px rgba(26,109,255,0.3);letter-spacing:0.3px" style-hover="transform:scale(1.02)" style-active="transform:scale(0.98)">Get Started</div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ AUTH WELCOME ══════════ -->
+<div style="position:absolute;inset:0;z-index:{{ authZ }};opacity:{{ authOpacity }};transition:opacity 0.5s ease;pointer-events:{{ authPointer }}">
+  <div style="width:100%;height:100%;background:#fff;display:flex;flex-direction:column;overflow:hidden">
+    <!-- Hero image -->
+    <div style="flex:0 0 42%;position:relative;overflow:hidden">
+      <img src="https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,109,255,0.15) 0%,rgba(255,255,255,0.6) 80%,white 100%)"></div>
+      <!-- Logo floating -->
+      <div style="position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(26,109,255,0.3);z-index:2">
+        <svg viewBox="0 0 32 32" style="width:26px;height:26px"><circle cx="16" cy="16" r="13" fill="none" stroke="white" stroke-width="1.5"/><path d="M16 10 L20 13 L19 19 L13 19 L12 13 Z" fill="none" stroke="white" stroke-width="1.2"/><circle cx="16" cy="16" r="2.5" fill="white"/></svg>
+      </div>
+    </div>
+    <!-- Content -->
+    <div style="flex:1;padding:40px 28px 24px;display:flex;flex-direction:column;align-items:center">
+      <div style="font-size:24px;font-weight:700;color:#111;margin-bottom:6px;text-align:center">Welcome to Matobev</div>
+      <div style="font-size:13px;color:#7A8494;text-align:center;max-width:260px;line-height:1.5;margin-bottom:28px">Where football talent meets opportunity</div>
+      <!-- Role selection -->
+      <div style="width:100%;display:flex;gap:12px;margin-bottom:24px">
+        <div onClick="{{ selectPlayer }}" style="flex:1;border-radius:16px;border:2px solid {{ playerBorderLight }};background:{{ playerBgLight }};padding:18px 12px;text-align:center;cursor:pointer;transition:all 0.25s ease" style-hover="border-color:#1A6DFF">
+          <div style="width:44px;height:44px;border-radius:12px;background:{{ playerChipBg }};display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ playerChipIcon }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div style="font-size:14px;font-weight:600;color:#111">Player</div>
+          <div style="font-size:11px;color:#7A8494;margin-top:2px">Showcase your skills</div>
+        </div>
+        <div onClick="{{ selectScout }}" style="flex:1;border-radius:16px;border:2px solid {{ scoutBorderLight }};background:{{ scoutBgLight }};padding:18px 12px;text-align:center;cursor:pointer;transition:all 0.25s ease" style-hover="border-color:#1A6DFF">
+          <div style="width:44px;height:44px;border-radius:12px;background:{{ scoutChipBg }};display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ scoutChipIcon }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div style="font-size:14px;font-weight:600;color:#111">Scout</div>
+          <div style="font-size:11px;color:#7A8494;margin-top:2px">Discover talent</div>
+        </div>
+      </div>
+      <!-- CTA buttons -->
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:auto">
+        <div onClick="{{ goToSignup }}" style="width:100%;height:52px;border-radius:14px;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:600;color:white;box-shadow:0 4px 16px rgba(26,109,255,0.25)" style-hover="transform:scale(1.02)" style-active="transform:scale(0.98)">Create Account</div>
+        <div onClick="{{ goToLogin }}" style="width:100%;height:52px;border-radius:14px;background:#F4F6F9;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:600;color:#111" style-hover="background:#EAECF0" style-active="transform:scale(0.98)">Sign In</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SIGNUP ══════════ -->
+<div style="position:absolute;inset:0;z-index:{{ signupZ }};opacity:{{ signupOpacity }};transition:opacity 0.4s ease;pointer-events:{{ signupPointer }}">
+  <div style="width:100%;height:100%;background:#fff;display:flex;flex-direction:column;overflow-y:auto">
+    <div style="padding:16px 20px 0;display:flex;align-items:center;gap:12px">
+      <div onClick="{{ goToAuth }}" style="width:36px;height:36px;border-radius:10px;background:#F4F6F9;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#EAECF0">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </div>
+    </div>
+    <div style="padding:20px 28px 32px;flex:1;display:flex;flex-direction:column">
+      <div style="font-size:26px;font-weight:700;color:#111;margin-bottom:4px">Create Account</div>
+      <div style="font-size:13px;color:#7A8494;margin-bottom:28px">Join thousands of football talents</div>
+      <!-- Form -->
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">Full Name</div>
+          <div style="height:48px;border-radius:12px;border:1.5px solid #E2E6EC;background:#FAFBFC;display:flex;align-items:center;padding:0 14px;gap:10px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" placeholder="Marcus Johnson" style="flex:1;border:none;background:transparent;font-size:14px;color:#111;outline:none;font-family:Poppins,sans-serif">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">Email</div>
+          <div style="height:48px;border-radius:12px;border:1.5px solid #E2E6EC;background:#FAFBFC;display:flex;align-items:center;padding:0 14px;gap:10px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+            <input type="email" placeholder="you@email.com" style="flex:1;border:none;background:transparent;font-size:14px;color:#111;outline:none;font-family:Poppins,sans-serif">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">Password</div>
+          <div style="height:48px;border-radius:12px;border:1.5px solid #E2E6EC;background:#FAFBFC;display:flex;align-items:center;padding:0 14px;gap:10px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="password" placeholder="Min 8 characters" style="flex:1;border:none;background:transparent;font-size:14px;color:#111;outline:none;font-family:Poppins,sans-serif">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;cursor:pointer" fill="none" stroke="#B0B8C4" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">Position</div>
+          <div style="height:48px;border-radius:12px;border:1.5px solid #E2E6EC;background:#FAFBFC;display:flex;align-items:center;padding:0 14px;gap:10px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <div style="flex:1;font-size:14px;color:#B0B8C4">Select position</div>
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- Social divider -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="flex:1;height:1px;background:#E8EBF0"></div>
+        <div style="font-size:12px;color:#9CA3AF;font-weight:500">or sign up with</div>
+        <div style="flex:1;height:1px;background:#E8EBF0"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:24px">
+        <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid #E2E6EC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#CCC;background:#FAFBFC">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        </div>
+        <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid #E2E6EC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#CCC;background:#FAFBFC">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="#000"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        </div>
+        <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid #E2E6EC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#CCC;background:#FAFBFC">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </div>
+      </div>
+      <!-- Submit -->
+      <div onClick="{{ goToHome }}" style="width:100%;height:52px;border-radius:14px;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:600;color:white;box-shadow:0 4px 16px rgba(26,109,255,0.25);margin-top:auto" style-hover="transform:scale(1.02)" style-active="transform:scale(0.98)">Create Account</div>
+      <div style="text-align:center;margin-top:14px;font-size:13px;color:#7A8494">Already have an account? <span onClick="{{ goToLogin }}" style="color:#1A6DFF;font-weight:600;cursor:pointer" style-hover="text-decoration:underline">Sign In</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div style="position:absolute;inset:0;z-index:{{ loginZ }};opacity:{{ loginOpacity }};transition:opacity 0.4s ease;pointer-events:{{ loginPointer }}">
+  <div style="width:100%;height:100%;background:#fff;display:flex;flex-direction:column;overflow-y:auto">
+    <div style="padding:16px 20px 0;display:flex;align-items:center">
+      <div onClick="{{ goToAuth }}" style="width:36px;height:36px;border-radius:10px;background:#F4F6F9;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#EAECF0">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </div>
+    </div>
+    <div style="padding:20px 28px 32px;flex:1;display:flex;flex-direction:column">
+      <div style="font-size:26px;font-weight:700;color:#111;margin-bottom:4px">Welcome Back</div>
+      <div style="font-size:13px;color:#7A8494;margin-bottom:32px">Sign in to continue</div>
+      <!-- Form -->
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:12px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">Email</div>
+          <div style="height:48px;border-radius:12px;border:1.5px solid #E2E6EC;background:#FAFBFC;display:flex;align-items:center;padding:0 14px;gap:10px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+            <input type="email" placeholder="you@email.com" style="flex:1;border:none;background:transparent;font-size:14px;color:#111;outline:none;font-family:Poppins,sans-serif">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">Password</div>
+          <div style="height:48px;border-radius:12px;border:1.5px solid #E2E6EC;background:#FAFBFC;display:flex;align-items:center;padding:0 14px;gap:10px">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="password" placeholder="Enter password" style="flex:1;border:none;background:transparent;font-size:14px;color:#111;outline:none;font-family:Poppins,sans-serif">
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;cursor:pointer" fill="none" stroke="#B0B8C4" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-bottom:28px">
+        <span style="font-size:13px;color:#1A6DFF;font-weight:500;cursor:pointer" style-hover="text-decoration:underline">Forgot Password?</span>
+      </div>
+      <!-- Social -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="flex:1;height:1px;background:#E8EBF0"></div>
+        <div style="font-size:12px;color:#9CA3AF;font-weight:500">or continue with</div>
+        <div style="flex:1;height:1px;background:#E8EBF0"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:28px">
+        <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid #E2E6EC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#CCC;background:#FAFBFC">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        </div>
+        <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid #E2E6EC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#CCC;background:#FAFBFC">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="#000"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        </div>
+        <div style="flex:1;height:48px;border-radius:12px;border:1.5px solid #E2E6EC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="border-color:#CCC;background:#FAFBFC">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </div>
+      </div>
+      <!-- Submit -->
+      <div onClick="{{ goToHome }}" style="width:100%;height:52px;border-radius:14px;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:600;color:white;box-shadow:0 4px 16px rgba(26,109,255,0.25);margin-top:auto" style-hover="transform:scale(1.02)" style-active="transform:scale(0.98)">Sign In</div>
+      <div style="text-align:center;margin-top:14px;font-size:13px;color:#7A8494">Don't have an account? <span onClick="{{ goToSignup }}" style="color:#1A6DFF;font-weight:600;cursor:pointer" style-hover="text-decoration:underline">Sign Up</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div style="position:absolute;top:60px;left:0;right:0;bottom:0;z-index:{{ appZ }};opacity:{{ appOpacity }};transition:opacity 0.5s ease;pointer-events:{{ appPointer }};display:flex;flex-direction:column;background:#F4F6F9">
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;position:relative">
+
+    <!-- ── HOME ── -->
+    <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+      <div style="animation:fadeIn 0.4s ease-out">
+        <!-- Header -->
+        <div style="padding:16px 20px 12px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:12px;color:#7A8494;font-weight:500">Good evening</div>
+            <div style="font-size:20px;font-weight:700;color:#111">Marcus Johnson</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:#F0F2F5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative" style-hover="background:#E6E8EC">
+              <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="#333" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              <div style="position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#FF4444;border:2px solid #F4F6F9"></div>
+            </div>
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #1A6DFF" crossorigin="anonymous">
+          </div>
+        </div>
+
+        <!-- Player card -->
+        <div style="margin:0 20px 16px;position:relative;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(26,109,255,0.2)">
+          <img src="https://images.unsplash.com/photo-1556056504-5c7696c4c28d?w=800&q=80" style="width:100%;height:190px;object-fit:cover" crossorigin="anonymous">
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(26,109,255,0.85) 0%,rgba(0,80,208,0.9) 100%)"></div>
+          <div style="position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:1.5px;text-transform:uppercase">Overall Rating</div>
+                <div style="font-size:44px;font-weight:800;color:white;line-height:1;letter-spacing:-2px">82</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:5px 12px">
+                <div style="font-size:11px;font-weight:700;color:white;letter-spacing:0.5px">CAM</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:8px;text-align:center">
+                <div style="font-size:9px;color:rgba(255,255,255,0.5);font-weight:600">PAC</div>
+                <div style="font-size:18px;font-weight:700;color:white">78</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:8px;text-align:center">
+                <div style="font-size:9px;color:rgba(255,255,255,0.5);font-weight:600">SHO</div>
+                <div style="font-size:18px;font-weight:700;color:white">85</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:8px;text-align:center">
+                <div style="font-size:9px;color:rgba(255,255,255,0.5);font-weight:600">PAS</div>
+                <div style="font-size:18px;font-weight:700;color:white">87</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div style="padding:0 20px;margin-bottom:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div onClick="{{ goToAnalysis }}" style="background:white;border-radius:16px;padding:16px 12px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.04)" style-hover="box-shadow:0 4px 16px rgba(0,0,0,0.08)">
+              <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#EBF2FF,#D6E4FF);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="#1A6DFF" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:#111">Analysis</div>
+            </div>
+            <div onClick="{{ goToReels }}" style="background:white;border-radius:16px;padding:16px 12px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.04)" style-hover="box-shadow:0 4px 16px rgba(0,0,0,0.08)">
+              <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#FFF4E0,#FFE8B8);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="#F5A623" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:#111">Reels</div>
+            </div>
+            <div onClick="{{ goToDiscover }}" style="background:white;border-radius:16px;padding:16px 12px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.04)" style-hover="box-shadow:0 4px 16px rgba(0,0,0,0.08)">
+              <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#E8FFF0,#C8F5D8);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="#22B573" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:#111">Discover</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div style="padding:0 20px 24px">
+          <div style="font-size:15px;font-weight:600;color:#111;margin-bottom:10px">Recent Activity</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:white;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <img src="https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=200&q=80" style="width:40px;height:40px;border-radius:10px;object-fit:cover" crossorigin="anonymous">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:#111">Skill rating updated</div>
+                <div style="font-size:11px;color:#7A8494">Dribbling +3 after last analysis</div>
+              </div>
+              <div style="font-size:10px;color:#B0B8C4;flex-shrink:0">2h</div>
+            </div>
+            <div style="background:white;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#FFF4E0,#FFE8B8);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="#F5A623" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:#111">Profile viewed by scout</div>
+                <div style="font-size:11px;color:#7A8494">Lagos Premier Academy</div>
+              </div>
+              <div style="font-size:10px;color:#B0B8C4;flex-shrink:0">5h</div>
+            </div>
+            <div style="background:white;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&q=80" style="width:40px;height:40px;border-radius:10px;object-fit:cover" crossorigin="anonymous">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:#111">New reel uploaded</div>
+                <div style="font-size:11px;color:#7A8494">Free kick compilation</div>
+              </div>
+              <div style="font-size:10px;color:#B0B8C4;flex-shrink:0">1d</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── ANALYSIS ── -->
+    <sc-if value="{{ showAnalysis }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 20px 24px;animation:fadeIn 0.4s ease-out">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#111">AI Analysis</div>
+            <div style="font-size:12px;color:#7A8494">Latest performance breakdown</div>
+          </div>
+          <div style="padding:6px 14px;border-radius:10px;background:white;border:1px solid #E8EBF0;font-size:12px;font-weight:500;color:#444;cursor:pointer" style-hover="background:#F4F6F9">This week</div>
+        </div>
+        <!-- Radar -->
+        <div style="background:white;border-radius:20px;padding:20px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">
+          <div style="display:flex;justify-content:center;margin-bottom:12px">{{ radarChart }}</div>
+          <div style="display:flex;justify-content:center;gap:20px">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#1A6DFF"></div><div style="font-size:11px;color:#7A8494">Current</div></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:rgba(26,109,255,0.2)"></div><div style="font-size:11px;color:#7A8494">Previous</div></div>
+          </div>
+        </div>
+        <!-- Skills -->
+        <div style="font-size:14px;font-weight:600;color:#111;margin-bottom:10px">Skill Breakdown</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+          <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:13px;font-weight:600;color:#111">Dribbling</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="font-size:16px;font-weight:700;color:#1A6DFF">90</div>
+                <div style="font-size:11px;color:#22B573;font-weight:600;background:#E8FFF0;padding:1px 6px;border-radius:6px">+3</div>
+              </div>
+            </div>
+            <div style="height:6px;background:#F0F2F5;border-radius:3px;overflow:hidden"><div style="width:90%;height:100%;background:linear-gradient(90deg,#1A6DFF,#0050D0);border-radius:3px"></div></div>
+          </div>
+          <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:13px;font-weight:600;color:#111">Passing</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="font-size:16px;font-weight:700;color:#1A6DFF">87</div>
+                <div style="font-size:11px;color:#22B573;font-weight:600;background:#E8FFF0;padding:1px 6px;border-radius:6px">+1</div>
+              </div>
+            </div>
+            <div style="height:6px;background:#F0F2F5;border-radius:3px;overflow:hidden"><div style="width:87%;height:100%;background:linear-gradient(90deg,#1A6DFF,#0050D0);border-radius:3px"></div></div>
+          </div>
+          <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:13px;font-weight:600;color:#111">Shooting</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="font-size:16px;font-weight:700;color:#1A6DFF">85</div>
+                <div style="font-size:11px;color:#7A8494;font-weight:500">—</div>
+              </div>
+            </div>
+            <div style="height:6px;background:#F0F2F5;border-radius:3px;overflow:hidden"><div style="width:85%;height:100%;background:linear-gradient(90deg,#1A6DFF,#0050D0);border-radius:3px"></div></div>
+          </div>
+          <div style="background:white;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:13px;font-weight:600;color:#111">Pace</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="font-size:16px;font-weight:700;color:#1A6DFF">78</div>
+                <div style="font-size:11px;color:#FF4444;font-weight:600;background:#FFF0F0;padding:1px 6px;border-radius:6px">-2</div>
+              </div>
+            </div>
+            <div style="height:6px;background:#F0F2F5;border-radius:3px;overflow:hidden"><div style="width:78%;height:100%;background:linear-gradient(90deg,#1A6DFF,#0050D0);border-radius:3px"></div></div>
+          </div>
+        </div>
+        <!-- Upload CTA -->
+        <div style="height:52px;border-radius:14px;background:linear-gradient(135deg,#1A6DFF,#0050D0);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;font-weight:600;color:white;box-shadow:0 4px 16px rgba(26,109,255,0.25);gap:8px" style-hover="transform:scale(1.02)" style-active="transform:scale(0.98)">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload New Clip
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── REELS ── -->
+    <sc-if value="{{ showReels }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:fadeIn 0.4s ease-out;height:100%;display:flex;flex-direction:column">
+        <div style="flex:1;position:relative;min-height:420px">
+          <img src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.6) 100%)"></div>
+          <!-- Play -->
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid rgba(255,255,255,0.35)">
+            <svg viewBox="0 0 24 24" style="width:28px;height:28px;margin-left:3px" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <!-- Info -->
+          <div style="position:absolute;bottom:16px;left:16px;right:56px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.5)" crossorigin="anonymous">
+              <div style="font-size:13px;font-weight:600;color:white">Marcus Johnson</div>
+              <div style="padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.15);font-size:10px;color:white;font-weight:500">Following</div>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.85);line-height:1.4">Free kick compilation — last weekend's match 🔥</div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <div style="font-size:10px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:6px">#freekick</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:6px">#goals</div>
+            </div>
+          </div>
+          <!-- Side actions -->
+          <div style="position:absolute;right:12px;bottom:16px;display:flex;flex-direction:column;gap:18px;align-items:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="white" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              </div>
+              <div style="font-size:10px;color:white;font-weight:500">234</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="white" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              </div>
+              <div style="font-size:10px;color:white;font-weight:500">42</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px" fill="none" stroke="white" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+              <div style="font-size:10px;color:white;font-weight:500">Share</div>
+            </div>
+          </div>
+        </div>
+        <!-- Thumbnails -->
+        <div style="padding:10px 16px;background:#F4F6F9">
+          <div style="display:flex;gap:8px">
+            <div style="flex-shrink:0;width:68px;height:90px;border-radius:12px;overflow:hidden;border:2px solid #1A6DFF;position:relative">
+              <img src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=200&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+            </div>
+            <div style="flex-shrink:0;width:68px;height:90px;border-radius:12px;overflow:hidden;opacity:0.7;position:relative">
+              <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+            </div>
+            <div style="flex-shrink:0;width:68px;height:90px;border-radius:12px;overflow:hidden;opacity:0.7;position:relative">
+              <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=200&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+            </div>
+            <div style="flex-shrink:0;width:68px;height:90px;border-radius:12px;background:#E8EBF0;border:2px dashed #C8CDD5;display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="#9CA3AF" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── DISCOVER ── -->
+    <sc-if value="{{ showDiscover }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 20px 24px;animation:fadeIn 0.4s ease-out">
+        <div style="font-size:20px;font-weight:700;color:#111;margin-bottom:14px">Discover</div>
+        <!-- Search -->
+        <div style="display:flex;align-items:center;gap:10px;background:white;border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,0.04);border:1px solid #E8EBF0">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" fill="none" stroke="#B0B8C4" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div style="font-size:13px;color:#B0B8C4">Search players, teams...</div>
+        </div>
+        <!-- Chips -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto">
+          <div style="flex-shrink:0;padding:6px 16px;border-radius:20px;background:#1A6DFF;color:white;font-size:12px;font-weight:600">All</div>
+          <div style="flex-shrink:0;padding:6px 16px;border-radius:20px;background:white;color:#555;font-size:12px;font-weight:500;border:1px solid #E8EBF0" style-hover="border-color:#1A6DFF;color:#1A6DFF">Strikers</div>
+          <div style="flex-shrink:0;padding:6px 16px;border-radius:20px;background:white;color:#555;font-size:12px;font-weight:500;border:1px solid #E8EBF0" style-hover="border-color:#1A6DFF;color:#1A6DFF">Midfielders</div>
+          <div style="flex-shrink:0;padding:6px 16px;border-radius:20px;background:white;color:#555;font-size:12px;font-weight:500;border:1px solid #E8EBF0" style-hover="border-color:#1A6DFF;color:#1A6DFF">Defenders</div>
+        </div>
+        <!-- Players -->
+        <div style="font-size:14px;font-weight:600;color:#111;margin-bottom:10px">Trending Players</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:white;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);cursor:pointer" style-hover="box-shadow:0 4px 12px rgba(0,0,0,0.06)">
+            <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&q=80" style="width:48px;height:48px;border-radius:50%;object-fit:cover" crossorigin="anonymous">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:#111">Adebayo Okonkwo</div>
+              <div style="font-size:12px;color:#7A8494">ST · Lagos · Rating 86</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#1A6DFF,#0050D0);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:white">86</div>
+          </div>
+          <div style="background:white;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);cursor:pointer" style-hover="box-shadow:0 4px 12px rgba(0,0,0,0.06)">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80" style="width:48px;height:48px;border-radius:50%;object-fit:cover" crossorigin="anonymous">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:#111">Kwame Mensah</div>
+              <div style="font-size:12px;color:#7A8494">CM · Accra · Rating 83</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#1A6DFF,#0050D0);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:white">83</div>
+          </div>
+          <div style="background:white;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);cursor:pointer" style-hover="box-shadow:0 4px 12px rgba(0,0,0,0.06)">
+            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80" style="width:48px;height:48px;border-radius:50%;object-fit:cover" crossorigin="anonymous">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:#111">Samuel Ndong</div>
+              <div style="font-size:12px;color:#7A8494">CB · Dakar · Rating 81</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#1A6DFF,#0050D0);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:white">81</div>
+          </div>
+          <div style="background:white;border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);cursor:pointer" style-hover="box-shadow:0 4px 12px rgba(0,0,0,0.06)">
+            <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&q=80" style="width:48px;height:48px;border-radius:50%;object-fit:cover" crossorigin="anonymous">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:#111">Emmanuel Faye</div>
+              <div style="font-size:12px;color:#7A8494">RW · Abidjan · Rating 79</div>
+            </div>
+            <div style="background:linear-gradient(135deg,#1A6DFF,#0050D0);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:700;color:white">79</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── PROFILE ── -->
+    <sc-if value="{{ showProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:fadeIn 0.4s ease-out">
+        <!-- Header with photo -->
+        <div style="position:relative;padding-bottom:60px">
+          <img src="https://images.unsplash.com/photo-1556056504-5c7696c4c28d?w=800&q=80" style="width:100%;height:140px;object-fit:cover" crossorigin="anonymous">
+          <div style="position:absolute;inset:0;height:140px;background:linear-gradient(180deg,rgba(26,109,255,0.4) 0%,rgba(0,80,208,0.7) 100%)"></div>
+          <!-- Avatar -->
+          <div style="position:absolute;bottom:0;left:20px;display:flex;align-items:flex-end;gap:14px">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.15)" crossorigin="anonymous">
+            <div style="padding-bottom:8px">
+              <div style="font-size:18px;font-weight:700;color:#111">Marcus Johnson</div>
+              <div style="font-size:12px;color:#7A8494">CAM · 19 · Lagos, Nigeria</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 20px 24px">
+          <!-- Stats -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+            <div style="background:white;border-radius:12px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="font-size:18px;font-weight:700;color:#1A6DFF">82</div>
+              <div style="font-size:10px;color:#7A8494;font-weight:500">Overall</div>
+            </div>
+            <div style="background:white;border-radius:12px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="font-size:18px;font-weight:700;color:#1A6DFF">12</div>
+              <div style="font-size:10px;color:#7A8494;font-weight:500">Reels</div>
+            </div>
+            <div style="background:white;border-radius:12px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="font-size:18px;font-weight:700;color:#1A6DFF">1.2k</div>
+              <div style="font-size:10px;color:#7A8494;font-weight:500">Views</div>
+            </div>
+            <div style="background:white;border-radius:12px;padding:10px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="font-size:18px;font-weight:700;color:#1A6DFF">8</div>
+              <div style="font-size:10px;color:#7A8494;font-weight:500">Scouts</div>
+            </div>
+          </div>
+          <!-- Bio -->
+          <div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="font-size:13px;font-weight:600;color:#111;margin-bottom:4px">About</div>
+            <div style="font-size:13px;color:#555;line-height:1.5">Attacking midfielder with strong vision and creative playmaking. Looking for opportunities at the next level.</div>
+          </div>
+          <!-- Skills mini -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="font-size:11px;color:#7A8494;font-weight:500;margin-bottom:2px">Best Skill</div>
+              <div style="font-size:15px;font-weight:700;color:#1A6DFF">Dribbling 90</div>
+            </div>
+            <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+              <div style="font-size:11px;color:#7A8494;font-weight:500;margin-bottom:2px">Preferred Foot</div>
+              <div style="font-size:15px;font-weight:700;color:#1A6DFF">Right</div>
+            </div>
+          </div>
+          <!-- Menu -->
+          <div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #F0F2F5;cursor:pointer" style-hover="background:#FAFBFC">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="#555" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <div style="flex:1;font-size:14px;color:#111">Edit Profile</div>
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #F0F2F5;cursor:pointer" style-hover="background:#FAFBFC">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="#555" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              <div style="flex:1;font-size:14px;color:#111">Settings</div>
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" style-hover="background:#FAFBFC">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px" fill="none" stroke="#FF4444" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <div style="flex:1;font-size:14px;color:#FF4444">Log Out</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- ── TAB BAR ── -->
+  <div style="display:flex;background:white;border-top:1px solid #ECEEF2;padding:6px 0 22px;flex-shrink:0">
+    <div onClick="{{ goToHome }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ homeTabColor }}" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div style="font-size:10px;font-weight:{{ homeTabWeight }};color:{{ homeTabColor }}">Home</div>
+    </div>
+    <div onClick="{{ goToAnalysis }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ analysisTabColor }}" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <div style="font-size:10px;font-weight:{{ analysisTabWeight }};color:{{ analysisTabColor }}">Analysis</div>
+    </div>
+    <div onClick="{{ goToReels }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ reelsTabColor }}" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <div style="font-size:10px;font-weight:{{ reelsTabWeight }};color:{{ reelsTabColor }}">Reels</div>
+    </div>
+    <div onClick="{{ goToDiscover }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ discoverTabColor }}" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div style="font-size:10px;font-weight:{{ discoverTabWeight }};color:{{ discoverTabColor }}">Discover</div>
+    </div>
+    <div onClick="{{ goToProfile }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0">
+      <svg viewBox="0 0 24 24" style="width:22px;height:22px" fill="none" stroke="{{ profileTabColor }}" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div style="font-size:10px;font-weight:{{ profileTabWeight }};color:{{ profileTabColor }}">Profile</div>
+    </div>
+  </div>
+</div>
+
+</x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: &quot;100%&quot;, &quot;height&quot;: &quot;100%&quot; },
+  &quot;startScreen&quot;: {
+    &quot;editor&quot;: &quot;enum&quot;,
+    &quot;options&quot;: [&quot;splash&quot;, &quot;onboarding&quot;, &quot;auth&quot;, &quot;signup&quot;, &quot;login&quot;, &quot;app&quot;],
+    &quot;default&quot;: &quot;splash&quot;,
+    &quot;tsType&quot;: &quot;string&quot;,
+    &quot;section&quot;: &quot;Navigation&quot;
+  }
+}">
+
+class Component extends DCLogic {
+  state = {
+    screen: 'splash',
+    onboardingSlide: 0,
+    selectedRole: null,
+    activeTab: 'home',
+    scale: 1,
+  };
+
+  componentDidMount() {
+    const start = this.props.startScreen ?? 'splash';
+    if (start !== 'splash') {
+      this.setState({ screen: start, activeTab: start === 'app' ? 'home' : this.state.activeTab });
+    } else {
+      this._splashTimer = setTimeout(() => this.setState({ screen: 'onboarding' }), 3500);
+    }
+    this._computeScale = () => {
+      const sw = (window.innerWidth - 40) / 402;
+      const sh = (window.innerHeight - 40) / 874;
+      this.setState({ scale: Math.min(sw, sh, 1) });
+    };
+    this._computeScale();
+    window.addEventListener('resize', this._computeScale);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._splashTimer);
+    window.removeEventListener('resize', this._computeScale);
+  }
+
+  renderVals() {
+    const { screen, onboardingSlide, selectedRole, activeTab, scale } = this.state;
+    const slides = [
+      { title: 'Discover Football Talent', sub: 'Every talented player deserves to be seen. Matobev brings your skills to the world stage.' },
+      { title: 'AI-Powered Analysis', sub: 'Upload match footage and get detailed performance ratings powered by advanced motion tracking.' },
+      { title: 'Connect With Scouts', sub: 'Get discovered by top scouts and academies worldwide. Your next opportunity is one reel away.' },
+    ];
+    const s = slides[onboardingSlide];
+    const isLast = onboardingSlide === 2;
+    const tc = (t) => activeTab === t ? '#1A6DFF' : '#B0B8C4';
+    const tw = (t) => activeTab === t ? '600' : '400';
+
+    const vis = (name) => ({
+      [`${name}Z`]: screen === name ? (name === 'splash' ? 30 : name === 'onboarding' ? 25 : name === 'auth' ? 20 : name === 'signup' ? 18 : name === 'login' ? 17 : 5) : 0,
+      [`${name}Opacity`]: screen === name ? 1 : 0,
+      [`${name}Pointer`]: screen === name ? 'auto' : 'none',
+    });
+
+    // Radar
+    const stats = { pace: 78, shooting: 85, passing: 87, dribbling: 90, defending: 52, physical: 71 };
+    const labels = ['PAC', 'SHO', 'PAS', 'DRI', 'DEF', 'PHY'];
+    const vals = Object.values(stats);
+    const prev = [80, 85, 86, 87, 54, 73];
+    const cx = 120, cy = 120, R = 90;
+    const xy = (i, r) => { const a = Math.PI*2*i/6 - Math.PI/2; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
+    const poly = (vs) => vs.map((v,i) => xy(i, R*v/100).join(',')).join(' ');
+    const grid = [0.2,0.4,0.6,0.8,1].map(f => Array.from({length:6},(_,i)=>xy(i,R*f).join(',')).join(' '));
+    const axes = Array.from({length:6},(_,i)=>{ const [x,y]=xy(i,R); return `M${cx},${cy} L${x},${y}`; });
+    const lbl = labels.map((l,i)=>{ const [x,y]=xy(i,R+18); return {x,y,l,v:vals[i]}; });
+
+    const radarChart = React.createElement('svg', { viewBox:'0 0 240 240', style:{width:200,height:200} },
+      grid.map((p,i)=>React.createElement('polygon',{key:'g'+i,points:p,fill:'none',stroke:'#E8EBF0',strokeWidth:0.5})),
+      axes.map((d,i)=>React.createElement('path',{key:'a'+i,d,stroke:'#E8EBF0',strokeWidth:0.5})),
+      React.createElement('polygon',{points:poly(prev),fill:'rgba(26,109,255,0.06)',stroke:'rgba(26,109,255,0.15)',strokeWidth:1}),
+      React.createElement('polygon',{points:poly(vals),fill:'rgba(26,109,255,0.12)',stroke:'#1A6DFF',strokeWidth:1.5}),
+      vals.map((v,i)=>{const [x,y]=xy(i,R*v/100);return React.createElement('circle',{key:'d'+i,cx:x,cy:y,r:3,fill:'#1A6DFF'});}),
+      lbl.map((e,i)=>React.createElement('text',{key:'l'+i,x:e.x,y:e.y,textAnchor:'middle',dominantBaseline:'central',style:{fontSize:9,fill:'#7A8494',fontFamily:'Poppins',fontWeight:600}},`${e.l} ${e.v}`))
+    );
+
+    return {
+      deviceScale: scale,
+      ...vis('splash'), ...vis('onboarding'), ...vis('auth'), ...vis('signup'), ...vis('login'), ...vis('app'),
+
+      slide1X: onboardingSlide===0?'0%':'-100%', slide1Op: onboardingSlide===0?1:0,
+      slide2X: onboardingSlide===1?'0%':onboardingSlide<1?'100%':'-100%', slide2Op: onboardingSlide===1?1:0,
+      slide3X: onboardingSlide===2?'0%':'100%', slide3Op: onboardingSlide===2?1:0,
+
+      onboardingTitle: s.title, onboardingSubtext: s.sub,
+      dot1Color: onboardingSlide===0?'#1A6DFF':'#DDE1E7', dot1W: onboardingSlide===0?'24px':'6px',
+      dot2Color: onboardingSlide===1?'#1A6DFF':'#DDE1E7', dot2W: onboardingSlide===1?'24px':'6px',
+      dot3Color: onboardingSlide===2?'#1A6DFF':'#DDE1E7', dot3W: onboardingSlide===2?'24px':'6px',
+      showSkip: !isLast, showNextBtn: !isLast, showGetStarted: isLast,
+      navJustify: isLast?'center':'space-between',
+      nextSlide: ()=>{ if(onboardingSlide<2) this.setState({onboardingSlide:onboardingSlide+1}); },
+      skipOnboarding: ()=>this.setState({screen:'auth'}),
+
+      // Auth role
+      playerBorderLight: selectedRole==='player'?'#1A6DFF':'#E8EBF0',
+      playerBgLight: selectedRole==='player'?'#F0F5FF':'#FAFBFC',
+      playerChipBg: selectedRole==='player'?'#1A6DFF':'#F0F2F5',
+      playerChipIcon: selectedRole==='player'?'white':'#7A8494',
+      scoutBorderLight: selectedRole==='scout'?'#1A6DFF':'#E8EBF0',
+      scoutBgLight: selectedRole==='scout'?'#F0F5FF':'#FAFBFC',
+      scoutChipBg: selectedRole==='scout'?'#1A6DFF':'#F0F2F5',
+      scoutChipIcon: selectedRole==='scout'?'white':'#7A8494',
+      selectPlayer: ()=>this.setState({selectedRole:'player'}),
+      selectScout: ()=>this.setState({selectedRole:'scout'}),
+
+      goToSignup: ()=>this.setState({screen:'signup'}),
+      goToLogin: ()=>this.setState({screen:'login'}),
+      goToAuth: ()=>this.setState({screen:'auth'}),
+      goToHome: ()=>this.setState({screen:'app',activeTab:'home'}),
+
+      showHome: activeTab==='home', showAnalysis: activeTab==='analysis',
+      showReels: activeTab==='reels', showDiscover: activeTab==='discover', showProfile: activeTab==='profile',
+      goToAnalysis: ()=>this.setState({screen:'app',activeTab:'analysis'}),
+      goToReels: ()=>this.setState({screen:'app',activeTab:'reels'}),
+      goToDiscover: ()=>this.setState({screen:'app',activeTab:'discover'}),
+      goToProfile: ()=>this.setState({screen:'app',activeTab:'profile'}),
+
+      homeTabColor:tc('home'), homeTabWeight:tw('home'),
+      analysisTabColor:tc('analysis'), analysisTabWeight:tw('analysis'),
+      reelsTabColor:tc('reels'), reelsTabWeight:tw('reels'),
+      discoverTabColor:tc('discover'), discoverTabWeight:tw('discover'),
+      profileTabColor:tc('profile'), profileTabWeight:tw('profile'),
+
+      radarChart,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
