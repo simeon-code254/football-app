@@ -74,6 +74,10 @@ export default function Profile() {
     },
   });
 
+  const presentAttrCount = data?.attributes.filter((a) => a.value != null).length ?? 0;
+  const totalAttrCount = data?.attributes.length ?? 0;
+  const isProvisionalRating = presentAttrCount > 0 && presentAttrCount < totalAttrCount;
+
   const statTiles = [
     { label: 'OVR', value: data?.publicView.overall_rating != null ? String(data.publicView.overall_rating) : '—' },
     { label: 'Reels', value: data ? String(data.videoCount) : '—' },
@@ -126,6 +130,11 @@ export default function Profile() {
           </View>
         ))}
       </View>
+      {isProvisionalRating && (
+        <Text style={styles.provisionalNote}>
+          Provisional ({presentAttrCount}/{totalAttrCount} attributes assessed)
+        </Text>
+      )}
 
       <View style={styles.tabRow}>
         {TABS.map((t) => (
@@ -181,6 +190,11 @@ export default function Profile() {
             <Text style={styles.aiNote}>
               Ratings update automatically as new highlights are analyzed by the AI pipeline.
             </Text>
+            {isProvisionalRating && (
+              <Text style={styles.provisionalNote}>
+                Provisional — {presentAttrCount} of {totalAttrCount} attributes assessed so far.
+              </Text>
+            )}
             {(data?.attributes ?? []).map((attr) => (
               <View key={attr.key} style={styles.skillRow}>
                 <Text style={styles.skillName}>{attr.displayName}</Text>
@@ -304,6 +318,7 @@ const styles = StyleSheet.create({
   videoPlayGlyph: { color: colors.white, fontSize: 11 },
   videoCloseBtn: { position: 'absolute', top: 50, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
   aiNote: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, lineHeight: 18 },
+  provisionalNote: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, textAlign: 'center', marginTop: 4 },
   skillRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   skillName: { width: 110, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
   skillTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.surfaceMuted, overflow: 'hidden' },

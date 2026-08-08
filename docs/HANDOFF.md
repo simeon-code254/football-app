@@ -76,7 +76,7 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 
 ## 3. Backend — everything built
 
-**27 migrations**, all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
+**28 migrations**, all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
 
 1. Extensions/enums (`position_code`)
 2. `countries` (Africa-only, 54 seeded rows)
@@ -105,6 +105,7 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 25. `scout_verification_documents` + private storage bucket + `scouts.verification_notes`
 26. `queue_ai_analysis_jobs` — `SECURITY DEFINER` trigger auto-creates a queued `video_analysis_jobs` row on `ai_analysis` uploads (the table has no client-write policy at all — this trigger is the only path a job can ever be created)
 27. `scouts_country` — adds `scouts.country_code` (was missing; `scout-edit-profile.tsx`'s Country field had no backing column)
+28. `video_analysis_jobs_realtime` — enables Realtime on `video_analysis_jobs` so the new AI analysis service can pick up queued jobs via an outbound subscription (see §6)
 
 **RLS is live-verified**, not just written — confirmed via the anon key (same path the app uses): seed data readable, unauthenticated writes to `player_attribute_scores`, `video_likes`, `profile_views`, and `scout_verification_documents` are all correctly blocked. See §5 for the full backend-integration verification pass (real authenticated writes, Realtime delivery, RLS spoof-blocking, etc.).
 
@@ -180,9 +181,21 @@ Every screen now runs on real Supabase data. `src/repositories/*.ts` (8 files: `
 - Upload's UI copy says "up to 500MB" but the base64 upload path is realistically good for far less (~100MB) before memory becomes an issue — fine for MVP, a resumable/TUS upload would be the real fix later.
 - "Scout Saves" was dropped from the player's own Stats tab — `saved_players` is intentionally RLS-private to the saving scout, so a player has no honest way to see who saved them.
 
-## 6. Next phase: the AI analysis engine (not started, by design)
+## 6. AI analysis engine — Phase A built (Pace + Physical), local dev only
 
-Explicitly out of scope for the backend-integration pass per the user's own sequencing ("we will lastly work on the engine of ai analysis"). The schema is ready for it (`video_analysis_jobs`, `player_attribute_scores`/history, the new auto-queue trigger) — see the Phase 1 "AI Pipeline" section further down this file for the architecture recommendation (custom CV pipeline: detection → pose → tracking → action recognition → heuristic attribute scoring, phased A→D by what's genuinely computable at each stage).
+Full design rationale in `C:\Users\Admin\.claude\plans\now-fancy-balloon.md` ("Phase 4"). New top-level `ai-service/` directory — a standalone Python/FastAPI service, separate from `app/` and `supabase/`, not deployed anywhere yet (deliberately local-dev-only per the user's own decision, given this machine's GPU is a 2GB-VRAM MX450, nowhere near enough to train/run the heavier action-recognition phases).
+
+**Scope, deliberately narrow**: detection + tracking only, using pretrained zero-training models (YOLOv8n + its built-in ByteTrack) → real **Pace** and **Physical** attributes. No pose estimation, no action recognition (Shooting/Passing/Defending/GK attributes — needs SoccerNet fine-tuning and real GPU compute, not attempted here), no goalkeeper scores (no Pace/Physical-equivalent exists in that attribute taxonomy — GK jobs complete with no scores written, by design, not a bug).
+
+**New migration** (28 total now): `video_analysis_jobs_realtime` — enables Realtime on `video_analysis_jobs` (previously only `messages`/`notifications` were enabled), so the service can pick up newly-queued jobs via an outbound Realtime subscription instead of needing a public inbound webhook endpoint.
+
+**What's built and verified**:
+- Full pipeline (`ai-service/src/pipeline/`): ffmpeg-free frame extraction (OpenCV's bundled backend) at 5fps → YOLOv8n person+ball detection/tracking → a heuristic subject-player disambiguation (most screen time + largest size + most central — a real, documented approximation, not solved) → pixel→meter calibration off the subject's bbox height vs. `players.height_cm` (or a 170cm default) → Pace/Physical formulas from tracked displacement → confidence capped at `Medium` (never `High` — this phase's inputs are never ground-truth-validated).
+- Job orchestration (`src/jobs.py`): atomic claim (`UPDATE...WHERE status='queued'`, race-safe by construction), a startup self-heal that resets any stuck `processing` row back to `queued`, and an honest failure path (`status='failed'` + a real `error` message — never left stuck, never silently faked as `completed`).
+- **Live-verified without needing the service_role key locally**: uploaded a real synthetic test clip through the actual app upload path as a real test player account, confirmed the existing auto-queue trigger still creates a `queued` job correctly. Ran the pipeline directly (no Supabase needed for this part) against two real test videos: (1) a synthetic clip with no person in it → correctly returned `ok=False, "no person detected"`, zero crash, matching the honest-failure design; (2) a real photo of footballers (Ultralytics' own official demo image, `zidane.jpg`) turned into a static test clip → YOLO genuinely detected and tracked two real people, but the calibration step correctly **refused** to calibrate off the selected subject's bounding box because its aspect ratio wasn't a plausible upright person (a same-scene neighboring detection was upright and would have calibrated fine) — a real, honest finding: the subject-heuristic can pick a wide/merged detection in a crowded scene, and the calibration safety check is what catches it and prevents a fabricated number, exactly as designed. Test artifacts (test player account, uploaded test video row) cleaned up after; one small leftover — the tiny synthetic test clip's Storage object under the now-deleted test player's path — couldn't be removed (storage deletion needs an authenticated owner session or service_role, and the account was already deleted first); harmless (private bucket, orphaned path, nothing can generate a valid URL to it), safe to ignore or delete manually from the Supabase dashboard's Storage browser.
+- **Not yet run against real human movement** — this needs a real short video of an actual moving person, which nobody in this session could supply (the assistant can't record one; the synthetic/static tests above are the honest substitute for validating pipeline mechanics). **To see real Pace/Physical numbers**: copy `ai-service/.env.example` to `.env`, fill in the Supabase service_role key (dashboard → Project Settings → API), install deps per `ai-service/README.md`, film a few seconds of a person moving sideways across the camera, upload it through the app with AI Analysis mode on, run `uvicorn main:app --reload` from `ai-service/`.
+
+**Small companion UI change also shipped this pass**: both `app/app/(player-tabs)/profile.tsx` and `app/app/player/[id].tsx` now show a "Provisional (X/Y attributes assessed)" label next to the overall rating whenever some but not all attributes are scored — otherwise a Phase-A-only player (2 of 10 attributes) would show a normal-looking overall rating that reads as complete.
 
 ## 7. Verification commands (for whoever resumes)
 
@@ -195,4 +208,7 @@ cd matobev && SUPABASE_ACCESS_TOKEN=<pat> supabase gen types typescript --linked
 
 # Type-check + bundle-verify the app after any change
 cd app && npx tsc --noEmit && npx expo export -p web && rm -rf dist
+
+# Run the AI service locally (after filling in ai-service/.env)
+cd ai-service && .venv\Scripts\Activate.ps1 && uvicorn main:app --reload
 ```

@@ -1,0 +1,7 @@
+ultralytics==8.4.116
+lap==0.5.13
+supabase==2.31.0
+fastapi
+uvicorn[standard]
+opencv-python
+python-dotenv

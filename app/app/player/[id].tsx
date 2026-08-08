@@ -151,6 +151,9 @@ export default function PlayerDetail() {
 
   const player = data.publicView;
   const savedFolderName = scoutData?.folders.find((f) => f.id === scoutData.savedFolderId)?.name ?? null;
+  const presentAttrCount = data.attributes.filter((a) => a.value != null).length;
+  const totalAttrCount = data.attributes.length;
+  const isProvisionalRating = presentAttrCount > 0 && presentAttrCount < totalAttrCount;
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
@@ -255,6 +258,11 @@ export default function PlayerDetail() {
               <View style={styles.overallCard}>
                 <Text style={styles.overallLabel}>OVERALL</Text>
                 <Text style={styles.overallValue}>{player.overall_rating ?? '—'}</Text>
+                {isProvisionalRating && (
+                  <Text style={styles.provisionalNote}>
+                    Provisional ({presentAttrCount}/{totalAttrCount} attributes assessed)
+                  </Text>
+                )}
               </View>
 
               <View style={{ gap: 10 }}>
@@ -407,6 +415,7 @@ const styles = StyleSheet.create({
   disclaimer: { flexDirection: 'row', gap: 8, backgroundColor: '#EBF2FF', borderRadius: radii.md, padding: 10, alignItems: 'flex-start' },
   disclaimerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.primaryDark, lineHeight: 16 },
   overallCard: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 16, alignItems: 'center' },
+  provisionalNote: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, marginTop: 6 },
   overallLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 1 },
   overallValue: { fontFamily: fontFamily.extraBold, fontSize: 40, color: colors.primary },
   skillRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
