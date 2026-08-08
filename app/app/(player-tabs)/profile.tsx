@@ -1,12 +1,25 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
+import { useSessionStore } from '../../src/store/useSessionStore';
 
 const COVER = images.onboardSlide1;
 const AVATAR = images.avatarMale;
 
 const TABS = ['About', 'Videos', 'AI Ratings', 'Stats'] as const;
+
+const SETTINGS_SECTIONS: { title: string; icon: React.ComponentProps<typeof Feather>['name'] }[] = [
+  { title: 'Account', icon: 'user' },
+  { title: 'Security', icon: 'shield' },
+  { title: 'Notifications', icon: 'bell' },
+  { title: 'Privacy', icon: 'eye-off' },
+  { title: 'Language', icon: 'globe' },
+  { title: 'Theme', icon: 'moon' },
+  { title: 'Help', icon: 'help-circle' },
+];
 
 // Canonical outfield attribute set (10) — see engineering plan. Sample
 // values shown here for layout purposes; real values come from
@@ -37,6 +50,7 @@ const STAT_TILES = [
 // built out here with real content matching the app's data model.
 export default function Profile() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('About');
+  const setRole = useSessionStore((s) => s.setRole);
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
@@ -139,6 +153,34 @@ export default function Profile() {
           </View>
         )}
       </View>
+
+      <View style={styles.settingsSection}>
+        <Text style={styles.sectionTitle}>Settings</Text>
+        <View style={styles.settingsList}>
+          {SETTINGS_SECTIONS.map((s) => (
+            <Pressable key={s.title} style={styles.settingsRow}>
+              <Feather name={s.icon} size={17} color={colors.textBody} style={{ width: 24 }} />
+              <Text style={styles.settingsText}>{s.title}</Text>
+              <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
+            </Pressable>
+          ))}
+        </View>
+
+        <Pressable
+          style={styles.logoutRow}
+          onPress={() => {
+            setRole('player');
+            router.replace('/welcome');
+          }}
+        >
+          <Feather name="log-out" size={17} color={colors.error} style={{ width: 24 }} />
+          <Text style={[styles.settingsText, { color: colors.error }]}>Logout</Text>
+        </Pressable>
+        <Pressable style={styles.logoutRow}>
+          <Feather name="trash-2" size={17} color={colors.textPlaceholder} style={{ width: 24 }} />
+          <Text style={[styles.settingsText, { color: colors.textPlaceholder }]}>Delete Account</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -196,4 +238,10 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 14 },
   statRowLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
   statRowValue: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  settingsSection: { paddingHorizontal: 20, marginTop: 8, paddingBottom: 32 },
+  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 10 },
+  settingsList: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  settingsText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  logoutRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 14, marginTop: 10 },
 });

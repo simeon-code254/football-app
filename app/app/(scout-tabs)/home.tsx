@@ -68,7 +68,7 @@ export default function ScoutDashboard() {
         </View>
 
         {!scoutVerified && (
-          <Pressable style={styles.verifyBanner}>
+          <Pressable style={styles.verifyBanner} onPress={() => router.push('/scout-verification')}>
             <Feather name="alert-circle" size={16} color={colors.goldDark} />
             <Text style={styles.verifyBannerText}>
               Complete verification to message players and create trials.

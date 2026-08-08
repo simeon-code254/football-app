@@ -52,6 +52,7 @@ export default function RootLayout() {
         <Stack.Screen name="(scout-tabs)" />
         <Stack.Screen name="player/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="trial/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="scout-verification" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </View>
   );
