@@ -58,6 +58,7 @@ export default function RootLayout() {
         <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="compare" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="scout-edit-profile" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="messages" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </View>
   );

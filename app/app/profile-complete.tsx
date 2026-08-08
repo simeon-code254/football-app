@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
@@ -84,8 +85,25 @@ export default function ProfileComplete() {
   const isEdit = mode === 'edit';
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(isEdit ? editInitialForm : initialForm);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const pickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow photo library access to set a profile photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    setPhotoUri(result.assets[0].uri);
+  };
 
   const isLast = step === 4;
 
@@ -119,9 +137,15 @@ export default function ProfileComplete() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {step === 1 && (
           <View style={styles.stepBody}>
-            <Pressable style={styles.photoUpload}>
-              <Feather name="camera" size={22} color="#9CA3AF" />
-              <Text style={styles.photoUploadLabel}>Add Photo</Text>
+            <Pressable style={[styles.photoUpload, photoUri && styles.photoUploadFilled]} onPress={pickPhoto}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+              ) : (
+                <>
+                  <Feather name="camera" size={22} color="#9CA3AF" />
+                  <Text style={styles.photoUploadLabel}>Add Photo</Text>
+                </>
+              )}
             </Pressable>
             <AppTextField label="Full Name" placeholder="Marcus Johnson" value={form.fullName} onChangeText={(v) => set('fullName', v)} />
             <AppTextField label="Date of Birth" placeholder="DD / MM / YYYY" value={form.dob} onChangeText={(v) => set('dob', v)} />
@@ -237,8 +261,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    overflow: 'hidden',
   },
+  photoUploadFilled: { borderStyle: 'solid', borderColor: colors.primary },
   photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: 9, color: '#9CA3AF', marginTop: 2 },
+  photoPreview: { width: '100%', height: '100%', borderRadius: 40 },
   footRow: { flexDirection: 'row', gap: 8 },
   footPill: {
     flex: 1,

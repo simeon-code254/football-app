@@ -32,6 +32,13 @@
           "imageWidth": 220,
           "backgroundColor": "#FFFFFF"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Matobev to access your photos to upload highlights and your profile picture.",
+          "cameraPermission": "Allow Matobev to use your camera to record highlights."
+        }
       ]
     ]
   }

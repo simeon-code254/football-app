@@ -71,13 +71,13 @@ export default function Home() {
             </View>
             <Text style={styles.actionLabel}>Upload Highlight</Text>
           </Pressable>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/(player-tabs)/discover')}>
+          <Pressable style={styles.actionCard} onPress={() => router.push('/trials')}>
             <View style={[styles.actionIcon, { backgroundColor: '#FFF8E1' }]}>
               <Feather name="award" size={20} color={colors.goldDark} />
             </View>
             <Text style={styles.actionLabel}>Browse Trials</Text>
           </Pressable>
-          <Pressable style={styles.actionCard}>
+          <Pressable style={styles.actionCard} onPress={() => router.push('/messages')}>
             <View style={[styles.actionIcon, { backgroundColor: '#F0FDF4' }]}>
               <Feather name="message-circle" size={20} color={colors.success} />
             </View>

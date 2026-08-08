@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 
 type UploadMode = 'reel' | 'ai';
+type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | null };
 
 // Matches the mockup's UPLOAD tab: Highlight Reel / AI Analysis mode toggle,
 // dashed drop zone, Title/Description/Match/Opponent/Tags, Upload & Publish.
@@ -14,6 +17,36 @@ type UploadMode = 'reel' | 'ai';
 // platform's data model — 'reel' -> 'highlight_only', 'ai' -> 'ai_analysis'.
 export default function Upload() {
   const [mode, setMode] = useState<UploadMode>('reel');
+  const [video, setVideo] = useState<PickedVideo | null>(null);
+  const [publishing, setPublishing] = useState(false);
+
+  const pickVideo = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow photo library access to upload a highlight video.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      quality: 1,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    setVideo({ uri: asset.uri, durationMs: asset.duration });
+  };
+
+  const publish = async () => {
+    if (!video) return;
+    setPublishing(true);
+    // TODO(backend wiring): upload `video.uri` to the `videos` storage bucket
+    // at `{player_id}/{video_id}/source.mp4`, then insert a `videos` row with
+    // upload_intent matching `mode` and the form fields below.
+    await new Promise((res) => setTimeout(res, 700));
+    setPublishing(false);
+    Alert.alert('Uploaded', 'Your video has been published.', [
+      { text: 'OK', onPress: () => router.push('/(player-tabs)/profile') },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -30,11 +63,24 @@ export default function Upload() {
           </Pressable>
         </View>
 
-        <Pressable style={styles.dropZone}>
-          <Feather name="upload-cloud" size={28} color="#9CA3AF" />
-          <Text style={styles.dropTitle}>Upload Video</Text>
-          <Text style={styles.dropSub}>MP4, MOV up to 500MB</Text>
-        </Pressable>
+        {video ? (
+          <View style={styles.videoPreview}>
+            <Image source={{ uri: video.uri }} style={styles.videoPreviewImage} />
+            <View style={styles.videoPreviewOverlay}>
+              <Feather name="film" size={22} color={colors.white} />
+              <Text style={styles.videoPreviewText}>Video selected</Text>
+            </View>
+            <Pressable style={styles.videoRemoveBtn} onPress={() => setVideo(null)}>
+              <Feather name="x" size={14} color={colors.white} />
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable style={styles.dropZone} onPress={pickVideo}>
+            <Feather name="upload-cloud" size={28} color="#9CA3AF" />
+            <Text style={styles.dropTitle}>Upload Video</Text>
+            <Text style={styles.dropSub}>MP4, MOV up to 500MB</Text>
+          </Pressable>
+        )}
 
         <View style={styles.fields}>
           <AppTextField label="Title" placeholder="e.g. Hat-trick vs Academy FC" />
@@ -55,7 +101,13 @@ export default function Upload() {
           </View>
         )}
 
-        <PrimaryButton label="Upload & Publish" style={styles.submitBtn} />
+        <PrimaryButton
+          label={publishing ? 'Uploading…' : 'Upload & Publish'}
+          onPress={publish}
+          disabled={!video}
+          loading={publishing}
+          style={styles.submitBtn}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -85,6 +137,11 @@ const styles = StyleSheet.create({
   },
   dropTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8 },
   dropSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
+  videoPreview: { height: 160, borderRadius: radii.xl, overflow: 'hidden', marginBottom: 20, backgroundColor: '#000' },
+  videoPreviewImage: { width: '100%', height: '100%', opacity: 0.6 },
+  videoPreviewOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  videoPreviewText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.white },
+  videoRemoveBtn: { position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   fields: { gap: 14, marginBottom: 16 },
   row: { flexDirection: 'row', gap: 10 },
   aiHint: { flexDirection: 'row', gap: 10, backgroundColor: '#EBF2FF', borderRadius: radii.md, padding: 12, marginBottom: 20, alignItems: 'flex-start' },
