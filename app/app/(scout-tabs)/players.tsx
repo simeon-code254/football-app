@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { MOCK_PLAYERS } from '../../src/data/mockPlayers';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
+
+const MAX_COMPARE = 3;
 
 type Filters = {
   positions: string[];
@@ -27,6 +30,18 @@ export default function DiscoverPlayers() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [draftFilters, setDraftFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const toggleCompareMode = () => {
+    setCompareMode((v) => !v);
+    setSelectedIds([]);
+  };
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : ids.length < MAX_COMPARE ? [...ids, id] : ids
+    );
 
   const results = useMemo(() => {
     return MOCK_PLAYERS.filter((p) => {
@@ -62,6 +77,12 @@ export default function DiscoverPlayers() {
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Discover Players</Text>
+        <Pressable style={[styles.compareToggle, compareMode && styles.compareToggleActive]} onPress={toggleCompareMode}>
+          <Feather name="bar-chart-2" size={14} color={compareMode ? colors.white : colors.primary} />
+          <Text style={[styles.compareToggleText, compareMode && styles.compareToggleTextActive]}>
+            {compareMode ? 'Cancel' : 'Compare'}
+          </Text>
+        </Pressable>
       </View>
 
       <View style={styles.searchRow}>
@@ -106,15 +127,43 @@ export default function DiscoverPlayers() {
             <Text style={styles.emptySub}>Try widening your search or clearing a filter.</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <PlayerCard
-            name={item.name}
-            positionLine={`${item.position} · ${item.flag} ${item.country}`}
-            rating={item.overall}
-            avatar={item.avatar}
-          />
-        )}
+        renderItem={({ item }) => {
+          const selected = selectedIds.includes(item.id);
+          return (
+            <Pressable
+              onPress={() =>
+                compareMode
+                  ? toggleSelected(item.id)
+                  : router.push({ pathname: '/player/[id]', params: { id: item.id } })
+              }
+            >
+              <View style={compareMode && selected ? styles.cardSelected : undefined}>
+                <PlayerCard
+                  name={item.name}
+                  positionLine={`${item.position} · ${item.flag} ${item.country}`}
+                  rating={item.overall}
+                  avatar={item.avatar}
+                />
+              </View>
+              {compareMode && (
+                <View style={[styles.checkCircle, selected && styles.checkCircleActive]}>
+                  {selected && <Feather name="check" size={12} color={colors.white} />}
+                </View>
+              )}
+            </Pressable>
+          );
+        }}
       />
+
+      {compareMode && selectedIds.length >= 2 && (
+        <Pressable
+          style={styles.compareBar}
+          onPress={() => router.push({ pathname: '/compare', params: { ids: selectedIds.join(',') } })}
+        >
+          <Text style={styles.compareBarText}>Compare ({selectedIds.length})</Text>
+          <Feather name="arrow-right" size={16} color={colors.white} />
+        </Pressable>
+      )}
 
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)}>
@@ -223,8 +272,17 @@ export default function DiscoverPlayers() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surfaceMuted },
-  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary },
+  compareToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 7 },
+  compareToggleActive: { backgroundColor: colors.primary },
+  compareToggleText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.primary },
+  compareToggleTextActive: { color: colors.white },
+  cardSelected: { borderRadius: radii.xl, borderWidth: 2, borderColor: colors.primary },
+  checkCircle: { position: 'absolute', top: 10, right: 10, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  checkCircleActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  compareBar: { position: 'absolute', left: 20, right: 20, bottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.primary, borderRadius: radii.lg, paddingVertical: 14, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  compareBarText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.white },
   searchRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 10 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: 14 },
   searchInput: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },

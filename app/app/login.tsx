@@ -54,7 +54,7 @@ export default function Login() {
           <AppTextField label="Password" icon="lock" placeholder="Enter password" isPassword />
         </View>
 
-        <Pressable style={styles.forgotRow}>
+        <Pressable style={styles.forgotRow} onPress={() => router.push('/forgot-password')}>
           <Text style={styles.forgotText}>Forgot Password?</Text>
         </Pressable>
 

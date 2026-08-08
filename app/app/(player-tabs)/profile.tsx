@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import { IconButton } from '../../src/components/IconButton';
 
 const COVER = images.onboardSlide1;
 const AVATAR = images.avatarMale;
@@ -57,6 +58,9 @@ export default function Profile() {
       <View style={styles.coverWrap}>
         <Image source={{ uri: COVER }} style={styles.cover} />
         <View style={styles.coverMask} />
+        <View style={styles.editBtnWrap}>
+          <IconButton icon="edit-2" light onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })} />
+        </View>
       </View>
 
       <View style={styles.headerBlock}>
@@ -189,6 +193,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   coverWrap: { height: 140 },
   cover: { width: '100%', height: '100%' },
+  editBtnWrap: { position: 'absolute', top: 44, right: 16 },
   coverMask: {
     position: 'absolute',
     bottom: -1,

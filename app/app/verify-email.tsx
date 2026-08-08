@@ -1,10 +1,13 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useSessionStore } from '../src/store/useSessionStore';
+
+const RESEND_COOLDOWN_S = 30;
 
 // Matches Matobev v4.dc.html's EMAIL VERIFICATION block. Scouts skip the
 // player-specific profile wizard (position/foot/jersey make no sense for a
@@ -13,6 +16,27 @@ import { useSessionStore } from '../src/store/useSessionStore';
 export default function VerifyEmail() {
   const role = useSessionStore((s) => s.role);
   const setScoutVerified = useSessionStore((s) => s.setScoutVerified);
+  const [cooldown, setCooldown] = useState(0);
+  const [justSent, setJustSent] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const resend = () => {
+    if (cooldown > 0) return;
+    // TODO(backend wiring): supabase.auth.resend({ type: 'signup', email })
+    setJustSent(true);
+    setCooldown(RESEND_COOLDOWN_S);
+    timerRef.current = setInterval(() => {
+      setCooldown((c) => {
+        if (c <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -37,9 +61,15 @@ export default function VerifyEmail() {
           }}
           style={styles.cta}
         />
-        <Text style={styles.resendText}>
-          Didn't receive it? <Text style={styles.resendLink}>Resend</Text>
-        </Text>
+        {justSent && <Text style={styles.sentText}>Verification email sent.</Text>}
+        <Pressable onPress={resend} disabled={cooldown > 0} hitSlop={8}>
+          <Text style={styles.resendText}>
+            Didn't receive it?{' '}
+            <Text style={[styles.resendLink, cooldown > 0 && styles.resendLinkDisabled]}>
+              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend'}
+            </Text>
+          </Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -69,6 +99,8 @@ const styles = StyleSheet.create({
   },
   email: { color: colors.textPrimary, fontFamily: fontFamily.semiBold },
   cta: { width: '100%', marginBottom: 12 },
-  resendText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
+  sentText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.success, marginBottom: 8 },
+  resendText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
   resendLink: { color: colors.primary, fontFamily: fontFamily.semiBold },
+  resendLinkDisabled: { color: colors.textPlaceholder },
 });

@@ -5,12 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
-
-const TRIALS = [
-  { id: '1', club: 'Lagos City Academy', location: 'Lagos, Nigeria', date: 'Aug 24', spots: '12 spots left' },
-  { id: '2', club: 'Accra Sports FC', location: 'Accra, Ghana', date: 'Sep 2', spots: '5 spots left' },
-  { id: '3', club: 'Nairobi United', location: 'Nairobi, Kenya', date: 'Sep 10', spots: '20 spots left' },
-];
+import { MOCK_TRIALS } from '../../src/data/mockTrials';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -36,7 +31,7 @@ export default function Home() {
             <Text style={styles.name}>Marcus Johnson</Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable style={styles.iconBtn}>
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/notifications')}>
               <Feather name="bell" size={18} color="#333" />
               <View style={styles.dot} />
             </Pressable>
@@ -93,18 +88,20 @@ export default function Home() {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Trials Near You</Text>
-            <Text style={styles.sectionLink}>See all</Text>
+            <Pressable onPress={() => router.push('/trials')}>
+              <Text style={styles.sectionLink}>See all</Text>
+            </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-            {TRIALS.map((trial) => (
-              <View key={trial.id} style={styles.trialCard}>
+            {MOCK_TRIALS.map((trial) => (
+              <Pressable key={trial.id} style={styles.trialCard} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                 <View style={styles.trialDateBadge}>
-                  <Text style={styles.trialDateText}>{trial.date}</Text>
+                  <Text style={styles.trialDateText}>{trial.trialDate}</Text>
                 </View>
-                <Text style={styles.trialClub}>{trial.club}</Text>
+                <Text style={styles.trialClub}>{trial.title}</Text>
                 <Text style={styles.trialLocation}>{trial.location}</Text>
-                <Text style={styles.trialSpots}>{trial.spots}</Text>
-              </View>
+                <Text style={styles.trialSpots}>Deadline {trial.deadline}</Text>
+              </Pressable>
             ))}
           </ScrollView>
         </View>

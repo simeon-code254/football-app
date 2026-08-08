@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { MOCK_PLAYERS } from '../../src/data/mockPlayers';
@@ -16,9 +17,16 @@ const CONVERSATIONS = [
 // context is never lost. Gated behind scoutVerified per spec §3.
 export default function Messages() {
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const { playerId } = useLocalSearchParams<{ playerId?: string }>();
+  const [activeId, setActiveId] = useState<string | null>(playerId ?? null);
   const [draft, setDraft] = useState('');
   const activePlayer = activeId ? MOCK_PLAYERS.find((p) => p.id === activeId) : null;
+
+  // Deep-linked from Player Details' Message button — open that specific
+  // thread directly instead of landing on the generic conversation list.
+  useEffect(() => {
+    if (playerId) setActiveId(playerId);
+  }, [playerId]);
 
   if (!scoutVerified) {
     return (

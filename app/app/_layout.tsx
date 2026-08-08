@@ -53,6 +53,11 @@ export default function RootLayout() {
         <Stack.Screen name="player/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="trial/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="scout-verification" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="trials" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="compare" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="scout-edit-profile" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </View>
   );

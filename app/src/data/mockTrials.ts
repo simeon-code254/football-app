@@ -58,3 +58,23 @@ export function getTrialById(id: string) {
 export function applicantPlayer(a: MockApplicant) {
   return MOCK_PLAYERS.find((p) => p.id === a.playerId)!;
 }
+
+// The demo player persona ("Marcus Johnson" elsewhere in the app) isn't one
+// of the MOCK_PLAYERS rows — those represent the pool a scout browses. This
+// tracks which trials "you" (the logged-in player) have applied to or been
+// invited to, independent of that pool.
+export type MyApplicationStatus = ApplicantStatus | 'invited';
+
+export type MyApplication = {
+  trialId: string;
+  status: MyApplicationStatus;
+  appliedAt: string;
+};
+
+export const MY_APPLICATIONS: MyApplication[] = [
+  { trialId: 't2', status: 'invited', appliedAt: '2 days ago' },
+];
+
+export function getMyApplication(trialId: string) {
+  return MY_APPLICATIONS.find((a) => a.trialId === trialId);
+}

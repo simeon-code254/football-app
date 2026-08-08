@@ -59,7 +59,7 @@ export default function ScoutDashboard() {
               )}
             </View>
           </View>
-          <Pressable style={styles.bellBtn}>
+          <Pressable style={styles.bellBtn} onPress={() => router.push('/notifications')}>
             <Feather name="bell" size={18} color="#333" />
             <View style={styles.bellDot}>
               <Text style={styles.bellDotText}>3</Text>

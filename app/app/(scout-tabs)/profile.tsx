@@ -46,6 +46,10 @@ export default function ScoutProfile() {
         <Text style={styles.verifiedLabel}>{scoutVerified ? 'Verified Scout' : 'Verification Pending'}</Text>
         <Text style={styles.org}>Matobev Talent Partners · Kenya</Text>
         <Text style={styles.since}>Scout since 2024</Text>
+        <Pressable style={styles.editProfileLink} onPress={() => router.push('/scout-edit-profile')}>
+          <Feather name="edit-2" size={12} color={colors.primary} />
+          <Text style={styles.editProfileLinkText}>Edit Profile</Text>
+        </Pressable>
         {!scoutVerified && (
           <Pressable style={styles.verifyCta} onPress={() => router.push('/scout-verification')}>
             <Feather name="upload" size={14} color={colors.white} />
@@ -188,6 +192,8 @@ const styles = StyleSheet.create({
   verifiedLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.success, marginTop: 2 },
   org: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginTop: 4 },
   since: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, marginTop: 2 },
+  editProfileLink: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
+  editProfileLinkText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.primary },
   verifyCta: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.goldDark, borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 10, marginTop: 14 },
   verifyCtaText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.white },
   section: { paddingHorizontal: 20, marginTop: 20 },

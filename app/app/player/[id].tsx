@@ -72,7 +72,10 @@ export default function PlayerDetail() {
               </Pressable>
               <Pressable
                 style={[styles.messageActionBtn, !scoutVerified && { opacity: 0.5 }]}
-                onPress={() => scoutVerified && router.push('/(scout-tabs)/messages')}
+                onPress={() =>
+                  scoutVerified &&
+                  router.push({ pathname: '/(scout-tabs)/messages', params: { playerId: player.id } })
+                }
               >
                 <Feather name="message-circle" size={15} color={colors.white} />
                 <Text style={styles.messageActionText}>Message</Text>

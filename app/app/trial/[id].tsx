@@ -5,7 +5,17 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
-import { getTrialById, applicantPlayer, type ApplicantStatus, type MockApplicant } from '../../src/data/mockTrials';
+import { getTrialById, applicantPlayer, getMyApplication, type ApplicantStatus, type MockApplicant, type MyApplicationStatus } from '../../src/data/mockTrials';
+import { useSessionStore } from '../../src/store/useSessionStore';
+import { PrimaryButton } from '../../src/components/PrimaryButton';
+
+const MY_STATUS_STYLE: Record<MyApplicationStatus, { bg: string; text: string; label: string }> = {
+  invited: { bg: '#EBF2FF', text: colors.primary, label: 'Invited' },
+  pending: { bg: '#FFF8E1', text: colors.goldDark, label: 'Applied — Pending' },
+  shortlisted: { bg: '#EBF2FF', text: colors.primary, label: 'Shortlisted' },
+  accepted: { bg: '#F0FDF4', text: colors.success, label: 'Accepted' },
+  rejected: { bg: '#FEF2F2', text: colors.error, label: 'Rejected' },
+};
 
 const STATUS_TABS: { key: 'all' | ApplicantStatus; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -23,11 +33,53 @@ export default function TrialDetail() {
   const [applicants, setApplicants] = useState<MockApplicant[]>(trial?.applicants ?? []);
   const [tab, setTab] = useState<'all' | ApplicantStatus>('all');
   const [selected, setSelected] = useState<string[]>([]);
+  const role = useSessionStore((s) => s.role);
+  const [justApplied, setJustApplied] = useState(false);
 
   if (!trial) {
     return (
       <SafeAreaView style={styles.root}>
         <Text style={styles.notFound}>Trial not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (role === 'player') {
+    const mine = getMyApplication(trial.id);
+    const status = justApplied ? 'pending' : mine?.status;
+    return (
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <IconButton icon="chevron-left" onPress={() => router.back()} />
+          <Text style={styles.headerTitle}>Trial Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+          <View style={styles.infoCard}>
+            <Text style={styles.trialTitle}>{trial.title}</Text>
+            <Text style={styles.trialClub}>{trial.club}</Text>
+            <View style={styles.infoGrid}>
+              <InfoCell label="Location" value={trial.location} />
+              <InfoCell label="Age" value={trial.ageRange} />
+              <InfoCell label="Position" value={trial.position} />
+              <InfoCell label="Deadline" value={trial.deadline} />
+            </View>
+            <Text style={styles.trialDesc}>{trial.description}</Text>
+          </View>
+
+          <View style={{ paddingHorizontal: 20 }}>
+            {status ? (
+              <View style={[styles.myStatusBanner, { backgroundColor: MY_STATUS_STYLE[status].bg }]}>
+                <Feather name="check-circle" size={16} color={MY_STATUS_STYLE[status].text} />
+                <Text style={[styles.myStatusText, { color: MY_STATUS_STYLE[status].text }]}>
+                  {MY_STATUS_STYLE[status].label}
+                </Text>
+              </View>
+            ) : (
+              <PrimaryButton label="Apply for Trial" onPress={() => setJustApplied(true)} />
+            )}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -190,4 +242,6 @@ const styles = StyleSheet.create({
   viewProfileText: { fontFamily: fontFamily.medium, fontSize: 10, color: colors.textPrimary },
   smallActionBtn: { backgroundColor: colors.surface, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 5 },
   smallActionText: { fontFamily: fontFamily.semiBold, fontSize: 10, color: colors.textPrimary },
+  myStatusBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: radii.md, padding: 14 },
+  myStatusText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm },
 });

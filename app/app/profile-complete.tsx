@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
@@ -57,11 +57,33 @@ const initialForm: FormState = {
   facebook: '',
 };
 
+// Matches the demo values already shown on the player Profile screen's
+// About tab, so opening Edit Profile doesn't look like data loss.
+const editInitialForm: FormState = {
+  ...initialForm,
+  fullName: 'Marcus Johnson',
+  gender: 'Male',
+  nationality: 'Nigeria',
+  primaryPosition: 'CAM',
+  preferredFoot: 'Left',
+  height: '178',
+  weight: '68',
+  club: 'Lagos City FC',
+  yearsPlaying: '6',
+  bio: 'Attacking midfielder with sharp vision and a clinical left foot. Captain of my school team, two-time regional top scorer. Looking for a trial with a professional academy.',
+};
+
 // Matches Matobev v4.dc.html's PROFILE COMPLETION block: a 4-step wizard
 // (Personal -> Football Info -> Bio -> Social), progress bar, back/next nav.
+// Doubles as Edit Profile (?mode=edit) — pre-filled, "Save Changes" instead
+// of "Complete Profile", and a close button to bail out without finishing
+// the whole wizard, since profile-complete.tsx was previously the only way
+// to touch these fields, ever, even after the initial signup.
 export default function ProfileComplete() {
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isEdit = mode === 'edit';
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<FormState>(isEdit ? editInitialForm : initialForm);
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
@@ -69,7 +91,7 @@ export default function ProfileComplete() {
 
   const next = () => {
     if (isLast) {
-      router.replace('/(player-tabs)/home');
+      router.replace(isEdit ? '/(player-tabs)/profile' : '/(player-tabs)/home');
     } else {
       setStep((s) => Math.min(s + 1, 4));
     }
@@ -78,7 +100,14 @@ export default function ProfileComplete() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.stepLabel}>Step {step} of 4</Text>
+        <View style={styles.headerTopRow}>
+          <Text style={styles.stepLabel}>Step {step} of 4</Text>
+          {isEdit && (
+            <Pressable onPress={() => router.replace('/(player-tabs)/profile')} hitSlop={8}>
+              <Feather name="x" size={20} color={colors.textMuted} />
+            </Pressable>
+          )}
+        </View>
         <Text style={styles.stepTitle}>{STEP_TITLES[step - 1]}</Text>
         <View style={styles.progressRow}>
           {[1, 2, 3, 4].map((i) => (
@@ -173,7 +202,11 @@ export default function ProfileComplete() {
 
         <View style={styles.navRow}>
           {step > 1 && <IconButton icon="chevron-left" onPress={() => setStep((s) => s - 1)} size={52} style={styles.backBtn} />}
-          <PrimaryButton label={isLast ? 'Complete Profile' : 'Continue'} onPress={next} style={{ flex: 1 }} />
+          <PrimaryButton
+            label={isLast ? (isEdit ? 'Save Changes' : 'Complete Profile') : 'Continue'}
+            onPress={next}
+            style={{ flex: 1 }}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -183,6 +216,7 @@ export default function ProfileComplete() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
+  headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stepLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted, marginBottom: 2 },
   stepTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.textPrimary },
   progressRow: { flexDirection: 'row', gap: 4, marginTop: 10 },
