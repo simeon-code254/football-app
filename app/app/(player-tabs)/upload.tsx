@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,6 +14,8 @@ import * as videosRepository from '../../src/repositories/videosRepository';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | null };
+type TagFrame = { uri: string; width: number; height: number };
+type SubjectHint = { x: number; y: number }; // normalized 0-1, relative to TagFrame
 
 // Matches the mockup's UPLOAD tab: Highlight Reel / AI Analysis mode toggle,
 // dashed drop zone, Title/Description/Match/Opponent/Tags, Upload & Publish.
@@ -30,6 +32,23 @@ export default function Upload() {
   const [tags, setTags] = useState('');
   const [publishing, setPublishing] = useState(false);
 
+  // "Tag yourself" step (see src/pipeline/subject.py on the AI service side)
+  // — without this the AI can only guess which detected person is the
+  // uploader, using screen-time/size/centering. A confirmed tap removes
+  // that ambiguity entirely. Optional, skippable — the service falls back
+  // to its heuristic when no hint is present.
+  const [tagFrame, setTagFrame] = useState<TagFrame | null>(null);
+  const [subjectHint, setSubjectHint] = useState<SubjectHint | null>(null);
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [extractingFrame, setExtractingFrame] = useState(false);
+  const [frameBoxSize, setFrameBoxSize] = useState({ width: 0, height: 0 });
+
+  const resetVideo = () => {
+    setVideo(null);
+    setTagFrame(null);
+    setSubjectHint(null);
+  };
+
   const pickVideo = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -42,7 +61,28 @@ export default function Upload() {
     });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
+    setTagFrame(null);
+    setSubjectHint(null);
     setVideo({ uri: asset.uri, durationMs: asset.duration });
+  };
+
+  const openTagModal = async () => {
+    if (!video) return;
+    setExtractingFrame(true);
+    try {
+      if (!tagFrame) {
+        const thumb = await VideoThumbnails.getThumbnailAsync(video.uri, { time: 500 });
+        setTagFrame({ uri: thumb.uri, width: thumb.width, height: thumb.height });
+      }
+      setTagModalOpen(true);
+    } catch {
+      Alert.alert(
+        'Could not load a frame',
+        "You can still upload — the AI will use its own best guess for who to track."
+      );
+    } finally {
+      setExtractingFrame(false);
+    }
   };
 
   const publish = async () => {
@@ -53,7 +93,7 @@ export default function Upload() {
 
       let thumbnailPath: string | undefined;
       try {
-        const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(video.uri, { time: 500 });
+        const thumbUri = tagFrame?.uri ?? (await VideoThumbnails.getThumbnailAsync(video.uri, { time: 500 })).uri;
         thumbnailPath = await videosRepository.uploadVideoThumbnail(userId, videoId, thumbUri);
       } catch {
         // Thumbnail generation can fail on some formats/platforms — the
@@ -77,6 +117,8 @@ export default function Upload() {
           .filter(Boolean),
         uploadIntent: mode === 'ai' ? 'ai_analysis' : 'highlight_only',
         durationSeconds: video.durationMs ? Math.round(video.durationMs / 1000) : undefined,
+        subjectHintX: mode === 'ai' ? subjectHint?.x : undefined,
+        subjectHintY: mode === 'ai' ? subjectHint?.y : undefined,
       });
 
       Alert.alert('Uploaded', 'Your video has been published.', [
@@ -111,7 +153,7 @@ export default function Upload() {
               <Feather name="film" size={22} color={colors.white} />
               <Text style={styles.videoPreviewText}>Video selected</Text>
             </View>
-            <Pressable style={styles.videoRemoveBtn} onPress={() => setVideo(null)}>
+            <Pressable style={styles.videoRemoveBtn} onPress={resetVideo}>
               <Feather name="x" size={14} color={colors.white} />
             </Pressable>
           </View>
@@ -120,6 +162,21 @@ export default function Upload() {
             <Feather name="upload-cloud" size={28} color="#9CA3AF" />
             <Text style={styles.dropTitle}>Upload Video</Text>
             <Text style={styles.dropSub}>MP4, MOV up to 100MB</Text>
+          </Pressable>
+        )}
+
+        {mode === 'ai' && video && (
+          <Pressable style={styles.tagRow} onPress={openTagModal} disabled={extractingFrame}>
+            <View style={styles.tagIconWrap}>
+              <Feather name={subjectHint ? 'check-circle' : 'crosshair'} size={16} color={subjectHint ? colors.success : colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.tagRowTitle}>{subjectHint ? 'Tagged — you\'re marked in the video' : 'Tag Yourself (recommended)'}</Text>
+              <Text style={styles.tagRowSub}>
+                {subjectHint ? 'Tap to change' : 'Tap yourself on a frame so the AI tracks the right person'}
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
           </Pressable>
         )}
 
@@ -145,6 +202,7 @@ export default function Upload() {
             <Feather name="cpu" size={16} color={colors.primary} />
             <Text style={styles.aiHintText}>
               This video will be analyzed by our AI pipeline. Ratings for your position appear once processing completes.
+              For best accuracy, film yourself only, in one continuous shot with no cuts, camera held roughly level.
             </Text>
           </View>
         )}
@@ -157,6 +215,69 @@ export default function Upload() {
           style={styles.submitBtn}
         />
       </ScrollView>
+
+      <Modal visible={tagModalOpen} animationType="slide" onRequestClose={() => setTagModalOpen(false)}>
+        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+          <View style={styles.tagModalHeader}>
+            <Pressable onPress={() => setTagModalOpen(false)}>
+              <Feather name="x" size={22} color={colors.textPrimary} />
+            </Pressable>
+            <Text style={styles.tagModalTitle}>Tag Yourself</Text>
+            <View style={{ width: 22 }} />
+          </View>
+
+          <View style={styles.tagModalBody}>
+            <Text style={styles.tagModalHint}>Tap on yourself in the frame below.</Text>
+            {tagFrame && (
+              <View
+                style={{ width: '100%', aspectRatio: tagFrame.width / tagFrame.height, borderRadius: radii.lg, overflow: 'hidden' }}
+                onLayout={(e) => setFrameBoxSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+              >
+                <Pressable
+                  style={StyleSheet.absoluteFill}
+                  onPress={(e) => {
+                    if (!frameBoxSize.width || !frameBoxSize.height) return;
+                    const { locationX, locationY } = e.nativeEvent;
+                    setSubjectHint({
+                      x: Math.min(1, Math.max(0, locationX / frameBoxSize.width)),
+                      y: Math.min(1, Math.max(0, locationY / frameBoxSize.height)),
+                    });
+                  }}
+                >
+                  <Image source={{ uri: tagFrame.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  {subjectHint && (
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        styles.tapMarker,
+                        { left: `${subjectHint.x * 100}%`, top: `${subjectHint.y * 100}%` },
+                      ]}
+                    />
+                  )}
+                </Pressable>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.tagModalActions}>
+            <Pressable
+              style={styles.tagSkipBtn}
+              onPress={() => {
+                setSubjectHint(null);
+                setTagModalOpen(false);
+              }}
+            >
+              <Text style={styles.tagSkipText}>Skip This Step</Text>
+            </Pressable>
+            <PrimaryButton
+              label="Use This Tap"
+              onPress={() => setTagModalOpen(false)}
+              disabled={!subjectHint}
+              style={{ flex: 1 }}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -190,9 +311,31 @@ const styles = StyleSheet.create({
   videoPreviewOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 6 },
   videoPreviewText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.white },
   videoRemoveBtn: { position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  tagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 12, marginBottom: 20 },
+  tagIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  tagRowTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  tagRowSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
   fields: { gap: 14, marginBottom: 16 },
   row: { flexDirection: 'row', gap: 10 },
   aiHint: { flexDirection: 'row', gap: 10, backgroundColor: '#EBF2FF', borderRadius: radii.md, padding: 12, marginBottom: 20, alignItems: 'flex-start' },
   aiHintText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.primaryDark, lineHeight: 18 },
   submitBtn: { marginTop: 4 },
+  tagModalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
+  tagModalTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
+  tagModalBody: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  tagModalHint: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 14, textAlign: 'center' },
+  tapMarker: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginLeft: -14,
+    marginTop: -14,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(26,109,255,0.25)',
+  },
+  tagModalActions: { flexDirection: 'row', gap: 10, padding: 20, alignItems: 'center' },
+  tagSkipBtn: { paddingVertical: 14, paddingHorizontal: 12 },
+  tagSkipText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textMuted },
 });

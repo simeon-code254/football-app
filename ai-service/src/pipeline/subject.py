@@ -9,6 +9,7 @@ class SubjectResult:
     track_id: int | None
     dominance_margin: float  # 0 if fewer than 2 candidate tracks
     candidate_count: int
+    hint_matched: bool  # True if a user-provided tap point identified the subject directly
 
 
 def _center_and_area(xyxy: tuple[float, float, float, float]) -> tuple[float, float, float]:
@@ -18,8 +19,37 @@ def _center_and_area(xyxy: tuple[float, float, float, float]) -> tuple[float, fl
     return cx, cy, area
 
 
-def select_subject(per_frame: list[list[Detection]], frame_width: int, frame_height: int) -> SubjectResult:
-    """Heuristic subject-player disambiguation — NOT a solved problem, see
+def _match_hint(
+    per_frame: list[list[Detection]], frame_width: int, frame_height: int, hint: tuple[float, float]
+) -> int | None:
+    """hint is normalized (0-1) x,y from the upload flow's tap-to-confirm
+    step. Scans frames in order for the first person detection whose box
+    contains the tapped point; that detection's track ID becomes the
+    subject, no heuristic guessing needed. Returns None if the tap never
+    lands inside any detected person's box (e.g. detection missed that
+    frame, or the user tapped background) — caller falls back to the
+    heuristic in that case."""
+    px, py = hint[0] * frame_width, hint[1] * frame_height
+    for frame_dets in per_frame:
+        for det in frame_dets:
+            if det.cls != PERSON_CLASS:
+                continue
+            x1, y1, x2, y2 = det.xyxy
+            if x1 <= px <= x2 and y1 <= py <= y2:
+                return det.track_id
+    return None
+
+
+def select_subject(
+    per_frame: list[list[Detection]],
+    frame_width: int,
+    frame_height: int,
+    hint: tuple[float, float] | None = None,
+) -> SubjectResult:
+    """If `hint` (a normalized tap point from the upload flow) is given and
+    lands inside a detected person's box in any sampled frame, that track
+    is the subject — no guessing, dominance_margin=1.0, hint_matched=True.
+    Otherwise falls back to the heuristic below: NOT a solved problem, see
     ai-service/README.md. Picks the person track with the most screen time,
     largest average size, and most central average position, weighted
     0.5/0.3/0.2. Known failure mode: a highlight clip's subject can leave
@@ -27,6 +57,11 @@ def select_subject(per_frame: list[list[Detection]], frame_width: int, frame_hei
     make a consistently-present bystander outscore the true subject. This
     is exactly why the caller must cap confidence using dominance_margin.
     """
+    if hint is not None:
+        matched_id = _match_hint(per_frame, frame_width, frame_height, hint)
+        if matched_id is not None:
+            return SubjectResult(track_id=matched_id, dominance_margin=1.0, candidate_count=1, hint_matched=True)
+
     frame_area = frame_width * frame_height
     frame_cx, frame_cy = frame_width / 2, frame_height / 2
     max_center_dist = math.hypot(frame_cx, frame_cy) or 1.0
@@ -44,7 +79,7 @@ def select_subject(per_frame: list[list[Detection]], frame_width: int, frame_hei
             t["dist_sum"] += center_dist / max_center_dist
 
     if not tracks:
-        return SubjectResult(track_id=None, dominance_margin=0.0, candidate_count=0)
+        return SubjectResult(track_id=None, dominance_margin=0.0, candidate_count=0, hint_matched=False)
 
     max_frame_count = max(t["frame_count"] for t in tracks.values())
     max_avg_area = max(t["area_sum"] / t["frame_count"] for t in tracks.values())
@@ -69,4 +104,6 @@ def select_subject(per_frame: list[list[Detection]], frame_width: int, frame_hei
     else:
         dominance_margin = 1.0  # only one candidate — trivially "dominant"
 
-    return SubjectResult(track_id=top_id, dominance_margin=dominance_margin, candidate_count=len(scored))
+    return SubjectResult(
+        track_id=top_id, dominance_margin=dominance_margin, candidate_count=len(scored), hint_matched=False
+    )

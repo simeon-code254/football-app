@@ -27,6 +27,12 @@ export type CreateVideoInput = {
   tags: string[];
   uploadIntent: 'highlight_only' | 'ai_analysis';
   durationSeconds?: number;
+  /** Normalized (0-1) tap point from the upload flow's "tag yourself" step —
+   * where the uploader tapped themselves on the first frame. Only set for
+   * ai_analysis uploads where the user completed that optional step; the AI
+   * service falls back to its own heuristic when absent. */
+  subjectHintX?: number;
+  subjectHintY?: number;
 };
 
 export async function createVideo(input: CreateVideoInput): Promise<VideoRow> {
@@ -44,6 +50,8 @@ export async function createVideo(input: CreateVideoInput): Promise<VideoRow> {
       tags: input.tags,
       upload_intent: input.uploadIntent,
       duration_seconds: input.durationSeconds,
+      subject_hint_x: input.subjectHintX,
+      subject_hint_y: input.subjectHintY,
       // No transcoding/moderation pipeline yet — the clip is watchable
       // immediately. video_analysis_jobs.status is what tracks AI progress.
       status: 'ready',

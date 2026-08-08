@@ -18,7 +18,12 @@ class PipelineResult:
     result_summary: dict
 
 
-def run_pipeline(video_bytes: bytes, player_height_cm: int | None, is_goalkeeper: bool) -> PipelineResult:
+def run_pipeline(
+    video_bytes: bytes,
+    player_height_cm: int | None,
+    is_goalkeeper: bool,
+    subject_hint: tuple[float, float] | None = None,
+) -> PipelineResult:
     t0 = time.monotonic()
 
     if is_goalkeeper:
@@ -42,7 +47,7 @@ def run_pipeline(video_bytes: bytes, player_height_cm: int | None, is_goalkeeper
     t_track = time.monotonic()
 
     frame_h, frame_w = frames[0].shape[:2]
-    subject = select_subject(per_frame, frame_width=frame_w, frame_height=frame_h)
+    subject = select_subject(per_frame, frame_width=frame_w, frame_height=frame_h, hint=subject_hint)
 
     if subject.track_id is None:
         return PipelineResult(
@@ -52,6 +57,7 @@ def run_pipeline(video_bytes: bytes, player_height_cm: int | None, is_goalkeeper
             result_summary={
                 "frame_count": len(frames),
                 "duration_s": duration_s,
+                "subject_hint_provided": subject_hint is not None,
                 "error": "no_person_detected",
             },
         )
@@ -100,6 +106,8 @@ def run_pipeline(video_bytes: bytes, player_height_cm: int | None, is_goalkeeper
             "frame_count": len(frames),
             "duration_s": round(duration_s, 2),
             "subject_track_id": subject.track_id,
+            "subject_hint_provided": subject_hint is not None,
+            "subject_hint_matched": subject.hint_matched,
             "subject_candidate_count": subject.candidate_count,
             "subject_dominance_margin": round(subject.dominance_margin, 3),
             "calibration_source": "player.height_cm" if player_height_cm else "default_170cm",

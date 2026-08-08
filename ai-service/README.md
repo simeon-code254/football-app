@@ -66,10 +66,17 @@ The first run downloads YOLOv8n's pretrained weights automatically into
 
 ## How scores are computed (honesty notes)
 
-- **Subject-player disambiguation** is a heuristic (most screen time +
-  largest average size + most central position), not solved — a highlight
-  clip's subject can leave and re-enter frame across cuts and get missed.
-  See `src/pipeline/subject.py`.
+- **Subject-player disambiguation**: the upload flow has an optional "Tag
+  Yourself" step (`app/(player-tabs)/upload.tsx`) — the uploader taps
+  themselves on a frame before publishing, stored as a normalized point on
+  `videos.subject_hint_x/y`. If present, `select_subject()` finds whichever
+  detected person's box contains that point in any sampled frame and uses
+  it directly (`dominance_margin=1.0`, `hint_matched=True` in
+  `result_summary`) — no guessing. **Only when no hint was given, or the tap
+  never lands inside a detected box**, it falls back to a heuristic (most
+  screen time + largest average size + most central position) that is NOT
+  solved — a highlight clip's subject can leave and re-enter frame across
+  cuts and get missed by it. See `src/pipeline/subject.py`.
 - **Pixel→meter calibration** has no camera calibration/homography — it
   uses the subject's average bounding-box height against `players.height_cm`
   (or a 170cm default) as a proxy for real-world scale. Assumes a roughly

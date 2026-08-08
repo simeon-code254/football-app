@@ -72,7 +72,7 @@ async def process_job(job_id: str) -> None:
     try:
         job_res = (
             await client.table("video_analysis_jobs")
-            .select("*, videos(storage_path), players(is_goalkeeper, height_cm)")
+            .select("*, videos(storage_path, subject_hint_x, subject_hint_y), players(is_goalkeeper, height_cm)")
             .eq("id", job_id)
             .single()
             .execute()
@@ -83,8 +83,11 @@ async def process_job(job_id: str) -> None:
 
         video_bytes = await client.storage.from_("videos").download(video["storage_path"])
 
+        hint_x, hint_y = video.get("subject_hint_x"), video.get("subject_hint_y")
+        subject_hint = (hint_x, hint_y) if hint_x is not None and hint_y is not None else None
+
         result = await asyncio.to_thread(
-            run_pipeline, video_bytes, player.get("height_cm"), bool(player.get("is_goalkeeper"))
+            run_pipeline, video_bytes, player.get("height_cm"), bool(player.get("is_goalkeeper")), subject_hint
         )
 
         if not result.ok:
