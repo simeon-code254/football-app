@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
 import { getPlayerById } from '../../src/data/mockPlayers';
+import { MOCK_TRIALS } from '../../src/data/mockTrials';
 import { useSessionStore } from '../../src/store/useSessionStore';
 
 const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
@@ -30,6 +31,8 @@ export default function PlayerDetail() {
   const [savedFolder, setSavedFolder] = useState<string | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
   const [note, setNote] = useState('');
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [invitedTrialTitle, setInvitedTrialTitle] = useState<string | null>(null);
 
   if (!player) {
     return (
@@ -79,8 +82,19 @@ export default function PlayerDetail() {
               </Pressable>
             </View>
           )}
+          {role === 'scout' && (
+            <Pressable
+              style={[styles.inviteActionBtn, !scoutVerified && { opacity: 0.5 }]}
+              onPress={() => scoutVerified && setInviteOpen(true)}
+            >
+              <Feather name="send" size={15} color={colors.primary} />
+              <Text style={styles.inviteActionText}>
+                {invitedTrialTitle ? `Invited · ${invitedTrialTitle}` : 'Invite to Trial'}
+              </Text>
+            </Pressable>
+          )}
           {role === 'scout' && !scoutVerified && (
-            <Text style={styles.verifyHint}>Verification required before contacting players.</Text>
+            <Text style={styles.verifyHint}>Verification required before contacting or inviting players.</Text>
           )}
         </View>
 
@@ -218,6 +232,35 @@ export default function PlayerDetail() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Invite to Trial — scout-initiated, distinct from a player browsing
+          and applying themselves (trial_applications.source='invited') */}
+      <Modal visible={inviteOpen} transparent animationType="fade" onRequestClose={() => setInviteOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setInviteOpen(false)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.sheetTitle}>Invite to Trial</Text>
+            <Text style={styles.notesHint}>Choose one of your open trials to invite {player.name} to.</Text>
+            {MOCK_TRIALS.map((trial) => (
+              <Pressable
+                key={trial.id}
+                style={styles.trialInviteRow}
+                onPress={() => {
+                  setInvitedTrialTitle(trial.title);
+                  setInviteOpen(false);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.folderText}>{trial.title}</Text>
+                  <Text style={styles.trialInviteMeta}>{trial.location} · Deadline {trial.deadline}</Text>
+                </View>
+                <View style={styles.radioDot}>
+                  {invitedTrialTitle === trial.title && <View style={styles.radioDotFill} />}
+                </View>
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -242,6 +285,12 @@ const styles = StyleSheet.create({
   messageActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 10 },
   messageActionText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.white },
   notesActionBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  inviteActionBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1.5, borderColor: colors.primary, borderRadius: radii.pill,
+    paddingHorizontal: 16, paddingVertical: 10, marginTop: 10, alignSelf: 'stretch',
+  },
+  inviteActionText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.primary },
   verifyHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.goldDark, marginTop: 8 },
   tabRow: { flexDirection: 'row', marginTop: 24, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingHorizontal: 20 },
   tabItem: { marginRight: 20, paddingBottom: 10 },
@@ -280,6 +329,8 @@ const styles = StyleSheet.create({
   radioDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   radioDotFill: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   folderText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  trialInviteRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  trialInviteMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
   notesHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginBottom: 12 },
   notesBox: { borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 12, minHeight: 100, marginBottom: 14 },
   notesInput: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 80, textAlignVertical: 'top' },
