@@ -1,18 +1,26 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Feather, AntDesign } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
+import { images } from '../src/constants/images';
 
-// Matches Matobev v4.dc.html's LOGIN block.
+// Matches Matobev v4.dc.html's LOGIN block — given a hero photo (the mockup
+// had none on this screen, which read as bare) and a password visibility
+// toggle, which a static HTML mockup can't express.
 export default function Login() {
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+    <SafeAreaView style={styles.root} edges={['bottom']}>
+      <View style={styles.hero}>
+        <Image source={{ uri: images.authHero }} style={styles.heroImage} resizeMode="cover" />
+        <LinearGradient colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.75)']} style={StyleSheet.absoluteFill} />
+        <View style={styles.heroTop}>
+          <IconButton icon="chevron-left" light onPress={() => router.back()} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -21,7 +29,7 @@ export default function Login() {
 
         <View style={styles.fields}>
           <AppTextField label="Email" icon="mail" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
-          <AppTextField label="Password" icon="lock" placeholder="Enter password" secureTextEntry />
+          <AppTextField label="Password" icon="lock" placeholder="Enter password" isPassword />
         </View>
 
         <Pressable style={styles.forgotRow}>
@@ -58,8 +66,10 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  header: { paddingHorizontal: 20, paddingTop: 4 },
-  content: { paddingHorizontal: 28, paddingTop: 20, paddingBottom: 32, flexGrow: 1 },
+  hero: { height: 180 },
+  heroImage: { width: '100%', height: '100%' },
+  heroTop: { position: 'absolute', top: 8, left: 20 },
+  content: { paddingHorizontal: 28, paddingTop: 24, paddingBottom: 32, flexGrow: 1 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.displayLg, color: colors.textPrimary, marginBottom: 4 },
   sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 28 },
   fields: { gap: 14, marginBottom: 12 },

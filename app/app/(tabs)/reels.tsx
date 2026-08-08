@@ -2,9 +2,10 @@ import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../../src/theme';
+import { images } from '../../src/constants/images';
 
-const VIDEO_THUMB = 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80';
-const AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80';
+const VIDEO_THUMB = images.reelsClip;
+const AVATAR = images.avatarMale;
 
 const ACTIONS: { icon: React.ComponentProps<typeof Feather>['name']; count: string }[] = [
   { icon: 'heart', count: '2.4k' },

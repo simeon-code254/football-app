@@ -6,15 +6,14 @@ import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { SecondaryButton } from '../src/components/SecondaryButton';
-
-const HERO_IMAGE = 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800&q=80';
+import { images } from '../src/constants/images';
 
 // Matches Matobev v4.dc.html's WELCOME block.
 export default function Welcome() {
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <View style={styles.hero}>
-        <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} resizeMode="cover" />
+        <Image source={{ uri: images.welcomeHero }} style={styles.heroImage} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(26,109,255,0.1)', 'rgba(255,255,255,0.7)', '#ffffff']}
           locations={[0, 0.85, 1]}

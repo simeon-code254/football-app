@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
+import { images } from '../src/constants/images';
 
 type Role = 'player' | 'scout';
 
@@ -26,17 +28,22 @@ const ROLES: { key: Role; label: string; icon: React.ComponentProps<typeof Feath
   },
 ];
 
-// Matches Matobev v4.dc.html's ROLE SELECTION block.
+// Matches Matobev v4.dc.html's ROLE SELECTION block — given a hero photo (the
+// mockup had none on this screen, which read as bare white space up top).
 export default function RoleSelect() {
   const [selected, setSelected] = useState<Role | null>(null);
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+    <SafeAreaView style={styles.root} edges={['bottom']}>
+      <View style={styles.hero}>
+        <Image source={{ uri: images.onboardSlide3 }} style={styles.heroImage} resizeMode="cover" />
+        <LinearGradient colors={['rgba(10,22,40,0.1)', 'rgba(10,22,40,0.7)']} style={StyleSheet.absoluteFill} />
+        <View style={styles.heroTop}>
+          <IconButton icon="chevron-left" light onPress={() => router.back()} />
+        </View>
       </View>
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.sub}>Choose how you'll use Matobev</Text>
 
@@ -77,15 +84,17 @@ export default function RoleSelect() {
             Already have an account? <Text style={styles.loginLink}>Login</Text>
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  header: { paddingHorizontal: 20, paddingTop: 4 },
-  content: { flex: 1, paddingHorizontal: 28, paddingTop: 20, paddingBottom: 32 },
+  hero: { height: 150 },
+  heroImage: { width: '100%', height: '100%' },
+  heroTop: { position: 'absolute', top: 8, left: 20 },
+  content: { flexGrow: 1, paddingHorizontal: 28, paddingTop: 20, paddingBottom: 32 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary, marginBottom: 4 },
   sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 28 },
   card: { borderRadius: radii.xl, borderWidth: 2, padding: 20, marginBottom: 12 },

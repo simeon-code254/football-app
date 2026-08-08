@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { images } from '../../src/constants/images';
 
-const COVER = 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80';
-const AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80';
+const COVER = images.onboardSlide1;
+const AVATAR = images.avatarMale;
 
 const TABS = ['About', 'Videos', 'AI Ratings', 'Stats'] as const;
 

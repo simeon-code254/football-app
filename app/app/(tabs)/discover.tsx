@@ -4,14 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
+import { images } from '../../src/constants/images';
 
 const FILTERS = ['All', 'Strikers', 'Midfield', 'Defense', 'GK'] as const;
 
 const TRENDING = [
-  { id: '1', name: 'Marcus Johnson', positionLine: 'CAM · Lagos, Nigeria', rating: 86, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
-  { id: '2', name: 'David Okafor', positionLine: 'ST · Accra, Ghana', rating: 83, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80' },
-  { id: '3', name: 'Samuel Adeyemi', positionLine: 'CB · Lagos, Nigeria', rating: 81, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&q=80' },
-  { id: '4', name: 'Kwame Boateng', positionLine: 'GK · Kumasi, Ghana', rating: 79, avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=200&q=80' },
+  { id: '1', name: 'Marcus Johnson', positionLine: 'CAM · Lagos, Nigeria', rating: 86, avatar: images.avatarMale },
+  { id: '2', name: 'David Okafor', positionLine: 'ST · Accra, Ghana', rating: 83, avatar: images.avatarMale },
+  { id: '3', name: 'Amara Adeyemi', positionLine: 'CB · Lagos, Nigeria', rating: 81, avatar: images.avatarFemale },
+  { id: '4', name: 'Kwame Boateng', positionLine: 'GK · Kumasi, Ghana', rating: 79, avatar: images.avatarMale },
 ];
 
 // Matches the mockup's DISCOVER tab: position-chip filters, search bar,

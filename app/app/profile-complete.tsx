@@ -8,7 +8,9 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { SelectField } from '../src/components/SelectField';
-import { POSITIONS, GENDERS, NATIONALITIES } from '../src/constants/football';
+import { TypeaheadField } from '../src/components/TypeaheadField';
+import { POSITIONS, GENDERS } from '../src/constants/football';
+import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
 
 const STEP_TITLES = ['Personal Details', 'Football Info', 'About You', 'Social Links'];
 const FOOT_OPTIONS = ['Right', 'Left', 'Both'] as const;
@@ -17,7 +19,7 @@ type FormState = {
   fullName: string;
   dob: string;
   gender: string | null;
-  nationality: string | null;
+  nationality: string;
   phone: string;
   primaryPosition: string | null;
   secondaryPosition: string | null;
@@ -38,7 +40,7 @@ const initialForm: FormState = {
   fullName: '',
   dob: '',
   gender: null,
-  nationality: null,
+  nationality: '',
   phone: '',
   primaryPosition: null,
   secondaryPosition: null,
@@ -94,10 +96,14 @@ export default function ProfileComplete() {
             </Pressable>
             <AppTextField label="Full Name" placeholder="Marcus Johnson" value={form.fullName} onChangeText={(v) => set('fullName', v)} />
             <AppTextField label="Date of Birth" placeholder="DD / MM / YYYY" value={form.dob} onChangeText={(v) => set('dob', v)} />
-            <View style={styles.row}>
-              <SelectField label="Gender" value={form.gender} options={[...GENDERS]} onChange={(v) => set('gender', v)} />
-              <SelectField label="Nationality" value={form.nationality} options={[...NATIONALITIES]} onChange={(v) => set('nationality', v)} />
-            </View>
+            <SelectField label="Gender" value={form.gender} options={[...GENDERS]} onChange={(v) => set('gender', v)} />
+            <TypeaheadField
+              label="Nationality"
+              value={form.nationality}
+              onChange={(v) => set('nationality', v)}
+              options={AFRICAN_COUNTRIES}
+              placeholder="e.g. Nigeria"
+            />
             <AppTextField label="Phone Number" placeholder="+234 800 000 0000" keyboardType="phone-pad" value={form.phone} onChangeText={(v) => set('phone', v)} />
           </View>
         )}

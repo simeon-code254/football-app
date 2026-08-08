@@ -4,9 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
+import { images } from '../src/constants/images';
 
-const SPLASH_IMAGE =
-  'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80';
 const SPLASH_DURATION_MS = 3000;
 
 // Matches Matobev v4.dc.html's SPLASH block: full-bleed photo, dark gradient
@@ -32,10 +31,10 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.root}>
-      <ImageBackground source={{ uri: SPLASH_IMAGE }} style={styles.bg} resizeMode="cover">
+      <ImageBackground source={{ uri: images.splashHero }} style={styles.bg} resizeMode="cover">
         <LinearGradient
-          colors={['rgba(10,22,40,0.3)', 'rgba(10,22,40,0.6)', 'rgba(10,22,40,0.92)']}
-          locations={[0, 0.5, 1]}
+          colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.4)', 'rgba(10,22,40,0.85)']}
+          locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.content}>

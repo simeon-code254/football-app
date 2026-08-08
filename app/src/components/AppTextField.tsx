@@ -1,16 +1,23 @@
-import React from 'react';
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../theme';
 
 type Props = TextInputProps & {
   label: string;
   icon?: React.ComponentProps<typeof Feather>['name'];
+  /** Renders a show/hide eye toggle and manages secureTextEntry internally. */
+  isPassword?: boolean;
 };
 
 // Matches the mockup's repeated input pattern: label above, 46px pill field,
-// 1.5px #E2E6EC border, #FAFBFC fill, leading icon.
-export function AppTextField({ label, icon, style, ...inputProps }: Props) {
+// 1.5px #E2E6EC border, #FAFBFC fill, leading icon. Password fields get a
+// trailing show/hide toggle since the mockup (a static prototype) had no way
+// to express that interaction.
+export function AppTextField({ label, icon, style, isPassword, secureTextEntry, ...inputProps }: Props) {
+  const [visible, setVisible] = useState(false);
+  const hidden = isPassword ? !visible : secureTextEntry;
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
@@ -19,8 +26,14 @@ export function AppTextField({ label, icon, style, ...inputProps }: Props) {
         <TextInput
           placeholderTextColor={colors.textPlaceholder}
           style={[styles.input, style]}
+          secureTextEntry={hidden}
           {...inputProps}
         />
+        {isPassword && (
+          <Pressable onPress={() => setVisible((v) => !v)} hitSlop={8} style={styles.eyeBtn}>
+            <Feather name={visible ? 'eye-off' : 'eye'} size={17} color={colors.textPlaceholder} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -51,4 +64,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.bodySm,
     color: colors.textPrimary,
   },
+  eyeBtn: { paddingLeft: spacing.sm },
 });

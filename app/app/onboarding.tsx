@@ -6,22 +6,23 @@ import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { SecondaryButton } from '../src/components/SecondaryButton';
+import { images } from '../src/constants/images';
 
 const SLIDES = [
   {
-    image: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
+    image: images.onboardSlide1,
     title: 'Discover Football Talent',
     sub: 'Every talented player deserves the chance to be seen, wherever they play.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    image: images.onboardSlide2,
     title: 'AI-Powered Analysis',
     sub: 'Upload highlights and get objective, data-driven performance ratings.',
   },
   {
-    image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&q=80',
+    image: images.onboardSlide3,
     title: 'Connect With Scouts',
-    sub: 'Get discovered by verified scouts and clubs from around the world.',
+    sub: 'Get discovered by verified scouts and clubs across Africa.',
   },
 ];
 

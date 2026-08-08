@@ -8,21 +8,27 @@ type Props = {
   onPress?: () => void;
   size?: number;
   style?: StyleProp<ViewStyle>;
+  /** White glass variant for use on photo/gradient headers. */
+  light?: boolean;
 };
 
-// Matches the mockup's recurring 36x36 #F4F6F9 rounded-square icon button
-// (back chevron, header actions).
-export function IconButton({ icon, onPress, size = 36, style }: Props) {
+// Matches the mockup's recurring 36x36 rounded-square icon button (back
+// chevron, header actions). `light` gives a translucent-white variant for
+// use over photos/gradients instead of the default #F4F6F9-on-white one.
+export function IconButton({ icon, onPress, size = 36, style, light }: Props) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        { width: size, height: size, backgroundColor: pressed ? '#EAECF0' : colors.surfaceMuted },
+        light
+          ? { backgroundColor: pressed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)' }
+          : { backgroundColor: pressed ? '#EAECF0' : colors.surfaceMuted },
+        { width: size, height: size },
         style,
       ]}
     >
-      <Feather name={icon} size={18} color="#333333" />
+      <Feather name={icon} size={18} color={light ? colors.white : '#333333'} />
     </Pressable>
   );
 }

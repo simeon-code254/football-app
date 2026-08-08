@@ -4,22 +4,35 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { images } from '../../src/constants/images';
 
-const AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80';
+const TRIALS = [
+  { id: '1', club: 'Lagos City Academy', location: 'Lagos, Nigeria', date: 'Aug 24', spots: '12 spots left' },
+  { id: '2', club: 'Accra Sports FC', location: 'Accra, Ghana', date: 'Sep 2', spots: '5 spots left' },
+  { id: '3', club: 'Nairobi United', location: 'Nairobi, Kenya', date: 'Sep 10', spots: '20 spots left' },
+];
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 // Header matches Matobev v4.dc.html's HOME block exactly (greeting, name,
-// notification bell w/ dot, avatar). The stat summary / quick actions below
-// use the same hard-coded PAC/SHO/DRI/OVR values the mockup's Profile+Reels
-// tabs already established (78/85/90/82) — the rest of Home wasn't captured
-// in the source read, so this section is a reasonable reconstruction in the
-// established visual language rather than a pixel trace.
+// notification bell w/ dot, avatar). The stat summary / quick actions/trials
+// below use the same hard-coded PAC/SHO/DRI/OVR values the mockup's
+// Profile+Reels tabs already established (78/85/90/82) — the rest of Home
+// wasn't captured in the source read, so this section is a reasonable
+// reconstruction in the established visual language rather than a pixel
+// trace, filled out with the Trials feature from the product brief.
 export default function Home() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good evening</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.name}>Marcus Johnson</Text>
           </View>
           <View style={styles.headerActions}>
@@ -27,7 +40,7 @@ export default function Home() {
               <Feather name="bell" size={18} color="#333" />
               <View style={styles.dot} />
             </Pressable>
-            <Image source={{ uri: AVATAR }} style={styles.avatar} />
+            <Image source={{ uri: images.avatarMale }} style={styles.avatar} />
           </View>
         </View>
 
@@ -69,6 +82,31 @@ export default function Home() {
             </View>
             <Text style={styles.actionLabel}>Browse Trials</Text>
           </Pressable>
+          <Pressable style={styles.actionCard}>
+            <View style={[styles.actionIcon, { backgroundColor: '#F0FDF4' }]}>
+              <Feather name="message-circle" size={20} color={colors.success} />
+            </View>
+            <Text style={styles.actionLabel}>Messages</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Trials Near You</Text>
+            <Text style={styles.sectionLink}>See all</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+            {TRIALS.map((trial) => (
+              <View key={trial.id} style={styles.trialCard}>
+                <View style={styles.trialDateBadge}>
+                  <Text style={styles.trialDateText}>{trial.date}</Text>
+                </View>
+                <Text style={styles.trialClub}>{trial.club}</Text>
+                <Text style={styles.trialLocation}>{trial.location}</Text>
+                <Text style={styles.trialSpots}>{trial.spots}</Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
 
         <View style={styles.section}>
@@ -128,12 +166,20 @@ const styles = StyleSheet.create({
   statChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: radii.md, paddingVertical: 10, alignItems: 'center' },
   statVal: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.white },
   statKey: { fontFamily: fontFamily.medium, fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  quickActions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginTop: 16 },
-  actionCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 16, alignItems: 'flex-start', gap: 10 },
+  quickActions: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginTop: 16 },
+  actionCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 14, alignItems: 'flex-start', gap: 10 },
   actionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
-  section: { paddingHorizontal: 20, marginTop: 24, paddingBottom: 32 },
-  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 12 },
+  actionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
+  section: { paddingHorizontal: 20, marginTop: 24 },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary },
+  sectionLink: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.primary },
+  trialCard: { width: 180, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 14 },
+  trialDateBadge: { alignSelf: 'flex-start', backgroundColor: '#EBF2FF', borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 10 },
+  trialDateText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.primary },
+  trialClub: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  trialLocation: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
+  trialSpots: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.success, marginTop: 8 },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.md, padding: 12, marginBottom: 8 },
   activityIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#EBF2FF', alignItems: 'center', justifyContent: 'center' },
   activityText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
