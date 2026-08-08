@@ -5,7 +5,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
+import { AppTextField } from '../src/components/AppTextField';
 import * as authRepository from '../src/repositories/authRepository';
+import * as profileRepository from '../src/repositories/profileRepository';
 import { useSessionStore } from '../src/store/useSessionStore';
 
 const RESEND_COOLDOWN_S = 30;
@@ -20,6 +22,9 @@ export default function VerifyEmail() {
   const [cooldown, setCooldown] = useState(0);
   const [justSent, setJustSent] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
@@ -44,29 +49,62 @@ export default function VerifyEmail() {
     }
   };
 
+  const proceedAfterAuth = async (session: NonNullable<Awaited<ReturnType<typeof authRepository.getSession>>>) => {
+    await hydrate(session);
+    if (role === 'scout') {
+      router.replace('/(scout-tabs)/home');
+      return;
+    }
+    // A signed-in player may already have completed their profile in a
+    // previous session (e.g. retrying this screen after already finishing
+    // onboarding) — don't force them back through the wizard.
+    try {
+      const player = await profileRepository.getMyPlayer(session.user.id);
+      router.push(player.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
+    } catch {
+      router.push('/profile-complete');
+    }
+  };
+
   const checkVerified = async () => {
     setChecking(true);
+    setError('');
     try {
-      // Supabase's default confirm-email flow means there's no session on
-      // this device until the user actually logs in — the email link is
-      // confirmed wherever it's tapped, not necessarily here. So this can
-      // only honestly succeed if a session already exists and is confirmed;
-      // otherwise route to a real login rather than pretending it worked.
+      // Confirming the email happens wherever the link is tapped — a
+      // separate process from this app — so there's usually no local
+      // session yet even once the email is genuinely confirmed. Try the
+      // fast path (a session already exists, e.g. from a deep link) first;
+      // if that fails, fall back to asking for the password so we can
+      // actually establish a session. signIn() itself is the real "is this
+      // email confirmed?" check — Supabase rejects it with "Email not
+      // confirmed" until the link has actually been tapped.
       const session = await authRepository.getSession();
       if (session?.user.email_confirmed_at) {
-        await hydrate(session);
-        if (role === 'scout') {
-          router.replace('/(scout-tabs)/home');
-        } else {
-          router.push('/profile-complete');
-        }
-      } else {
-        Alert.alert(
-          'Not verified yet',
-          "Once you've tapped the link in your email, log in to continue.",
-          [{ text: 'Go to Login', onPress: () => router.replace('/login') }]
-        );
+        await proceedAfterAuth(session);
+        return;
       }
+      setNeedsPassword(true);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const signInAndProceed = async () => {
+    if (!email || !password) return;
+    setChecking(true);
+    setError('');
+    try {
+      const session = await authRepository.signIn(email, password);
+      await proceedAfterAuth(session);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Please try again.';
+      setError(
+        message.toLowerCase().includes('email not confirmed')
+          ? "Your email isn't confirmed yet — check your inbox and tap the link, then try again."
+          : message.toLowerCase().includes('invalid login credentials')
+          ? 'Incorrect password.'
+          : message
+      );
     } finally {
       setChecking(false);
     }
@@ -83,12 +121,32 @@ export default function VerifyEmail() {
           We've sent a verification link to{'\n'}
           <Text style={styles.email}>{email ?? 'your email'}</Text>
         </Text>
+
+        {needsPassword && (
+          <AppTextField
+            label="Password"
+            icon="lock"
+            placeholder="Enter your password to continue"
+            isPassword
+            value={password}
+            onChangeText={setPassword}
+            style={{ width: '100%', marginBottom: 12 }}
+          />
+        )}
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
+
         <PrimaryButton
-          label={checking ? 'Checking…' : "I've Verified My Email"}
-          onPress={checkVerified}
+          label={checking ? 'Checking…' : needsPassword ? 'Continue' : "I've Verified My Email"}
+          onPress={needsPassword ? signInAndProceed : checkVerified}
+          disabled={needsPassword && !password}
           loading={checking}
           style={styles.cta}
         />
+        {needsPassword && (
+          <Text style={styles.hintText}>
+            We need your password once to confirm the verification — this only happens the first time.
+          </Text>
+        )}
         {justSent && <Text style={styles.sentText}>Verification email sent.</Text>}
         <Pressable onPress={resend} disabled={cooldown > 0} hitSlop={8}>
           <Text style={styles.resendText}>
@@ -128,6 +186,8 @@ const styles = StyleSheet.create({
   email: { color: colors.textPrimary, fontFamily: fontFamily.semiBold },
   cta: { width: '100%', marginBottom: 12 },
   sentText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.success, marginBottom: 8 },
+  errorText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.error, marginBottom: 12, textAlign: 'center' },
+  hintText: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginBottom: 8 },
   resendText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
   resendLink: { color: colors.primary, fontFamily: fontFamily.semiBold },
   resendLinkDisabled: { color: colors.textPlaceholder },
