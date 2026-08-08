@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useSegments, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -32,7 +32,10 @@ export default function RootLayout() {
   });
 
   const sessionStatus = useSessionStore((s) => s.status);
+  const role = useSessionStore((s) => s.role);
+  const player = useSessionStore((s) => s.player);
   const hydrate = useSessionStore((s) => s.hydrate);
+  const segments = useSegments();
 
   useEffect(() => {
     authRepository.getSession().then(hydrate);
@@ -43,6 +46,23 @@ export default function RootLayout() {
   }, [hydrate]);
 
   const ready = fontsLoaded && sessionStatus !== 'loading';
+
+  // Global enforcement, not just a redirect after signup/login: a signed-in
+  // player with an incomplete profile gets bounced back to the wizard from
+  // anywhere — cold start with a persisted session, a deep link, any future
+  // entry point — instead of relying on every screen that routes a player
+  // in to remember this check individually.
+  const AUTH_STACK_SCREENS = new Set([
+    '', 'index', 'onboarding', 'welcome', 'role-select', 'signup',
+    'verify-email', 'login', 'forgot-password', 'profile-complete',
+  ]);
+  useEffect(() => {
+    if (!ready || sessionStatus !== 'signed-in' || role !== 'player' || !player) return;
+    const top = segments[0] ?? '';
+    if (!player.profile_completed && !AUTH_STACK_SCREENS.has(top)) {
+      router.replace('/profile-complete');
+    }
+  }, [ready, sessionStatus, role, player, segments]);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready) await SplashScreen.hideAsync();

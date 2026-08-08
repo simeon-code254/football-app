@@ -29,9 +29,16 @@ export default function Login() {
       const session = await authRepository.signIn(email.trim(), password);
       await hydrate(session);
       // Don't rely on the async auth-state listener's timing to know where
-      // to route — read the role directly.
+      // to route — read the role (and, for players, completion status)
+      // directly. A player who abandoned the profile wizard must land back
+      // on it, not on the tabs with a blank profile.
       const profile = await profileRepository.getMyProfile(session.user.id);
-      router.replace(profile.role === 'scout' ? '/(scout-tabs)/home' : '/(player-tabs)/home');
+      if (profile.role === 'scout') {
+        router.replace('/(scout-tabs)/home');
+      } else {
+        const player = await profileRepository.getMyPlayer(session.user.id);
+        router.replace(player.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
+      }
     } catch (err) {
       Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {

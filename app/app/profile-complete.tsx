@@ -160,6 +160,14 @@ export default function ProfileComplete() {
 
   const isLast = step === 4;
 
+  // Required only for the initial completion flow, not edits — an edit
+  // implies the profile was already completed once, so re-litigating every
+  // field on every edit would just be friction. This is what actually stops
+  // the wizard being "completed" by tapping Continue four times with
+  // nothing filled in.
+  const step1Valid = isEdit || (form.fullName.trim().length > 0 && !!parseDob(form.dob) && form.nationality.trim().length > 0);
+  const step2Valid = isEdit || !!form.primaryPosition;
+
   const save = async () => {
     if (!userId) return;
     setSaving(true);
@@ -202,6 +210,14 @@ export default function ProfileComplete() {
   };
 
   const next = () => {
+    if (step === 1 && !step1Valid) {
+      Alert.alert('Missing details', 'Full name, date of birth, and nationality are required.');
+      return;
+    }
+    if (step === 2 && !step2Valid) {
+      Alert.alert('Missing details', 'Select your primary position.');
+      return;
+    }
     if (isLast) {
       save();
     } else {
@@ -331,7 +347,7 @@ export default function ProfileComplete() {
           <PrimaryButton
             label={saving ? 'Saving…' : isLast ? (isEdit ? 'Save Changes' : 'Complete Profile') : 'Continue'}
             onPress={next}
-            disabled={saving}
+            disabled={saving || (step === 1 && !step1Valid) || (step === 2 && !step2Valid)}
             loading={saving}
             style={{ flex: 1 }}
           />

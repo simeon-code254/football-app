@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { colors, fontFamily, fontSize } from '../src/theme';
 import { localImages } from '../src/constants/images';
 import { Logo } from '../src/components/Logo';
+import { useSessionStore } from '../src/store/useSessionStore';
 
 const SPLASH_DURATION_MS = 3000;
 
@@ -12,6 +13,9 @@ const SPLASH_DURATION_MS = 3000;
 // wash, gold badge + football icon, wordmark, tagline, filling progress bar.
 export default function SplashScreen() {
   const progress = useRef(new Animated.Value(0)).current;
+  const status = useSessionStore((s) => s.status);
+  const role = useSessionStore((s) => s.role);
+  const player = useSessionStore((s) => s.player);
 
   useEffect(() => {
     Animated.timing(progress, {
@@ -21,11 +25,26 @@ export default function SplashScreen() {
     }).start();
 
     const timer = setTimeout(() => {
-      router.replace('/onboarding');
+      // A persisted session should resume straight into the app, not force
+      // an already-signed-in user back through onboarding/welcome/login —
+      // that previously meant the only way back in was re-entering
+      // credentials on Login, which happened to be the one place that
+      // checked profile completion correctly.
+      if (status === 'signed-in') {
+        if (role === 'scout') {
+          router.replace('/(scout-tabs)/home');
+        } else if (role === 'player') {
+          router.replace(player?.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
+        } else {
+          router.replace('/onboarding');
+        }
+      } else {
+        router.replace('/onboarding');
+      }
     }, SPLASH_DURATION_MS + 300);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [status, role, player]);
 
   const barWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
