@@ -128,7 +128,26 @@ Everything listed here previously is now built (commit `51b8687`). Kept as a rec
 7. **Edit Profile** — `profile-complete.tsx` doubles as an edit flow via `?mode=edit` (pre-filled, "Save Changes", cancel-out X). Scout counterpart: `app/scout-edit-profile.tsx`.
 8. **Compare Players** — selection mode (checkbox overlay + floating bar) on `(scout-tabs)/players.tsx`, `app/compare.tsx` for the side-by-side attribute table.
 
-**Still deliberately not built**: in-app Admin UI (separate web dashboard is the architecture decision), Google/Apple social auth buttons (decorative), skeleton/loading/error states (falls out of the wiring work itself).
+## 4a. Deep-link audit (done before backend wiring, as requested)
+
+Cross-checked every route file against every `router.push`/`replace` call in the codebase, plus `_layout.tsx`/`Tabs.Screen` registrations. Found and fixed 4 more real gaps (commit `d82fbed`):
+
+9. **No player-facing Messages screen existed at all.** A scout could message a player once verified, but the player had no way to see or reply — Home's "Messages" quick action had no `onPress`. Added `app/messages.tsx` (mirrors the scout side, accepts a `scoutId` param for deep-linking) + `src/data/mockScouts.ts`.
+10. **Home's "Browse Trials" quick action navigated to Discover (players)**, not the Trials screen — mislabeled/wrong target from before `app/trials.tsx` existed. Fixed.
+11. **Upload's video dropzone had no `onPress`** — tapping "Upload Video" did nothing. Wired to `expo-image-picker` (permission check, video library, preview once selected, Upload & Publish now requires a video).
+12. **Profile-complete's "Add Photo" circle had no `onPress`** — same fix, image picker with square crop.
+
+Confirmed after fixing: every top-level/dynamic route has at least one inbound navigation reference (no orphaned screens), and every `router.push` target resolves to a real file.
+
+**Deliberately left as stubs (seen, not missed)** — these have no `onPress`/are decorative, judged lower priority than the above:
+- Settings sub-rows (Account/Security/Notifications/Privacy/Language/Theme/Help) on both player and scout Profile — generic placeholders, not Matobev-specific functionality.
+- "Delete Account" rows on both Profiles — destructive, needs a confirmation flow + real backend auth admin call anyway.
+- "Create New Folder" in Player Details' Save modal — minor sub-flow (needs a text-input prompt).
+- Bulk "Message" button in Trial Detail's applicant multi-select bar — messaging is modeled as 1:1 conversations, bulk-message needs its own design decision.
+- Message composer's paperclip/attach button (both scout and player Messages) — needs Storage wiring anyway.
+- Google/Apple social login buttons on Login — decorative, real OAuth is a separate setup task from email/password wiring.
+
+**Still deliberately not built**: in-app Admin UI (separate web dashboard is the architecture decision), skeleton/loading/error states (falls out of the wiring work itself).
 
 **One config change worth knowing about**: `experiments.typedRoutes` was disabled in `app.json`. The generated route-types file (`.expo/types/router.d.ts`) proved unreliable — `expo export` only sometimes regenerated it, with no dependable manual trigger found, and it caused repeated false-positive type errors on every new route (unrelated to actual bugs). Routes work identically at runtime either way; this just drops compile-time literal-route-string checking. If re-enabling it later, expect to need `npx expo start` (not just `export`) running at least once to populate the types file.
 
