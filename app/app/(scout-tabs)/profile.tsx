@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import * as authRepository from '../../src/repositories/authRepository';
+import * as profileRepository from '../../src/repositories/profileRepository';
+import * as scoutingRepository from '../../src/repositories/scoutingRepository';
+import * as trialsRepository from '../../src/repositories/trialsRepository';
+import * as messagesRepository from '../../src/repositories/messagesRepository';
 import { POSITIONS } from '../../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../../src/constants/africanCountries';
 
@@ -24,28 +30,81 @@ const SETTINGS_SECTIONS: { title: string; icon: React.ComponentProps<typeof Feat
 // which is why it lives as a real (if locally-stored) form, not a stub.
 export default function ScoutProfile() {
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
-  const setRole = useSessionStore((s) => s.setRole);
+  const clearSession = useSessionStore((s) => s.clear);
+  const userId = useSessionStore((s) => s.session?.user.id);
   const [prefsOpen, setPrefsOpen] = useState(false);
-  const [prefPositions, setPrefPositions] = useState<string[]>(['LW', 'RW', 'ST']);
-  const [prefCountries, setPrefCountries] = useState<string[]>(['Kenya']);
-  const [minAge, setMinAge] = useState('18');
-  const [maxAge, setMaxAge] = useState('23');
-  const [minOverall, setMinOverall] = useState('75');
+  const [prefPositions, setPrefPositions] = useState<string[]>([]);
+  const [prefCountries, setPrefCountries] = useState<string[]>([]);
+  const [minAge, setMinAge] = useState('');
+  const [maxAge, setMaxAge] = useState('');
+  const [minOverall, setMinOverall] = useState('');
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
+  const { data, refetch } = useQuery({
+    queryKey: ['scoutProfileScreen', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const [profile, scout, countries, trials, conversations, saved, prefs] = await Promise.all([
+        profileRepository.getMyProfile(userId!),
+        profileRepository.getMyScout(userId!),
+        profileRepository.getCountries(),
+        trialsRepository.listMyTrials(userId!),
+        messagesRepository.listConversations(userId!),
+        scoutingRepository.listSavedPlayers(userId!),
+        scoutingRepository.getPreferences(userId!),
+      ]);
+      const countryName = countries.find((c) => c.code === scout.country_code)?.name ?? null;
+      return { profile, scout, countryName, trialsRun: trials.length, playersContacted: conversations.length, savedCount: saved.length, prefs };
+    },
+  });
+
+  useEffect(() => {
+    if (!data?.prefs) return;
+    setPrefPositions(data.prefs.positions ?? []);
+    setPrefCountries(data.prefs.countries ?? []);
+    setMinAge(data.prefs.age_min != null ? String(data.prefs.age_min) : '');
+    setMaxAge(data.prefs.age_max != null ? String(data.prefs.age_max) : '');
+    setMinOverall(data.prefs.min_overall != null ? String(data.prefs.min_overall) : '');
+  }, [data?.prefs]);
 
   const toggle = (list: string[], setList: (v: string[]) => void, value: string) =>
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
+  const savePrefs = async () => {
+    if (!userId) return;
+    setSavingPrefs(true);
+    try {
+      await scoutingRepository.upsertPreferences(userId, {
+        positions: prefPositions as never,
+        countries: prefCountries,
+        age_min: minAge ? Number(minAge) : null,
+        age_max: maxAge ? Number(maxAge) : null,
+        min_overall: minOverall ? Number(minOverall) : null,
+      });
+      await refetch();
+      setPrefsOpen(false);
+    } catch (err) {
+      Alert.alert('Could not save preferences', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Image source={{ uri: images.avatarMale }} style={styles.avatar} />
+        <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
         <View style={styles.nameRow}>
-          <Text style={styles.name}>Simeon Anyal</Text>
+          <Text style={styles.name}>{data?.profile.full_name || 'Complete your profile'}</Text>
           {scoutVerified && <Feather name="check-circle" size={16} color={colors.success} />}
         </View>
         <Text style={styles.verifiedLabel}>{scoutVerified ? 'Verified Scout' : 'Verification Pending'}</Text>
-        <Text style={styles.org}>Matobev Talent Partners · Kenya</Text>
-        <Text style={styles.since}>Scout since 2024</Text>
+        <Text style={styles.org}>
+          {[data?.scout.organization, data?.countryName].filter(Boolean).join(' · ') || '—'}
+        </Text>
+        <Text style={styles.since}>
+          {data?.scout.scout_since ? `Scout since ${new Date(data.scout.scout_since).getFullYear()}` : ''}
+        </Text>
         <Pressable style={styles.editProfileLink} onPress={() => router.push('/scout-edit-profile')}>
           <Feather name="edit-2" size={12} color={colors.primary} />
           <Text style={styles.editProfileLinkText}>Edit Profile</Text>
@@ -60,16 +119,13 @@ export default function ScoutProfile() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.bio}>
-          Independent scout focused on East African wingers and attacking talent, working with academies across
-          Kenya, Uganda and Tanzania.
-        </Text>
+        <Text style={styles.bio}>{data?.scout.bio || 'No bio yet — add one from Edit Profile.'}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Positions Scouted</Text>
         <View style={styles.tagRow}>
-          {['LW', 'RW', 'ST', 'CAM'].map((p) => (
+          {(data?.prefs?.positions?.length ? data.prefs.positions : ['Set in Scouting Preferences']).map((p) => (
             <View key={p} style={styles.tag}>
               <Text style={styles.tagText}>{p}</Text>
             </View>
@@ -81,9 +137,9 @@ export default function ScoutProfile() {
         <Text style={styles.sectionTitle}>Activity</Text>
         <View style={styles.activityGrid}>
           {[
-            ['Trials Run', '5'],
-            ['Players Contacted', '12'],
-            ['Players Signed', '3'],
+            ['Trials Run', data ? String(data.trialsRun) : '—'],
+            ['Players Contacted', data ? String(data.playersContacted) : '—'],
+            ['Saved Players', data ? String(data.savedCount) : '—'],
           ].map(([label, value]) => (
             <View key={label} style={styles.activityTile}>
               <Text style={styles.activityValue}>{value}</Text>
@@ -111,8 +167,9 @@ export default function ScoutProfile() {
 
         <Pressable
           style={styles.logoutRow}
-          onPress={() => {
-            setRole('player');
+          onPress={async () => {
+            await authRepository.signOut();
+            clearSession();
             router.replace('/welcome');
           }}
         >
@@ -173,8 +230,8 @@ export default function ScoutProfile() {
             <Text style={styles.filterLabel}>Minimum Overall Rating</Text>
             <TextInput style={[styles.rangeInput, { width: '100%' }]} keyboardType="numeric" value={minOverall} onChangeText={setMinOverall} />
 
-            <Pressable style={styles.savePrefsBtn} onPress={() => setPrefsOpen(false)}>
-              <Text style={styles.savePrefsText}>Save Preferences</Text>
+            <Pressable style={styles.savePrefsBtn} onPress={savePrefs} disabled={savingPrefs}>
+              <Text style={styles.savePrefsText}>{savingPrefs ? 'Saving…' : 'Save Preferences'}</Text>
             </Pressable>
           </ScrollView>
         </View>

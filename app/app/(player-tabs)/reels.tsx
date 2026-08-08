@@ -1,108 +1,248 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   Pressable,
   FlatList,
   Modal,
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  ViewToken,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
-import { MOCK_REELS, type MockComment, type MockReel } from '../../src/data/mockReels';
+import { images } from '../../src/constants/images';
+import { useSessionStore } from '../../src/store/useSessionStore';
+import * as videosRepository from '../../src/repositories/videosRepository';
+import type { CommentWithAuthor } from '../../src/repositories/videosRepository';
+
+type ReelState = {
+  id: string;
+  videoUrl: string;
+  storagePath: string;
+  creatorName: string;
+  creatorAvatar: string;
+  badge: string;
+  caption: string;
+  hashtags: string;
+  likeCount: number;
+  commentCount: number;
+  saveCount: number;
+  shareCount: number;
+  liked: boolean;
+  saved: boolean;
+};
 
 function formatCount(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
-// A real vertical feed (paging FlatList, one clip per screen) with working
-// like/save/share/comment interactions — the previous version was a single
-// static video with decorative, non-functional counts.
-export default function Reels() {
-  const [reels, setReels] = useState<MockReel[]>(MOCK_REELS);
-  const [viewportHeight, setViewportHeight] = useState(0);
-  const [commentsFor, setCommentsFor] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
+async function buildFeed(userId: string): Promise<ReelState[]> {
+  const videos = await videosRepository.getFeed();
+  const urls = await Promise.all(videos.map((v) => videosRepository.getVideoUrl(v.storage_path)));
+  const engagement = await videosRepository.getMyEngagement(userId, videos.map((v) => v.id));
+  return videos.map((v, i) => ({
+    id: v.id,
+    videoUrl: urls[i],
+    storagePath: v.storage_path,
+    creatorName: v.players?.profiles?.full_name || 'Player',
+    creatorAvatar: v.players?.profiles?.avatar_url || images.avatarMale,
+    badge: [v.players?.primary_position, v.players?.overall_rating != null ? `${v.players.overall_rating} OVR` : null]
+      .filter(Boolean)
+      .join(' · '),
+    caption: v.title || v.description || '',
+    hashtags: (v.tags ?? []).map((t) => `#${t}`).join(' '),
+    likeCount: v.like_count,
+    commentCount: v.comment_count,
+    saveCount: v.save_count,
+    shareCount: v.share_count,
+    liked: engagement.liked.has(v.id),
+    saved: engagement.saved.has(v.id),
+  }));
+}
 
-  const toggleLike = (id: string) =>
-    setReels((list) =>
-      list.map((r) => (r.id === id ? { ...r, liked: !r.liked, likeCount: r.likeCount + (r.liked ? -1 : 1) } : r))
-    );
-  const toggleSave = (id: string) =>
-    setReels((list) =>
-      list.map((r) => (r.id === id ? { ...r, saved: !r.saved, saveCount: r.saveCount + (r.saved ? -1 : 1) } : r))
-    );
-  const share = (id: string) =>
-    setReels((list) => list.map((r) => (r.id === id ? { ...r, shareCount: r.shareCount + 1 } : r)));
+function ReelItem({
+  item,
+  height,
+  isActive,
+  onLike,
+  onSave,
+  onShare,
+  onOpenComments,
+}: {
+  item: ReelState;
+  height: number;
+  isActive: boolean;
+  onLike: () => void;
+  onSave: () => void;
+  onShare: () => void;
+  onOpenComments: () => void;
+}) {
+  const player = useVideoPlayer(item.videoUrl, (p) => {
+    p.loop = true;
+  });
 
-  const addComment = () => {
-    if (!draft.trim() || !commentsFor) return;
-    const newComment: MockComment = {
-      id: `local-${Date.now()}`,
-      author: 'You',
-      avatar: reels.find((r) => r.id === commentsFor)?.creatorAvatar ?? '',
-      text: draft.trim(),
-      time: 'now',
-    };
-    setReels((list) =>
-      list.map((r) =>
-        r.id === commentsFor ? { ...r, comments: [...r.comments, newComment], commentCount: r.commentCount + 1 } : r
-      )
-    );
-    setDraft('');
-  };
+  useEffect(() => {
+    if (isActive) player.play();
+    else player.pause();
+  }, [isActive, player]);
 
-  const activeReel = reels.find((r) => r.id === commentsFor);
+  return (
+    <View style={{ height, width: '100%' }}>
+      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+      <LinearGradient
+        colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.65)']}
+        locations={[0, 0.4, 1]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
 
-  const renderItem = useCallback(
-    ({ item }: { item: MockReel }) => (
-      <View style={{ height: viewportHeight, width: '100%' }}>
-        <Image source={{ uri: item.video }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        <LinearGradient
-          colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.65)']}
-          locations={[0, 0.4, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-
+      {!!item.badge && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{item.badge}</Text>
         </View>
+      )}
 
-        <View style={styles.actionRail}>
-          <Pressable style={styles.actionItem} onPress={() => toggleLike(item.id)}>
-            <Feather name="heart" size={26} color={item.liked ? '#EF4444' : colors.white} />
-            <Text style={styles.actionCount}>{formatCount(item.likeCount)}</Text>
-          </Pressable>
-          <Pressable style={styles.actionItem} onPress={() => setCommentsFor(item.id)}>
-            <Feather name="message-circle" size={26} color={colors.white} />
-            <Text style={styles.actionCount}>{formatCount(item.commentCount)}</Text>
-          </Pressable>
-          <Pressable style={styles.actionItem} onPress={() => share(item.id)}>
-            <Feather name="send" size={26} color={colors.white} />
-            <Text style={styles.actionCount}>{formatCount(item.shareCount)}</Text>
-          </Pressable>
-          <Pressable style={styles.actionItem} onPress={() => toggleSave(item.id)}>
-            <Feather name="bookmark" size={26} color={item.saved ? colors.gold : colors.white} />
-            <Text style={styles.actionCount}>{formatCount(item.saveCount)}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.bottomInfo}>
-          <View style={styles.creatorRow}>
-            <Image source={{ uri: item.creatorAvatar }} style={styles.creatorAvatar} />
-            <Text style={styles.creatorName}>{item.creatorName}</Text>
-          </View>
-          <Text style={styles.caption}>{item.caption}</Text>
-          <Text style={styles.hashtags}>{item.hashtags}</Text>
-        </View>
+      <View style={styles.actionRail}>
+        <Pressable style={styles.actionItem} onPress={onLike}>
+          <Feather name="heart" size={26} color={item.liked ? '#EF4444' : colors.white} />
+          <Text style={styles.actionCount}>{formatCount(item.likeCount)}</Text>
+        </Pressable>
+        <Pressable style={styles.actionItem} onPress={onOpenComments}>
+          <Feather name="message-circle" size={26} color={colors.white} />
+          <Text style={styles.actionCount}>{formatCount(item.commentCount)}</Text>
+        </Pressable>
+        <Pressable style={styles.actionItem} onPress={onShare}>
+          <Feather name="send" size={26} color={colors.white} />
+          <Text style={styles.actionCount}>{formatCount(item.shareCount)}</Text>
+        </Pressable>
+        <Pressable style={styles.actionItem} onPress={onSave}>
+          <Feather name="bookmark" size={26} color={item.saved ? colors.gold : colors.white} />
+          <Text style={styles.actionCount}>{formatCount(item.saveCount)}</Text>
+        </Pressable>
       </View>
+
+      <View style={styles.bottomInfo}>
+        <View style={styles.creatorRow}>
+          <Image source={{ uri: item.creatorAvatar }} style={styles.creatorAvatar} />
+          <Text style={styles.creatorName}>{item.creatorName}</Text>
+        </View>
+        {!!item.caption && <Text style={styles.caption}>{item.caption}</Text>}
+        {!!item.hashtags && <Text style={styles.hashtags}>{item.hashtags}</Text>}
+      </View>
+    </View>
+  );
+}
+
+// A real vertical feed (paging FlatList, one clip per screen) backed by
+// `videos`/`video_likes`/`video_saves`/`video_comments`, with only the
+// centered clip actually playing (expo-video), matching how a real feed
+// should behave rather than auto-playing every mounted row at once.
+export default function Reels() {
+  const userId = useSessionStore((s) => s.session?.user.id);
+  const { data: initialReels } = useQuery({
+    queryKey: ['reelsFeed', userId],
+    enabled: !!userId,
+    queryFn: () => buildFeed(userId!),
+  });
+
+  const [reels, setReels] = useState<ReelState[]>([]);
+  useEffect(() => {
+    if (initialReels) setReels(initialReels);
+  }, [initialReels]);
+
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const viewedRef = useRef<Set<string>>(new Set());
+
+  const { data: comments } = useQuery({
+    queryKey: ['videoComments', commentsFor],
+    enabled: !!commentsFor,
+    queryFn: () => videosRepository.listComments(commentsFor!),
+  });
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    const top = viewableItems.find((v) => v.isViewable);
+    if (top?.item) {
+      const id = (top.item as ReelState).id;
+      setActiveId(id);
+      if (!viewedRef.current.has(id)) {
+        viewedRef.current.add(id);
+        videosRepository.incrementView(id).catch(() => {});
+      }
+    }
+  }).current;
+
+  const toggleLike = (id: string) => {
+    if (!userId) return;
+    const target = reels.find((r) => r.id === id);
+    if (!target) return;
+    const nextLiked = !target.liked;
+    setReels((list) =>
+      list.map((r) => (r.id === id ? { ...r, liked: nextLiked, likeCount: r.likeCount + (nextLiked ? 1 : -1) } : r))
+    );
+    videosRepository.toggleLike(id, userId, target.liked).catch(() => {
+      setReels((list) =>
+        list.map((r) => (r.id === id ? { ...r, liked: target.liked, likeCount: target.likeCount } : r))
+      );
+    });
+  };
+
+  const toggleSave = (id: string) => {
+    if (!userId) return;
+    const target = reels.find((r) => r.id === id);
+    if (!target) return;
+    const nextSaved = !target.saved;
+    setReels((list) =>
+      list.map((r) => (r.id === id ? { ...r, saved: nextSaved, saveCount: r.saveCount + (nextSaved ? 1 : -1) } : r))
+    );
+    videosRepository.toggleSave(id, userId, target.saved).catch(() => {
+      setReels((list) =>
+        list.map((r) => (r.id === id ? { ...r, saved: target.saved, saveCount: target.saveCount } : r))
+      );
+    });
+  };
+
+  const share = (id: string) => {
+    setReels((list) => list.map((r) => (r.id === id ? { ...r, shareCount: r.shareCount + 1 } : r)));
+    videosRepository.incrementShare(id).catch(() => {});
+  };
+
+  const addComment = async () => {
+    if (!draft.trim() || !commentsFor || !userId) return;
+    const body = draft.trim();
+    setDraft('');
+    try {
+      await videosRepository.addComment(commentsFor, userId, body);
+      setReels((list) =>
+        list.map((r) => (r.id === commentsFor ? { ...r, commentCount: r.commentCount + 1 } : r))
+      );
+    } catch {
+      // best-effort — the comment sheet re-opening will re-fetch the true state
+    }
+  };
+
+  const renderItem = useCallback(
+    ({ item }: { item: ReelState }) => (
+      <ReelItem
+        item={item}
+        height={viewportHeight}
+        isActive={item.id === activeId}
+        onLike={() => toggleLike(item.id)}
+        onSave={() => toggleSave(item.id)}
+        onShare={() => share(item.id)}
+        onOpenComments={() => setCommentsFor(item.id)}
+      />
     ),
-    [viewportHeight]
+    [viewportHeight, activeId, reels]
   );
 
   return (
@@ -117,6 +257,13 @@ export default function Reels() {
           snapToInterval={viewportHeight}
           decelerationRate="fast"
           getItemLayout={(_, index) => ({ length: viewportHeight, offset: viewportHeight * index, index })}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
+          ListEmptyComponent={
+            <View style={{ height: viewportHeight, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: colors.white, fontFamily: fontFamily.medium }}>No highlights yet.</Text>
+            </View>
+          }
         />
       )}
 
@@ -129,18 +276,20 @@ export default function Reels() {
           <View style={styles.commentsSheet}>
             <Text style={styles.commentsTitle}>Comments</Text>
             <FlatList
-              data={activeReel?.comments ?? []}
+              data={comments ?? []}
               keyExtractor={(c) => c.id}
               style={{ maxHeight: 320 }}
               ListEmptyComponent={<Text style={styles.noComments}>No comments yet — be the first.</Text>}
-              renderItem={({ item }) => (
+              renderItem={({ item }: { item: CommentWithAuthor }) => (
                 <View style={styles.commentRow}>
-                  <Image source={{ uri: item.avatar }} style={styles.commentAvatar} />
+                  {item.profiles?.avatar_url ? (
+                    <Image source={{ uri: item.profiles.avatar_url }} style={styles.commentAvatarFallback} />
+                  ) : (
+                    <View style={styles.commentAvatarFallback} />
+                  )}
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.commentAuthor}>
-                      {item.author} <Text style={styles.commentTime}>· {item.time}</Text>
-                    </Text>
-                    <Text style={styles.commentText}>{item.text}</Text>
+                    <Text style={styles.commentAuthor}>{item.profiles?.full_name || 'Player'}</Text>
+                    <Text style={styles.commentText}>{item.body}</Text>
                   </View>
                 </View>
               )}
@@ -190,7 +339,7 @@ const styles = StyleSheet.create({
   commentsTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 14 },
   noComments: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center', paddingVertical: 20 },
   commentRow: { flexDirection: 'row', gap: 10, paddingVertical: 10 },
-  commentAvatar: { width: 32, height: 32, borderRadius: 16 },
+  commentAvatarFallback: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceMuted },
   commentAuthor: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   commentTime: { fontFamily: fontFamily.regular, color: colors.textPlaceholder },
   commentText: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textBody, marginTop: 2 },

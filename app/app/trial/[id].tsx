@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
-import { getTrialById, applicantPlayer, getMyApplication, type ApplicantStatus, type MockApplicant, type MyApplicationStatus } from '../../src/data/mockTrials';
+import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
+import * as trialsRepository from '../../src/repositories/trialsRepository';
+import type { ApplicantStatus } from '../../src/repositories/trialsRepository';
 
-const MY_STATUS_STYLE: Record<MyApplicationStatus, { bg: string; text: string; label: string }> = {
-  invited: { bg: '#EBF2FF', text: colors.primary, label: 'Invited' },
+const MY_STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: '#FFF8E1', text: colors.goldDark, label: 'Applied — Pending' },
   shortlisted: { bg: '#EBF2FF', text: colors.primary, label: 'Shortlisted' },
   accepted: { bg: '#F0FDF4', text: colors.success, label: 'Accepted' },
   rejected: { bg: '#FEF2F2', text: colors.error, label: 'Rejected' },
+  withdrawn: { bg: colors.surfaceMuted, text: colors.textMuted, label: 'Withdrawn' },
 };
 
 const STATUS_TABS: { key: 'all' | ApplicantStatus; label: string }[] = [
@@ -25,28 +28,63 @@ const STATUS_TABS: { key: 'all' | ApplicantStatus; label: string }[] = [
   { key: 'rejected', label: 'Rejected' },
 ];
 
+function ageFromDob(dob: string | null): number | null {
+  if (!dob) return null;
+  const diff = Date.now() - new Date(dob).getTime();
+  return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+}
+
 // Trial Management + Applicant review (spec §14/§15): trial detail header,
 // status tabs, per-applicant Shortlist/Accept/Reject, and bulk selection.
 export default function TrialDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const trial = getTrialById(id);
-  const [applicants, setApplicants] = useState<MockApplicant[]>(trial?.applicants ?? []);
+  const role = useSessionStore((s) => s.role);
+  const userId = useSessionStore((s) => s.session?.user.id);
   const [tab, setTab] = useState<'all' | ApplicantStatus>('all');
   const [selected, setSelected] = useState<string[]>([]);
-  const role = useSessionStore((s) => s.role);
-  const [justApplied, setJustApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
 
-  if (!trial) {
+  const { data: trial, isLoading: loadingTrial } = useQuery({
+    queryKey: ['trial', id],
+    enabled: !!id,
+    queryFn: () => trialsRepository.getTrialById(id),
+  });
+
+  const { data: myApplication, refetch: refetchMyApplication } = useQuery({
+    queryKey: ['myApplicationForTrial', id, userId],
+    enabled: role === 'player' && !!userId && !!id,
+    queryFn: () => trialsRepository.getMyApplicationForTrial(userId!, id),
+  });
+
+  const { data: applicants, refetch: refetchApplicants } = useQuery({
+    queryKey: ['trialApplicants', id],
+    enabled: role === 'scout' && !!id,
+    queryFn: () => trialsRepository.listApplicants(id),
+  });
+
+  if (loadingTrial || !trial) {
     return (
-      <SafeAreaView style={styles.root}>
-        <Text style={styles.notFound}>Trial not found.</Text>
+      <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        {loadingTrial ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.notFound}>Trial not found.</Text>}
       </SafeAreaView>
     );
   }
 
+  const apply = async () => {
+    if (!userId) return;
+    setApplying(true);
+    try {
+      await trialsRepository.applyToTrial(userId, trial.id);
+      await refetchMyApplication();
+    } catch (err) {
+      Alert.alert('Could not apply', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   if (role === 'player') {
-    const mine = getMyApplication(trial.id);
-    const status = justApplied ? 'pending' : mine?.status;
+    const status = myApplication?.status;
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
         <View style={styles.header}>
@@ -60,23 +98,23 @@ export default function TrialDetail() {
             <Text style={styles.trialClub}>{trial.club}</Text>
             <View style={styles.infoGrid}>
               <InfoCell label="Location" value={trial.location} />
-              <InfoCell label="Age" value={trial.ageRange} />
-              <InfoCell label="Position" value={trial.position} />
-              <InfoCell label="Deadline" value={trial.deadline} />
+              <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
+              <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
+              <InfoCell label="Deadline" value={trial.application_deadline} />
             </View>
-            <Text style={styles.trialDesc}>{trial.description}</Text>
+            {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
           </View>
 
           <View style={{ paddingHorizontal: 20 }}>
             {status ? (
-              <View style={[styles.myStatusBanner, { backgroundColor: MY_STATUS_STYLE[status].bg }]}>
-                <Feather name="check-circle" size={16} color={MY_STATUS_STYLE[status].text} />
-                <Text style={[styles.myStatusText, { color: MY_STATUS_STYLE[status].text }]}>
-                  {MY_STATUS_STYLE[status].label}
+              <View style={[styles.myStatusBanner, { backgroundColor: MY_STATUS_STYLE[status]?.bg }]}>
+                <Feather name="check-circle" size={16} color={MY_STATUS_STYLE[status]?.text} />
+                <Text style={[styles.myStatusText, { color: MY_STATUS_STYLE[status]?.text }]}>
+                  {myApplication?.source === 'invited' && status === 'pending' ? 'Invited' : MY_STATUS_STYLE[status]?.label}
                 </Text>
               </View>
             ) : (
-              <PrimaryButton label="Apply for Trial" onPress={() => setJustApplied(true)} />
+              <PrimaryButton label={applying ? 'Applying…' : 'Apply for Trial'} onPress={apply} disabled={applying} loading={applying} />
             )}
           </View>
         </ScrollView>
@@ -84,13 +122,25 @@ export default function TrialDetail() {
     );
   }
 
-  const setStatus = (playerId: string, status: ApplicantStatus) => {
-    setApplicants((list) => list.map((a) => (a.playerId === playerId ? { ...a, status } : a)));
+  const setStatus = async (applicationId: string, status: ApplicantStatus) => {
+    try {
+      await trialsRepository.updateApplicationStatus(applicationId, status);
+      await refetchApplicants();
+    } catch (err) {
+      Alert.alert('Could not update status', err instanceof Error ? err.message : 'Please try again.');
+    }
   };
 
-  const filtered = tab === 'all' ? applicants : applicants.filter((a) => a.status === tab);
-  const toggleSelect = (playerId: string) =>
-    setSelected((s) => (s.includes(playerId) ? s.filter((x) => x !== playerId) : [...s, playerId]));
+  const list = applicants ?? [];
+  const filtered = tab === 'all' ? list : list.filter((a) => a.status === tab);
+  const toggleSelect = (applicationId: string) =>
+    setSelected((s) => (s.includes(applicationId) ? s.filter((x) => x !== applicationId) : [...s, applicationId]));
+
+  const bulkShortlist = async () => {
+    await Promise.all(selected.map((appId) => trialsRepository.updateApplicationStatus(appId, 'shortlisted')));
+    setSelected([]);
+    refetchApplicants();
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -106,17 +156,17 @@ export default function TrialDetail() {
           <Text style={styles.trialClub}>{trial.club}</Text>
           <View style={styles.infoGrid}>
             <InfoCell label="Location" value={trial.location} />
-            <InfoCell label="Age" value={trial.ageRange} />
-            <InfoCell label="Position" value={trial.position} />
-            <InfoCell label="Deadline" value={trial.deadline} />
+            <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
+            <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
+            <InfoCell label="Deadline" value={trial.application_deadline} />
           </View>
-          <Text style={styles.trialDesc}>{trial.description}</Text>
+          {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
         </View>
 
         <View style={styles.tabsRow}>
           {STATUS_TABS.map((t) => {
             const active = tab === t.key;
-            const count = t.key === 'all' ? applicants.length : applicants.filter((a) => a.status === t.key).length;
+            const count = t.key === 'all' ? list.length : list.filter((a) => a.status === t.key).length;
             return (
               <Pressable key={t.key} style={[styles.tabChip, active && styles.tabChipActive]} onPress={() => setTab(t.key)}>
                 <Text style={[styles.tabChipText, active && styles.tabChipTextActive]}>
@@ -131,17 +181,8 @@ export default function TrialDetail() {
           <View style={styles.bulkBar}>
             <Text style={styles.bulkText}>{selected.length} selected</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable
-                style={styles.bulkBtn}
-                onPress={() => {
-                  selected.forEach((id) => setStatus(id, 'shortlisted'));
-                  setSelected([]);
-                }}
-              >
+              <Pressable style={styles.bulkBtn} onPress={bulkShortlist}>
                 <Text style={styles.bulkBtnText}>Shortlist</Text>
-              </Pressable>
-              <Pressable style={[styles.bulkBtn, styles.bulkBtnGhost]}>
-                <Text style={[styles.bulkBtnText, { color: colors.primary }]}>Message</Text>
               </Pressable>
             </View>
           </View>
@@ -152,35 +193,36 @@ export default function TrialDetail() {
             <Text style={styles.emptyText}>No applicants in this stage yet.</Text>
           ) : (
             filtered.map((a) => {
-              const player = applicantPlayer(a);
-              const isSelected = selected.includes(a.playerId);
+              const player = a.players;
+              const isSelected = selected.includes(a.id);
+              const age = ageFromDob(player?.date_of_birth ?? null);
               return (
-                <View key={a.playerId} style={styles.applicantCard}>
-                  <Pressable onPress={() => toggleSelect(a.playerId)} style={styles.checkbox}>
+                <View key={a.id} style={styles.applicantCard}>
+                  <Pressable onPress={() => toggleSelect(a.id)} style={styles.checkbox}>
                     <View style={[styles.checkboxBox, isSelected && styles.checkboxBoxActive]}>
                       {isSelected && <Feather name="check" size={12} color={colors.white} />}
                     </View>
                   </Pressable>
-                  <Image source={{ uri: player.avatar }} style={styles.applicantAvatar} />
+                  <Image source={{ uri: player?.profiles?.avatar_url || images.avatarMale }} style={styles.applicantAvatar} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.applicantName}>{player.name}</Text>
+                    <Text style={styles.applicantName}>{player?.profiles?.full_name || 'Unnamed player'}</Text>
                     <Text style={styles.applicantMeta}>
-                      {player.age} · {player.position} · {player.flag} {player.country}
+                      {age ?? '—'} · {player?.primary_position ?? '—'} · {player?.countries?.name ?? '—'}
                     </Text>
-                    <Text style={styles.applicantOvr}>{player.overall} OVR</Text>
+                    <Text style={styles.applicantOvr}>{player?.overall_rating ?? '—'} OVR</Text>
                   </View>
                   <View style={styles.applicantActions}>
-                    <Pressable style={styles.viewProfileBtn} onPress={() => router.push({ pathname: '/player/[id]', params: { id: player.id } })}>
+                    <Pressable style={styles.viewProfileBtn} onPress={() => router.push({ pathname: '/player/[id]', params: { id: a.player_id } })}>
                       <Text style={styles.viewProfileText}>View Profile</Text>
                     </Pressable>
                     <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
-                      <Pressable style={styles.smallActionBtn} onPress={() => setStatus(a.playerId, 'shortlisted')}>
+                      <Pressable style={styles.smallActionBtn} onPress={() => setStatus(a.id, 'shortlisted')}>
                         <Text style={styles.smallActionText}>Shortlist</Text>
                       </Pressable>
-                      <Pressable style={[styles.smallActionBtn, { backgroundColor: '#F0FDF4' }]} onPress={() => setStatus(a.playerId, 'accepted')}>
+                      <Pressable style={[styles.smallActionBtn, { backgroundColor: '#F0FDF4' }]} onPress={() => setStatus(a.id, 'accepted')}>
                         <Text style={[styles.smallActionText, { color: colors.success }]}>Accept</Text>
                       </Pressable>
-                      <Pressable style={[styles.smallActionBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => setStatus(a.playerId, 'rejected')}>
+                      <Pressable style={[styles.smallActionBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => setStatus(a.id, 'rejected')}>
                         <Text style={[styles.smallActionText, { color: colors.error }]}>Reject</Text>
                       </Pressable>
                     </View>

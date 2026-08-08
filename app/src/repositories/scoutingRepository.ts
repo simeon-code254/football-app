@@ -1,0 +1,106 @@
+import { supabase } from '../lib/supabase';
+import type { Database } from '../lib/database.types';
+
+export type FolderRow = Database['public']['Tables']['saved_player_folders']['Row'];
+export type SavedPlayerRow = Database['public']['Tables']['saved_players']['Row'];
+export type ScoutPreferencesRow = Database['public']['Tables']['scout_preferences']['Row'];
+type ScoutPreferencesUpsert = Database['public']['Tables']['scout_preferences']['Insert'];
+
+export async function listFolders(scoutId: string): Promise<FolderRow[]> {
+  const { data, error } = await supabase
+    .from('saved_player_folders')
+    .select('*')
+    .eq('scout_id', scoutId)
+    .order('created_at');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createFolder(scoutId: string, name: string): Promise<FolderRow> {
+  const { data, error } = await supabase
+    .from('saved_player_folders')
+    .insert({ scout_id: scoutId, name })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function savePlayerToFolder(scoutId: string, playerId: string, folderId: string) {
+  const { error } = await supabase
+    .from('saved_players')
+    .upsert({ scout_id: scoutId, player_id: playerId, folder_id: folderId }, { onConflict: 'scout_id,player_id' });
+  if (error) throw error;
+}
+
+export async function unsavePlayer(scoutId: string, playerId: string) {
+  const { error } = await supabase
+    .from('saved_players')
+    .delete()
+    .eq('scout_id', scoutId)
+    .eq('player_id', playerId);
+  if (error) throw error;
+}
+
+export async function isPlayerSaved(scoutId: string, playerId: string): Promise<SavedPlayerRow | null> {
+  const { data, error } = await supabase
+    .from('saved_players')
+    .select('*')
+    .eq('scout_id', scoutId)
+    .eq('player_id', playerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function listSavedPlayers(scoutId: string, folderId?: string) {
+  let query = supabase
+    .from('saved_players')
+    .select('*, players(*, profiles(full_name, avatar_url))')
+    .eq('scout_id', scoutId);
+  if (folderId) query = query.eq('folder_id', folderId);
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getNote(scoutId: string, playerId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from('scout_notes')
+    .select('note')
+    .eq('scout_id', scoutId)
+    .eq('player_id', playerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.note ?? '';
+}
+
+export async function upsertNote(scoutId: string, playerId: string, note: string) {
+  const { error } = await supabase
+    .from('scout_notes')
+    .upsert({ scout_id: scoutId, player_id: playerId, note }, { onConflict: 'scout_id,player_id' });
+  if (error) throw error;
+}
+
+export async function getPreferences(scoutId: string): Promise<ScoutPreferencesRow | null> {
+  const { data, error } = await supabase
+    .from('scout_preferences')
+    .select('*')
+    .eq('scout_id', scoutId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertPreferences(scoutId: string, prefs: Omit<ScoutPreferencesUpsert, 'scout_id'>) {
+  const { error } = await supabase
+    .from('scout_preferences')
+    .upsert({ ...prefs, scout_id: scoutId }, { onConflict: 'scout_id' });
+  if (error) throw error;
+}
+
+export async function getMatchScore(scoutId: string, playerId: string): Promise<number | null> {
+  const { data, error } = await supabase.rpc('match_score', { p_scout_id: scoutId, p_player_id: playerId });
+  if (error) throw error;
+  return data;
+}

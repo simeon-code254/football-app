@@ -3,10 +3,14 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as VideoThumbnails from 'expo-video-thumbnails';
+import * as Crypto from 'expo-crypto';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
+import { useSessionStore } from '../../src/store/useSessionStore';
+import * as videosRepository from '../../src/repositories/videosRepository';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | null };
@@ -16,8 +20,14 @@ type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | n
 // `uploadMode` maps directly to the `videos.upload_intent` field in the
 // platform's data model — 'reel' -> 'highlight_only', 'ai' -> 'ai_analysis'.
 export default function Upload() {
+  const userId = useSessionStore((s) => s.session?.user.id);
   const [mode, setMode] = useState<UploadMode>('reel');
   const [video, setVideo] = useState<PickedVideo | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [matchName, setMatchName] = useState('');
+  const [opponent, setOpponent] = useState('');
+  const [tags, setTags] = useState('');
   const [publishing, setPublishing] = useState(false);
 
   const pickVideo = async () => {
@@ -36,16 +46,47 @@ export default function Upload() {
   };
 
   const publish = async () => {
-    if (!video) return;
+    if (!video || !userId) return;
     setPublishing(true);
-    // TODO(backend wiring): upload `video.uri` to the `videos` storage bucket
-    // at `{player_id}/{video_id}/source.mp4`, then insert a `videos` row with
-    // upload_intent matching `mode` and the form fields below.
-    await new Promise((res) => setTimeout(res, 700));
-    setPublishing(false);
-    Alert.alert('Uploaded', 'Your video has been published.', [
-      { text: 'OK', onPress: () => router.push('/(player-tabs)/profile') },
-    ]);
+    try {
+      const videoId = Crypto.randomUUID();
+
+      let thumbnailPath: string | undefined;
+      try {
+        const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(video.uri, { time: 500 });
+        thumbnailPath = await videosRepository.uploadVideoThumbnail(userId, videoId, thumbUri);
+      } catch {
+        // Thumbnail generation can fail on some formats/platforms — the
+        // upload itself should still succeed, just without a thumbnail.
+      }
+
+      const storagePath = await videosRepository.uploadVideoSource(userId, videoId, video.uri);
+
+      await videosRepository.createVideo({
+        id: videoId,
+        playerId: userId,
+        storagePath,
+        thumbnailPath,
+        title: title.trim() || undefined,
+        description: description.trim() || undefined,
+        matchName: matchName.trim() || undefined,
+        opponent: opponent.trim() || undefined,
+        tags: tags
+          .split(/[\s,]+/)
+          .map((t) => t.replace(/^#/, '').trim())
+          .filter(Boolean),
+        uploadIntent: mode === 'ai' ? 'ai_analysis' : 'highlight_only',
+        durationSeconds: video.durationMs ? Math.round(video.durationMs / 1000) : undefined,
+      });
+
+      Alert.alert('Uploaded', 'Your video has been published.', [
+        { text: 'OK', onPress: () => router.push('/(player-tabs)/profile') },
+      ]);
+    } catch (err) {
+      Alert.alert('Upload failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -78,18 +119,25 @@ export default function Upload() {
           <Pressable style={styles.dropZone} onPress={pickVideo}>
             <Feather name="upload-cloud" size={28} color="#9CA3AF" />
             <Text style={styles.dropTitle}>Upload Video</Text>
-            <Text style={styles.dropSub}>MP4, MOV up to 500MB</Text>
+            <Text style={styles.dropSub}>MP4, MOV up to 100MB</Text>
           </Pressable>
         )}
 
         <View style={styles.fields}>
-          <AppTextField label="Title" placeholder="e.g. Hat-trick vs Academy FC" />
-          <AppTextField label="Description" placeholder="Tell scouts what to look for" multiline style={{ minHeight: 60 }} />
+          <AppTextField label="Title" placeholder="e.g. Hat-trick vs Academy FC" value={title} onChangeText={setTitle} />
+          <AppTextField
+            label="Description"
+            placeholder="Tell scouts what to look for"
+            multiline
+            style={{ minHeight: 60 }}
+            value={description}
+            onChangeText={setDescription}
+          />
           <View style={styles.row}>
-            <AppTextField label="Match" placeholder="League match" />
-            <AppTextField label="Opponent" placeholder="Academy FC" />
+            <AppTextField label="Match" placeholder="League match" value={matchName} onChangeText={setMatchName} />
+            <AppTextField label="Opponent" placeholder="Academy FC" value={opponent} onChangeText={setOpponent} />
           </View>
-          <AppTextField label="Tags" placeholder="#freekick #goals" autoCapitalize="none" />
+          <AppTextField label="Tags" placeholder="#freekick #goals" autoCapitalize="none" value={tags} onChangeText={setTags} />
         </View>
 
         {mode === 'ai' && (
@@ -104,7 +152,7 @@ export default function Upload() {
         <PrimaryButton
           label={publishing ? 'Uploading…' : 'Upload & Publish'}
           onPress={publish}
-          disabled={!video}
+          disabled={!video || publishing}
           loading={publishing}
           style={styles.submitBtn}
         />

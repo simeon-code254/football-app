@@ -7,6 +7,8 @@ import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
+import { useSessionStore } from '../src/store/useSessionStore';
+import * as verificationRepository from '../src/repositories/verificationRepository';
 
 type DocType = 'id_document' | 'proof_of_organization' | 'certification';
 
@@ -40,6 +42,7 @@ type PickedFile = { name: string; uri: string; mimeType?: string | null };
 // Storage upload + row insert lands when this screen gets wired to real
 // Supabase, same as the rest of the app right now.
 export default function ScoutVerification() {
+  const userId = useSessionStore((s) => s.session?.user.id);
   const [files, setFiles] = useState<Partial<Record<DocType, PickedFile>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -59,15 +62,19 @@ export default function ScoutVerification() {
   const remove = (type: DocType) => setFiles((f) => { const next = { ...f }; delete next[type]; return next; });
 
   const submit = async () => {
-    if (!requiredMet) return;
+    if (!requiredMet || !userId) return;
     setSubmitting(true);
-    // TODO(backend wiring): upload each file to the `verification-documents`
-    // bucket at `{scout_id}/{filename}`, insert one scout_verification_documents
-    // row per file, no need to touch scouts.verification_status here — an
-    // admin reviews the submission and flips it separately.
-    await new Promise((res) => setTimeout(res, 600));
-    setSubmitting(false);
-    setSubmitted(true);
+    try {
+      const entries = Object.entries(files) as [DocType, PickedFile][];
+      for (const [type, file] of entries) {
+        await verificationRepository.uploadVerificationDocument(userId, type, file.uri, file.name);
+      }
+      setSubmitted(true);
+    } catch (err) {
+      Alert.alert('Submission failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {

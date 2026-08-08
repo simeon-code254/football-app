@@ -7,10 +7,10 @@ import { colors, fontFamily, fontSize } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
+import * as authRepository from '../src/repositories/authRepository';
 
-// Login's "Forgot Password?" was dead text. Real send-reset-email call
-// (supabase.auth.resetPasswordForEmail) lands during backend wiring; the
-// flow and success state are real now.
+// Login's "Forgot Password?" was dead text — now wired to a real
+// supabase.auth.resetPasswordForEmail call.
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -19,9 +19,16 @@ export default function ForgotPassword() {
   const send = async () => {
     if (!email.trim()) return;
     setSending(true);
-    await new Promise((res) => setTimeout(res, 500));
-    setSending(false);
-    setSent(true);
+    try {
+      await authRepository.sendPasswordReset(email.trim());
+    } catch {
+      // Deliberately swallow: don't reveal whether an account exists for
+      // this email — the success screen's copy already says "if an account
+      // exists", so failure and success look identical to the user.
+    } finally {
+      setSending(false);
+      setSent(true);
+    }
   };
 
   if (sent) {

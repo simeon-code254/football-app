@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
-import { MOCK_PLAYERS } from '../../src/data/mockPlayers';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
+import { images } from '../../src/constants/images';
+import * as profileRepository from '../../src/repositories/profileRepository';
 
 const MAX_COMPARE = 3;
 
@@ -15,12 +17,11 @@ type Filters = {
   minAge: string;
   maxAge: string;
   minOverall: string;
-  countries: string[];
+  countries: string[]; // country codes
   foot: string[];
 };
 
 const EMPTY_FILTERS: Filters = { positions: [], minAge: '', maxAge: '', minOverall: '', countries: [], foot: [] };
-const COUNTRIES = Array.from(new Set(MOCK_PLAYERS.map((p) => p.country)));
 
 // Discover Players — spec §16/17: the scouting database with a filter
 // bottom sheet instead of 20 filters crammed on-screen, and applied filters
@@ -33,6 +34,22 @@ export default function DiscoverPlayers() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  const { data: countries } = useQuery({ queryKey: ['countries'], queryFn: profileRepository.getCountries });
+
+  const { data: results, isLoading } = useQuery({
+    queryKey: ['discoverPlayers', query, filters],
+    queryFn: () =>
+      profileRepository.listPlayerPublicViews({
+        search: query || undefined,
+        positions: filters.positions.length ? filters.positions : undefined,
+        countryCodes: filters.countries.length ? filters.countries : undefined,
+        preferredFoot: filters.foot.length ? filters.foot : undefined,
+        ageMin: filters.minAge ? Number(filters.minAge) : undefined,
+        ageMax: filters.maxAge ? Number(filters.maxAge) : undefined,
+        minOverall: filters.minOverall ? Number(filters.minOverall) : undefined,
+      }),
+  });
+
   const toggleCompareMode = () => {
     setCompareMode((v) => !v);
     setSelectedIds([]);
@@ -43,23 +60,11 @@ export default function DiscoverPlayers() {
       ids.includes(id) ? ids.filter((x) => x !== id) : ids.length < MAX_COMPARE ? [...ids, id] : ids
     );
 
-  const results = useMemo(() => {
-    return MOCK_PLAYERS.filter((p) => {
-      if (query && !p.name.toLowerCase().includes(query.toLowerCase()) && !p.position.toLowerCase().includes(query.toLowerCase()) && !p.country.toLowerCase().includes(query.toLowerCase())) {
-        return false;
-      }
-      if (filters.positions.length && !filters.positions.includes(p.position)) return false;
-      if (filters.countries.length && !filters.countries.includes(p.country)) return false;
-      if (filters.minAge && p.age < Number(filters.minAge)) return false;
-      if (filters.maxAge && p.age > Number(filters.maxAge)) return false;
-      if (filters.minOverall && p.overall < Number(filters.minOverall)) return false;
-      return true;
-    });
-  }, [query, filters]);
+  const countryName = (code: string) => countries?.find((c) => c.code === code)?.name ?? code;
 
   const chips: { key: string; label: string; clear: () => void }[] = [
     ...filters.positions.map((p) => ({ key: `pos-${p}`, label: p, clear: () => setFilters((f) => ({ ...f, positions: f.positions.filter((x) => x !== p) })) })),
-    ...filters.countries.map((c) => ({ key: `country-${c}`, label: c, clear: () => setFilters((f) => ({ ...f, countries: f.countries.filter((x) => x !== c) })) })),
+    ...filters.countries.map((c) => ({ key: `country-${c}`, label: countryName(c), clear: () => setFilters((f) => ({ ...f, countries: f.countries.filter((x) => x !== c) })) })),
     ...(filters.minOverall ? [{ key: 'minovr', label: `OVR ${filters.minOverall}+`, clear: () => setFilters((f) => ({ ...f, minOverall: '' })) }] : []),
     ...(filters.minAge || filters.maxAge
       ? [{ key: 'age', label: `Age ${filters.minAge || '0'}-${filters.maxAge || '99'}`, clear: () => setFilters((f) => ({ ...f, minAge: '', maxAge: '' })) }]
@@ -116,33 +121,36 @@ export default function DiscoverPlayers() {
       )}
 
       <FlatList
-        data={results}
-        keyExtractor={(p) => p.id}
+        data={results ?? []}
+        keyExtractor={(p) => p.id ?? ''}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Feather name="users" size={28} color={colors.textPlaceholder} />
-            <Text style={styles.emptyTitle}>No players match these filters</Text>
-            <Text style={styles.emptySub}>Try widening your search or clearing a filter.</Text>
-          </View>
+          isLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.empty}>
+              <Feather name="users" size={28} color={colors.textPlaceholder} />
+              <Text style={styles.emptyTitle}>No players match these filters</Text>
+              <Text style={styles.emptySub}>Try widening your search or clearing a filter.</Text>
+            </View>
+          )
         }
         renderItem={({ item }) => {
-          const selected = selectedIds.includes(item.id);
+          const id = item.id ?? '';
+          const selected = selectedIds.includes(id);
           return (
             <Pressable
               onPress={() =>
-                compareMode
-                  ? toggleSelected(item.id)
-                  : router.push({ pathname: '/player/[id]', params: { id: item.id } })
+                compareMode ? toggleSelected(id) : router.push({ pathname: '/player/[id]', params: { id } })
               }
             >
               <View style={compareMode && selected ? styles.cardSelected : undefined}>
                 <PlayerCard
-                  name={item.name}
-                  positionLine={`${item.position} · ${item.flag} ${item.country}`}
-                  rating={item.overall}
-                  avatar={item.avatar}
+                  name={item.full_name || 'Unnamed player'}
+                  positionLine={`${item.primary_position ?? '—'} · ${item.nationality_name ?? '—'}`}
+                  rating={item.overall_rating ?? 0}
+                  avatar={item.avatar_url ?? images.avatarMale}
                 />
               </View>
               {compareMode && (
@@ -218,15 +226,15 @@ export default function DiscoverPlayers() {
 
               <Text style={styles.filterLabel}>Country</Text>
               <View style={styles.wrapRow}>
-                {COUNTRIES.map((c) => {
-                  const active = draftFilters.countries.includes(c);
+                {(countries ?? []).map((c) => {
+                  const active = draftFilters.countries.includes(c.code);
                   return (
                     <Pressable
-                      key={c}
+                      key={c.code}
                       style={[styles.optionPill, active && styles.optionPillActive]}
-                      onPress={() => setDraftFilters((f) => ({ ...f, countries: toggle(f.countries, c) }))}
+                      onPress={() => setDraftFilters((f) => ({ ...f, countries: toggle(f.countries, c.code) }))}
                     >
-                      <Text style={[styles.optionPillText, active && styles.optionPillTextActive]}>{c}</Text>
+                      <Text style={[styles.optionPillText, active && styles.optionPillTextActive]}>{c.name}</Text>
                     </Pressable>
                   );
                 })}

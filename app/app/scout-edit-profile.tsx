@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, fontFamily, fontSize, radii } from '../src/theme';
@@ -8,17 +8,75 @@ import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { TypeaheadField } from '../src/components/TypeaheadField';
 import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
+import { useSessionStore } from '../src/store/useSessionStore';
+import * as profileRepository from '../src/repositories/profileRepository';
 
 // Scouts had no way to edit their profile after signup, same gap as the
 // player side — this is the scout counterpart (lighter than the player's
 // 4-step wizard since a scout profile has fewer fields).
 export default function ScoutEditProfile() {
-  const [fullName, setFullName] = useState('Simeon Anyal');
-  const [organization, setOrganization] = useState('Matobev Talent Partners');
-  const [country, setCountry] = useState('Kenya');
-  const [bio, setBio] = useState(
-    'Independent scout focused on East African wingers and attacking talent, working with academies across Kenya, Uganda and Tanzania.'
-  );
+  const session = useSessionStore((s) => s.session);
+  const hydrate = useSessionStore((s) => s.hydrate);
+  const userId = session?.user.id;
+
+  const [fullName, setFullName] = useState('');
+  const [organization, setOrganization] = useState('');
+  const [country, setCountry] = useState('');
+  const [bio, setBio] = useState('');
+  const [countryCodeByName, setCountryCodeByName] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      try {
+        const [profile, scout, countries] = await Promise.all([
+          profileRepository.getMyProfile(userId),
+          profileRepository.getMyScout(userId),
+          profileRepository.getCountries(),
+        ]);
+        setCountryCodeByName(Object.fromEntries(countries.map((c) => [c.name, c.code])));
+        setFullName(profile.full_name ?? '');
+        setOrganization(scout.organization ?? '');
+        setCountry(countries.find((c) => c.code === scout.country_code)?.name ?? '');
+        setBio(scout.bio ?? '');
+      } catch (err) {
+        Alert.alert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [userId]);
+
+  const save = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      await Promise.all([
+        profileRepository.updateProfileFields(userId, { full_name: fullName.trim() || null }),
+        profileRepository.updateScout(userId, {
+          organization: organization.trim() || null,
+          country_code: country ? countryCodeByName[country] ?? null : null,
+          bio: bio.trim() || null,
+        }),
+      ]);
+      await hydrate(session);
+      router.replace('/(scout-tabs)/profile');
+    } catch (err) {
+      Alert.alert('Could not save profile', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -48,7 +106,13 @@ export default function ScoutEditProfile() {
           <Text style={styles.charCount}>{bio.length} / 300</Text>
         </View>
 
-        <PrimaryButton label="Save Changes" onPress={() => router.replace('/(scout-tabs)/profile')} style={{ marginTop: 8 }} />
+        <PrimaryButton
+          label={saving ? 'Saving…' : 'Save Changes'}
+          onPress={save}
+          disabled={saving}
+          loading={saving}
+          style={{ marginTop: 8 }}
+        />
       </ScrollView>
     </SafeAreaView>
   );

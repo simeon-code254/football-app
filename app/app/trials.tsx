@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
-import { MOCK_TRIALS, MY_APPLICATIONS, getMyApplication, getTrialById, type MyApplicationStatus } from '../src/data/mockTrials';
+import { useSessionStore } from '../src/store/useSessionStore';
+import * as trialsRepository from '../src/repositories/trialsRepository';
 
 const SEGMENTS = ['Open Trials', 'My Applications'] as const;
 
-const STATUS_STYLE: Record<MyApplicationStatus, { bg: string; text: string; label: string }> = {
-  invited: { bg: '#EBF2FF', text: colors.primary, label: 'Invited' },
+const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: '#FFF8E1', text: colors.goldDark, label: 'Pending' },
   shortlisted: { bg: '#EBF2FF', text: colors.primary, label: 'Shortlisted' },
   accepted: { bg: '#F0FDF4', text: colors.success, label: 'Accepted' },
   rejected: { bg: '#FEF2F2', text: colors.error, label: 'Rejected' },
+  withdrawn: { bg: colors.surfaceMuted, text: colors.textMuted, label: 'Withdrawn' },
 };
 
 // The player-side counterpart to (scout-tabs)/trials.tsx — previously there
@@ -22,6 +24,20 @@ const STATUS_STYLE: Record<MyApplicationStatus, { bg: string; text: string; labe
 // Reachable from Home's "Trials Near You" section.
 export default function PlayerTrials() {
   const [segment, setSegment] = useState<(typeof SEGMENTS)[number]>('Open Trials');
+  const userId = useSessionStore((s) => s.session?.user.id);
+
+  const { data: openTrials, isLoading: loadingOpen } = useQuery({
+    queryKey: ['openTrials'],
+    queryFn: trialsRepository.listOpenTrials,
+  });
+
+  const { data: myApplications, isLoading: loadingApps } = useQuery({
+    queryKey: ['myApplications', userId],
+    enabled: !!userId,
+    queryFn: () => trialsRepository.getMyApplications(userId!),
+  });
+
+  const applicationByTrialId = new Map((myApplications ?? []).map((a) => [a.trial_id, a]));
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -44,53 +60,59 @@ export default function PlayerTrials() {
 
       {segment === 'Open Trials' ? (
         <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          {MOCK_TRIALS.map((trial) => {
-            const mine = getMyApplication(trial.id);
-            return (
-              <Pressable key={trial.id} style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
-                <View style={styles.cardTop}>
-                  <Text style={styles.cardTitle}>{trial.title}</Text>
-                  {mine && (
-                    <View style={[styles.statusBadge, { backgroundColor: STATUS_STYLE[mine.status].bg }]}>
-                      <Text style={[styles.statusBadgeText, { color: STATUS_STYLE[mine.status].text }]}>
-                        {STATUS_STYLE[mine.status].label}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.cardMeta}>{trial.club} · {trial.location}</Text>
-                <Text style={styles.cardMeta}>Positions: {trial.position} · Ages {trial.ageRange}</Text>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardDeadline}>Deadline: {trial.deadline}</Text>
-                  <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
-                </View>
-              </Pressable>
-            );
-          })}
+          {loadingOpen ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+          ) : (
+            (openTrials ?? []).map((trial) => {
+              const mine = applicationByTrialId.get(trial.id);
+              return (
+                <Pressable key={trial.id} style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+                  <View style={styles.cardTop}>
+                    <Text style={styles.cardTitle}>{trial.title}</Text>
+                    {mine && (
+                      <View style={[styles.statusBadge, { backgroundColor: STATUS_STYLE[mine.status]?.bg }]}>
+                        <Text style={[styles.statusBadgeText, { color: STATUS_STYLE[mine.status]?.text }]}>
+                          {mine.source === 'invited' ? 'Invited' : STATUS_STYLE[mine.status]?.label}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.cardMeta}>{trial.club} · {trial.location}</Text>
+                  <Text style={styles.cardMeta}>Positions: {trial.positions.join(', ') || 'Any'} · Ages {trial.age_min ?? '—'}-{trial.age_max ?? '—'}</Text>
+                  <View style={styles.cardFooter}>
+                    <Text style={styles.cardDeadline}>Deadline: {trial.application_deadline}</Text>
+                    <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
         </ScrollView>
       ) : (
         <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          {MY_APPLICATIONS.length === 0 ? (
+          {loadingApps ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+          ) : !myApplications?.length ? (
             <View style={styles.empty}>
               <Feather name="clipboard" size={28} color={colors.textPlaceholder} />
               <Text style={styles.emptyTitle}>No applications yet.</Text>
               <Text style={styles.emptySub}>Browse open trials and apply to get started.</Text>
             </View>
           ) : (
-            MY_APPLICATIONS.map((app) => {
-              const trial = getTrialById(app.trialId);
+            myApplications.map((app) => {
+              const trial = app.trials;
               if (!trial) return null;
-              const s = STATUS_STYLE[app.status];
+              const s = STATUS_STYLE[app.status] ?? STATUS_STYLE.pending;
               return (
-                <Pressable key={app.trialId} style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+                <Pressable key={app.id} style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                   <View style={styles.cardTop}>
                     <Text style={styles.cardTitle}>{trial.title}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>
-                      <Text style={[styles.statusBadgeText, { color: s.text }]}>{s.label}</Text>
+                      <Text style={[styles.statusBadgeText, { color: s.text }]}>{app.source === 'invited' ? 'Invited' : s.label}</Text>
                     </View>
                   </View>
                   <Text style={styles.cardMeta}>{trial.club} · {trial.location}</Text>
-                  <Text style={styles.cardMeta}>{app.status === 'invited' ? 'Invited' : 'Applied'} {app.appliedAt}</Text>
+                  <Text style={styles.cardMeta}>{app.source === 'invited' ? 'Invited' : 'Applied'} {new Date(app.applied_at).toLocaleDateString()}</Text>
                 </Pressable>
               );
             })

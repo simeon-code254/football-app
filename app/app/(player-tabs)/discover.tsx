@@ -1,25 +1,40 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { images } from '../../src/constants/images';
+import * as profileRepository from '../../src/repositories/profileRepository';
 
 const FILTERS = ['All', 'Strikers', 'Midfield', 'Defense', 'GK'] as const;
 
-const TRENDING = [
-  { id: '1', name: 'Marcus Johnson', positionLine: 'CAM · Lagos, Nigeria', rating: 86, avatar: images.avatarMale },
-  { id: '2', name: 'David Okafor', positionLine: 'ST · Accra, Ghana', rating: 83, avatar: images.avatarMale },
-  { id: '3', name: 'Amara Adeyemi', positionLine: 'CB · Lagos, Nigeria', rating: 81, avatar: images.avatarFemale },
-  { id: '4', name: 'Kwame Boateng', positionLine: 'GK · Kumasi, Ghana', rating: 79, avatar: images.avatarMale },
-];
+const CATEGORY_POSITIONS: Record<(typeof FILTERS)[number], string[] | null> = {
+  All: null,
+  Strikers: ['ST', 'LW', 'RW'],
+  Midfield: ['CM', 'CAM', 'CDM', 'LM', 'RM'],
+  Defense: ['CB', 'LB', 'RB'],
+  GK: ['GK'],
+};
 
 // Matches the mockup's DISCOVER tab: position-chip filters, search bar,
 // "Trending Players" list with rating badges.
 export default function Discover() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const [query, setQuery] = useState('');
+
+  const { data: players, isLoading } = useQuery({
+    queryKey: ['discoverTrending', query],
+    queryFn: () => profileRepository.listPlayerPublicViews({ search: query || undefined }),
+  });
+
+  const filtered = useMemo(() => {
+    const allowed = CATEGORY_POSITIONS[filter];
+    if (!allowed) return players ?? [];
+    return (players ?? []).filter((p) => p.primary_position && allowed.includes(p.primary_position));
+  }, [players, filter]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -50,13 +65,26 @@ export default function Discover() {
       </View>
 
       <FlatList
-        data={TRENDING}
-        keyExtractor={(item) => item.id}
+        data={filtered}
+        keyExtractor={(item) => item.id ?? ''}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={<Text style={styles.sectionTitle}>Trending Players</Text>}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        ListEmptyComponent={
+          isLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+          ) : (
+            <Text style={styles.emptyText}>No players found.</Text>
+          )
+        }
         renderItem={({ item }) => (
-          <PlayerCard name={item.name} positionLine={item.positionLine} rating={item.rating} avatar={item.avatar} />
+          <PlayerCard
+            name={item.full_name || 'Unnamed player'}
+            positionLine={[item.primary_position, item.nationality_name].filter(Boolean).join(' · ')}
+            rating={item.overall_rating ?? 0}
+            avatar={item.avatar_url ?? images.avatarMale}
+            onPress={() => router.push({ pathname: '/player/[id]', params: { id: item.id ?? '' } })}
+          />
         )}
       />
     </SafeAreaView>
@@ -86,4 +114,5 @@ const styles = StyleSheet.create({
   chipTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 10 },
+  emptyText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center', marginTop: 20 },
 });

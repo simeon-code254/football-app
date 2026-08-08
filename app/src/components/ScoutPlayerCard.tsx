@@ -1,68 +1,74 @@
-import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, fontFamily, fontSize, radii, spacing } from '../theme';
-import type { MockPlayer } from '../data/mockPlayers';
+
+export type ScoutPlayerCardAttribute = { key: string; displayName: string; value: number | null };
 
 type Props = {
-  player: MockPlayer;
-  /** Shows the "Why you're seeing this player" explanation strip. */
-  showMatchReason?: boolean;
+  id: string;
+  name: string;
+  avatar: string;
+  overall: number | null;
+  position: string | null;
+  country: string | null;
+  age: number | null;
+  topAttributes: ScoutPlayerCardAttribute[];
+  matchReasons?: string[];
+  saved: boolean;
+  onToggleSave: () => void;
 };
 
 // The signature scout-facing player card (spec §8/§9): image, OVR+position,
 // name, country, age, four key attributes, Save + View Profile actions, and
-// an optional recommendation-reason strip. `matchScore` (a recommendation
-// match, not a football rating) is visually separated from `overall` so the
-// two are never confused.
-export function ScoutPlayerCard({ player, showMatchReason }: Props) {
-  const [saved, setSaved] = useState(false);
-  const topAttrs = player.attributes.slice(0, 4);
-
+// an optional recommendation-reason strip built from real signals (preferred
+// position match, recent activity) — never a fabricated explanation.
+export function ScoutPlayerCard({ id, name, avatar, overall, position, country, age, topAttributes, matchReasons, saved, onToggleSave }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.imageWrap}>
-        <Image source={{ uri: player.avatar }} style={styles.image} />
+        <Image source={{ uri: avatar }} style={styles.image} />
         <View style={styles.ovrBadge}>
-          <Text style={styles.ovrValue}>{player.overall}</Text>
+          <Text style={styles.ovrValue}>{overall ?? '—'}</Text>
           <Text style={styles.ovrLabel}>OVR</Text>
         </View>
-        <View style={styles.posBadge}>
-          <Text style={styles.posText}>{player.position}</Text>
-        </View>
+        {!!position && (
+          <View style={styles.posBadge}>
+            <Text style={styles.posText}>{position}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.name}>{player.name}</Text>
+        <Text style={styles.name}>{name}</Text>
         <Text style={styles.meta}>
-          {player.flag} {player.country} · Age {player.age}
+          {country ?? '—'} {age != null ? `· Age ${age}` : ''}
         </Text>
 
         <View style={styles.attrGrid}>
-          {topAttrs.map((a) => (
+          {topAttributes.map((a) => (
             <Text key={a.key} style={styles.attrText}>
-              <Text style={styles.attrKey}>{a.key.slice(0, 3).toUpperCase()} </Text>
-              {a.val}
+              <Text style={styles.attrKey}>{a.displayName.slice(0, 3).toUpperCase()} </Text>
+              {a.value ?? '—'}
             </Text>
           ))}
         </View>
 
-        {showMatchReason && (
+        {!!matchReasons?.length && (
           <View style={styles.reasonBox}>
             <Text style={styles.reasonTitle}>Why you're seeing this player</Text>
-            <Text style={styles.reasonLine}>✓ Matches your preferred position</Text>
-            <Text style={styles.reasonLine}>✓ Strong pace rating</Text>
-            {player.recentlyActive && <Text style={styles.reasonLine}>✓ Recently active</Text>}
+            {matchReasons.map((line) => (
+              <Text key={line} style={styles.reasonLine}>✓ {line}</Text>
+            ))}
           </View>
         )}
 
         <View style={styles.actionsRow}>
-          <Pressable style={styles.saveBtn} onPress={() => setSaved((v) => !v)}>
-            <Feather name="heart" size={15} color={saved ? '#EF4444' : colors.textMuted} style={saved ? { opacity: 1 } : undefined} />
+          <Pressable style={styles.saveBtn} onPress={onToggleSave}>
+            <Feather name="heart" size={15} color={saved ? '#EF4444' : colors.textMuted} />
             <Text style={[styles.saveText, saved && { color: '#EF4444' }]}>{saved ? 'Saved' : 'Save'}</Text>
           </Pressable>
-          <Pressable style={styles.viewBtn} onPress={() => router.push({ pathname: '/player/[id]', params: { id: player.id } })}>
+          <Pressable style={styles.viewBtn} onPress={() => router.push({ pathname: '/player/[id]', params: { id } })}>
             <Text style={styles.viewText}>View Profile</Text>
           </Pressable>
         </View>

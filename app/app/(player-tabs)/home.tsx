@@ -1,11 +1,15 @@
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
-import { MOCK_TRIALS } from '../../src/data/mockTrials';
+import { useSessionStore } from '../../src/store/useSessionStore';
+import * as profileRepository from '../../src/repositories/profileRepository';
+import * as trialsRepository from '../../src/repositories/trialsRepository';
+import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -22,20 +26,53 @@ function getGreeting() {
 // reconstruction in the established visual language rather than a pixel
 // trace, filled out with the Trials feature from the product brief.
 export default function Home() {
+  const userId = useSessionStore((s) => s.session?.user.id);
+  const { data } = useQuery({
+    queryKey: ['playerHome', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const [profile, player, attributes] = await Promise.all([
+        profileRepository.getMyProfile(userId!),
+        profileRepository.getMyPlayer(userId!),
+        profileRepository.getMyPlayer(userId!).then((p) => profileRepository.getPlayerAttributes(userId!, !!p.is_goalkeeper)),
+      ]);
+      return { profile, player, attributes };
+    },
+  });
+
+  const { data: trials } = useQuery({ queryKey: ['openTrialsPreview'], queryFn: trialsRepository.listOpenTrials });
+
+  const { data: unreadCount } = useQuery({
+    queryKey: ['playerUnreadNotifications', userId],
+    enabled: !!userId,
+    queryFn: () => notificationsRepository.getUnreadCount(userId!),
+  });
+
+  const { data: recentNotifications } = useQuery({
+    queryKey: ['playerRecentNotifications', userId],
+    enabled: !!userId,
+    queryFn: () => notificationsRepository.listNotifications(userId!),
+  });
+
+  const ACTIVITY_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
+    trial_status_change: 'clipboard',
+    new_message: 'message-circle',
+  };
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.name}>Marcus Johnson</Text>
+            <Text style={styles.name}>{data?.profile.full_name || 'Welcome'}</Text>
           </View>
           <View style={styles.headerActions}>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/notifications')}>
               <Feather name="bell" size={18} color="#333" />
-              <View style={styles.dot} />
+              {!!unreadCount && <View style={styles.dot} />}
             </Pressable>
-            <Image source={{ uri: images.avatarMale }} style={styles.avatar} />
+            <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
           </View>
         </View>
 
@@ -43,7 +80,7 @@ export default function Home() {
           <View style={styles.ratingCardTop}>
             <View>
               <Text style={styles.ratingLabel}>Overall Rating</Text>
-              <Text style={styles.ratingValue}>82</Text>
+              <Text style={styles.ratingValue}>{data?.player.overall_rating != null ? data.player.overall_rating : '—'}</Text>
             </View>
             <Pressable style={styles.viewReportBtn} onPress={() => router.push('/(player-tabs)/profile')}>
               <Text style={styles.viewReportText}>View Report</Text>
@@ -51,16 +88,17 @@ export default function Home() {
             </Pressable>
           </View>
           <View style={styles.statRow}>
-            {[
-              { key: 'PAC', val: 78 },
-              { key: 'SHO', val: 85 },
-              { key: 'DRI', val: 90 },
-            ].map((s) => (
-              <View key={s.key} style={styles.statChip}>
-                <Text style={styles.statVal}>{s.val}</Text>
-                <Text style={styles.statKey}>{s.key}</Text>
+            {(data?.attributes ?? []).slice(0, 3).map((attr) => (
+              <View key={attr.key} style={styles.statChip}>
+                <Text style={styles.statVal}>{attr.value ?? '—'}</Text>
+                <Text style={styles.statKey}>{attr.displayName.slice(0, 3).toUpperCase()}</Text>
               </View>
             ))}
+            {!data?.attributes.length && (
+              <Text style={{ fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.7)' }}>
+                Ratings appear once your highlights are analyzed.
+              </Text>
+            )}
           </View>
         </LinearGradient>
 
@@ -93,14 +131,19 @@ export default function Home() {
             </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-            {MOCK_TRIALS.map((trial) => (
+            {!trials?.length && (
+              <Text style={{ fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted }}>
+                No open trials right now.
+              </Text>
+            )}
+            {(trials ?? []).slice(0, 8).map((trial) => (
               <Pressable key={trial.id} style={styles.trialCard} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                 <View style={styles.trialDateBadge}>
-                  <Text style={styles.trialDateText}>{trial.trialDate}</Text>
+                  <Text style={styles.trialDateText}>{trial.trial_date}</Text>
                 </View>
                 <Text style={styles.trialClub}>{trial.title}</Text>
                 <Text style={styles.trialLocation}>{trial.location}</Text>
-                <Text style={styles.trialSpots}>Deadline {trial.deadline}</Text>
+                <Text style={styles.trialSpots}>Deadline {trial.application_deadline}</Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -108,16 +151,17 @@ export default function Home() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
-          {[
-            { icon: 'eye', text: '3 scouts viewed your profile this week' },
-            { icon: 'trending-up', text: 'Your Pace rating improved by +3' },
-            { icon: 'message-circle', text: 'New message from Academy FC scout' },
-          ].map((item, i) => (
-            <View key={i} style={styles.activityRow}>
+          {!recentNotifications?.length && (
+            <Text style={{ fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted }}>
+              Nothing yet — activity shows up here as scouts and trials interact with your profile.
+            </Text>
+          )}
+          {(recentNotifications ?? []).slice(0, 3).map((item) => (
+            <View key={item.id} style={styles.activityRow}>
               <View style={styles.activityIcon}>
-                <Feather name={item.icon as any} size={16} color={colors.primary} />
+                <Feather name={ACTIVITY_ICON[item.type] ?? 'bell'} size={16} color={colors.primary} />
               </View>
-              <Text style={styles.activityText}>{item.text}</Text>
+              <Text style={styles.activityText}>{item.title}</Text>
             </View>
           ))}
         </View>

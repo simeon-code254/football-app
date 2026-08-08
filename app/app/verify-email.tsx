@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
+import * as authRepository from '../src/repositories/authRepository';
 import { useSessionStore } from '../src/store/useSessionStore';
 
 const RESEND_COOLDOWN_S = 30;
@@ -14,28 +15,61 @@ const RESEND_COOLDOWN_S = 30;
 // scout) and land straight on their dashboard, starting unverified — real
 // scout verification is an admin review step, not a self-serve form.
 export default function VerifyEmail() {
-  const role = useSessionStore((s) => s.role);
-  const setScoutVerified = useSessionStore((s) => s.setScoutVerified);
+  const { email, role } = useLocalSearchParams<{ email?: string; role?: 'player' | 'scout' }>();
+  const hydrate = useSessionStore((s) => s.hydrate);
   const [cooldown, setCooldown] = useState(0);
   const [justSent, setJustSent] = useState(false);
+  const [checking, setChecking] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
-  const resend = () => {
-    if (cooldown > 0) return;
-    // TODO(backend wiring): supabase.auth.resend({ type: 'signup', email })
-    setJustSent(true);
-    setCooldown(RESEND_COOLDOWN_S);
-    timerRef.current = setInterval(() => {
-      setCooldown((c) => {
-        if (c <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          return 0;
+  const resend = async () => {
+    if (cooldown > 0 || !email) return;
+    try {
+      await authRepository.resendVerificationEmail(email);
+      setJustSent(true);
+      setCooldown(RESEND_COOLDOWN_S);
+      timerRef.current = setInterval(() => {
+        setCooldown((c) => {
+          if (c <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      Alert.alert('Could not resend', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
+
+  const checkVerified = async () => {
+    setChecking(true);
+    try {
+      // Supabase's default confirm-email flow means there's no session on
+      // this device until the user actually logs in — the email link is
+      // confirmed wherever it's tapped, not necessarily here. So this can
+      // only honestly succeed if a session already exists and is confirmed;
+      // otherwise route to a real login rather than pretending it worked.
+      const session = await authRepository.getSession();
+      if (session?.user.email_confirmed_at) {
+        await hydrate(session);
+        if (role === 'scout') {
+          router.replace('/(scout-tabs)/home');
+        } else {
+          router.push('/profile-complete');
         }
-        return c - 1;
-      });
-    }, 1000);
+      } else {
+        Alert.alert(
+          'Not verified yet',
+          "Once you've tapped the link in your email, log in to continue.",
+          [{ text: 'Go to Login', onPress: () => router.replace('/login') }]
+        );
+      }
+    } finally {
+      setChecking(false);
+    }
   };
 
   return (
@@ -47,18 +81,12 @@ export default function VerifyEmail() {
         <Text style={styles.title}>Verify Your Email</Text>
         <Text style={styles.sub}>
           We've sent a verification link to{'\n'}
-          <Text style={styles.email}>you@email.com</Text>
+          <Text style={styles.email}>{email ?? 'your email'}</Text>
         </Text>
         <PrimaryButton
-          label="I've Verified My Email"
-          onPress={() => {
-            if (role === 'scout') {
-              setScoutVerified(false);
-              router.replace('/(scout-tabs)/home');
-            } else {
-              router.push('/profile-complete');
-            }
-          }}
+          label={checking ? 'Checking…' : "I've Verified My Email"}
+          onPress={checkVerified}
+          loading={checking}
           style={styles.cta}
         />
         {justSent && <Text style={styles.sentText}>Verification email sent.</Text>}

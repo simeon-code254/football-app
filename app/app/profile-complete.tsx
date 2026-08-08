@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Image, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Image, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,6 +12,8 @@ import { SelectField } from '../src/components/SelectField';
 import { TypeaheadField } from '../src/components/TypeaheadField';
 import { POSITIONS, GENDERS } from '../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
+import { useSessionStore } from '../src/store/useSessionStore';
+import * as profileRepository from '../src/repositories/profileRepository';
 
 const STEP_TITLES = ['Personal Details', 'Football Info', 'About You', 'Social Links'];
 const FOOT_OPTIONS = ['Right', 'Left', 'Both'] as const;
@@ -58,21 +60,19 @@ const initialForm: FormState = {
   facebook: '',
 };
 
-// Matches the demo values already shown on the player Profile screen's
-// About tab, so opening Edit Profile doesn't look like data loss.
-const editInitialForm: FormState = {
-  ...initialForm,
-  fullName: 'Marcus Johnson',
-  gender: 'Male',
-  nationality: 'Nigeria',
-  primaryPosition: 'CAM',
-  preferredFoot: 'Left',
-  height: '178',
-  weight: '68',
-  club: 'Lagos City FC',
-  yearsPlaying: '6',
-  bio: 'Attacking midfielder with sharp vision and a clinical left foot. Captain of my school team, two-time regional top scorer. Looking for a trial with a professional academy.',
-};
+function formatDob(iso: string | null): string {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d} / ${m} / ${y}`;
+}
+
+function parseDob(text: string): string | undefined {
+  const parts = text.split(/\D+/).filter(Boolean);
+  if (parts.length !== 3) return undefined;
+  const [d, m, y] = parts;
+  if (y.length !== 4) return undefined;
+  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
 
 // Matches Matobev v4.dc.html's PROFILE COMPLETION block: a 4-step wizard
 // (Personal -> Football Info -> Bio -> Social), progress bar, back/next nav.
@@ -83,11 +83,64 @@ const editInitialForm: FormState = {
 export default function ProfileComplete() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isEdit = mode === 'edit';
+  const session = useSessionStore((s) => s.session);
+  const hydrate = useSessionStore((s) => s.hydrate);
+  const userId = session?.user.id;
+
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormState>(isEdit ? editInitialForm : initialForm);
+  const [form, setForm] = useState<FormState>(initialForm);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [existingAvatarUrl, setExistingAvatarUrl] = useState<string | null>(null);
+  const [countryCodeByName, setCountryCodeByName] = useState<Record<string, string>>({});
+  const [loadingEdit, setLoadingEdit] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  useEffect(() => {
+    profileRepository.getCountries().then((countries) => {
+      setCountryCodeByName(Object.fromEntries(countries.map((c) => [c.name, c.code])));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isEdit || !userId) return;
+    (async () => {
+      try {
+        const [profile, player] = await Promise.all([
+          profileRepository.getMyProfile(userId),
+          profileRepository.getMyPlayer(userId),
+        ]);
+        const countries = await profileRepository.getCountries();
+        const nationalityName = countries.find((c) => c.code === player.nationality_code)?.name ?? '';
+        setForm({
+          fullName: profile.full_name ?? '',
+          dob: formatDob(player.date_of_birth),
+          gender: player.gender,
+          nationality: nationalityName,
+          phone: profile.phone ?? '',
+          primaryPosition: player.primary_position,
+          secondaryPosition: player.secondary_position,
+          preferredFoot: (player.preferred_foot as FormState['preferredFoot']) ?? 'Right',
+          height: player.height_cm != null ? String(player.height_cm) : '',
+          weight: player.weight_kg != null ? String(player.weight_kg) : '',
+          club: player.club ?? '',
+          jersey: player.jersey_number != null ? String(player.jersey_number) : '',
+          yearsPlaying: player.years_playing != null ? String(player.years_playing) : '',
+          bio: player.bio ?? '',
+          instagram: player.instagram_handle ?? '',
+          youtube: player.youtube_url ?? '',
+          tiktok: player.tiktok_handle ?? '',
+          facebook: player.facebook_url ?? '',
+        });
+        setExistingAvatarUrl(profile.avatar_url);
+      } catch (err) {
+        Alert.alert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
+      } finally {
+        setLoadingEdit(false);
+      }
+    })();
+  }, [isEdit, userId]);
 
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -107,13 +160,62 @@ export default function ProfileComplete() {
 
   const isLast = step === 4;
 
+  const save = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      if (photoUri) {
+        await profileRepository.uploadAvatar(userId, photoUri);
+      }
+      await Promise.all([
+        profileRepository.updateProfileFields(userId, {
+          full_name: form.fullName.trim() || null,
+          phone: form.phone.trim() || null,
+        }),
+        profileRepository.updatePlayer(userId, {
+          date_of_birth: parseDob(form.dob) ?? null,
+          gender: form.gender,
+          nationality_code: form.nationality ? countryCodeByName[form.nationality] ?? null : null,
+          primary_position: form.primaryPosition as never,
+          secondary_position: form.secondaryPosition as never,
+          preferred_foot: form.preferredFoot,
+          height_cm: form.height ? Number(form.height) : null,
+          weight_kg: form.weight ? Number(form.weight) : null,
+          club: form.club.trim() || null,
+          jersey_number: form.jersey ? Number(form.jersey) : null,
+          years_playing: form.yearsPlaying ? Number(form.yearsPlaying) : null,
+          bio: form.bio.trim() || null,
+          instagram_handle: form.instagram.trim() || null,
+          youtube_url: form.youtube.trim() || null,
+          tiktok_handle: form.tiktok.trim() || null,
+          facebook_url: form.facebook.trim() || null,
+          ...(isEdit ? {} : { profile_completed: true }),
+        }),
+      ]);
+      await hydrate(session);
+      router.replace(isEdit ? '/(player-tabs)/profile' : '/(player-tabs)/home');
+    } catch (err) {
+      Alert.alert('Could not save profile', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const next = () => {
     if (isLast) {
-      router.replace(isEdit ? '/(player-tabs)/profile' : '/(player-tabs)/home');
+      save();
     } else {
       setStep((s) => Math.min(s + 1, 4));
     }
   };
+
+  if (loadingEdit) {
+    return (
+      <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -137,9 +239,9 @@ export default function ProfileComplete() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {step === 1 && (
           <View style={styles.stepBody}>
-            <Pressable style={[styles.photoUpload, photoUri && styles.photoUploadFilled]} onPress={pickPhoto}>
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+            <Pressable style={[styles.photoUpload, (photoUri || existingAvatarUrl) && styles.photoUploadFilled]} onPress={pickPhoto}>
+              {photoUri || existingAvatarUrl ? (
+                <Image source={{ uri: photoUri ?? existingAvatarUrl ?? undefined }} style={styles.photoPreview} />
               ) : (
                 <>
                   <Feather name="camera" size={22} color="#9CA3AF" />
@@ -227,8 +329,10 @@ export default function ProfileComplete() {
         <View style={styles.navRow}>
           {step > 1 && <IconButton icon="chevron-left" onPress={() => setStep((s) => s - 1)} size={52} style={styles.backBtn} />}
           <PrimaryButton
-            label={isLast ? (isEdit ? 'Save Changes' : 'Complete Profile') : 'Continue'}
+            label={saving ? 'Saving…' : isLast ? (isEdit ? 'Save Changes' : 'Complete Profile') : 'Continue'}
             onPress={next}
+            disabled={saving}
+            loading={saving}
             style={{ flex: 1 }}
           />
         </View>

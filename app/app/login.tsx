@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -9,18 +9,35 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { images } from '../src/constants/images';
-import { useSessionStore, type Role } from '../src/store/useSessionStore';
+import * as authRepository from '../src/repositories/authRepository';
+import * as profileRepository from '../src/repositories/profileRepository';
+import { useSessionStore } from '../src/store/useSessionStore';
 
 // Matches Matobev v4.dc.html's LOGIN block — given a hero photo (the mockup
 // had none on this screen, which read as bare) and a password visibility
-// toggle, which a static HTML mockup can't express. There's no backend yet
-// to tell us which role an account has, so login includes a lightweight
-// "continue as" toggle — a real build replaces this with the role read off
-// the authenticated user record.
+// toggle, which a static HTML mockup can't express.
 export default function Login() {
-  const [role, setRoleLocal] = useState<Role>('player');
-  const setRole = useSessionStore((s) => s.setRole);
-  const setScoutVerified = useSessionStore((s) => s.setScoutVerified);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const hydrate = useSessionStore((s) => s.hydrate);
+
+  const submit = async () => {
+    if (!email.trim() || !password) return;
+    setSubmitting(true);
+    try {
+      const session = await authRepository.signIn(email.trim(), password);
+      await hydrate(session);
+      // Don't rely on the async auth-state listener's timing to know where
+      // to route — read the role directly.
+      const profile = await profileRepository.getMyProfile(session.user.id);
+      router.replace(profile.role === 'scout' ? '/(scout-tabs)/home' : '/(player-tabs)/home');
+    } catch (err) {
+      Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
@@ -36,22 +53,24 @@ export default function Login() {
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.sub}>Sign in to continue</Text>
 
-        <View style={styles.roleToggle}>
-          {(['player', 'scout'] as const).map((r) => {
-            const active = role === r;
-            return (
-              <Pressable key={r} style={[styles.roleOption, active && styles.roleOptionActive]} onPress={() => setRoleLocal(r)}>
-                <Text style={[styles.roleOptionText, active && styles.roleOptionTextActive]}>
-                  Continue as {r === 'player' ? 'Player' : 'Scout'}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         <View style={styles.fields}>
-          <AppTextField label="Email" icon="mail" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
-          <AppTextField label="Password" icon="lock" placeholder="Enter password" isPassword />
+          <AppTextField
+            label="Email"
+            icon="mail"
+            placeholder="you@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <AppTextField
+            label="Password"
+            icon="lock"
+            placeholder="Enter password"
+            isPassword
+            value={password}
+            onChangeText={setPassword}
+          />
         </View>
 
         <Pressable style={styles.forgotRow} onPress={() => router.push('/forgot-password')}>
@@ -74,16 +93,10 @@ export default function Login() {
         </View>
 
         <PrimaryButton
-          label="Sign In"
-          onPress={() => {
-            setRole(role);
-            if (role === 'scout') {
-              setScoutVerified(true);
-              router.replace('/(scout-tabs)/home');
-            } else {
-              router.replace('/(player-tabs)/home');
-            }
-          }}
+          label={submitting ? 'Signing in…' : 'Sign In'}
+          onPress={submit}
+          disabled={!email.trim() || !password || submitting}
+          loading={submitting}
           style={styles.submitBtn}
         />
 

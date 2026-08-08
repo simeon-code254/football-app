@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
-import { getPlayerById } from '../../src/data/mockPlayers';
-import { MOCK_TRIALS } from '../../src/data/mockTrials';
+import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import * as profileRepository from '../../src/repositories/profileRepository';
+import * as videosRepository from '../../src/repositories/videosRepository';
+import * as scoutingRepository from '../../src/repositories/scoutingRepository';
+import * as trialsRepository from '../../src/repositories/trialsRepository';
 
 const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
-const FOLDERS = ['Favorites', 'U21 Prospects', 'Wingers', 'Potential Signings'];
 
 const CONFIDENCE_COLOR: Record<string, string> = {
   High: colors.success,
@@ -23,30 +26,137 @@ const CONFIDENCE_COLOR: Record<string, string> = {
 // attributes (§20), Save-to-folder (§21), and private Scout Notes (§22).
 export default function PlayerDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const player = getPlayerById(id);
   const role = useSessionStore((s) => s.role);
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
+  const viewerId = useSessionStore((s) => s.session?.user.id);
+
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview');
   const [saveOpen, setSaveOpen] = useState(false);
-  const [savedFolder, setSavedFolder] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState('');
   const [notesOpen, setNotesOpen] = useState(false);
   const [note, setNote] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [invitedTrialTitle, setInvitedTrialTitle] = useState<string | null>(null);
 
-  if (!player) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['playerDetail', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const publicView = await profileRepository.getPlayerPublicView(id);
+      const attributes = await profileRepository.getPlayerAttributes(id, publicView.primary_position === 'GK');
+      const videos = await videosRepository.getMyVideos(id);
+      return { publicView, attributes, videos };
+    },
+  });
+
+  useEffect(() => {
+    if (role === 'scout' && viewerId && id && viewerId !== id) {
+      profileRepository.logProfileView(viewerId, id).catch(() => {});
+    }
+  }, [role, viewerId, id]);
+
+  const { data: scoutData, refetch: refetchScoutData } = useQuery({
+    queryKey: ['playerDetailScoutData', id, viewerId],
+    enabled: role === 'scout' && !!viewerId && !!id,
+    queryFn: async () => {
+      const [folders, savedRow, noteText, trials, matchScore] = await Promise.all([
+        scoutingRepository.listFolders(viewerId!),
+        scoutingRepository.isPlayerSaved(viewerId!, id),
+        scoutingRepository.getNote(viewerId!, id),
+        trialsRepository.listMyTrials(viewerId!),
+        scoutingRepository.getMatchScore(viewerId!, id),
+      ]);
+      return {
+        folders,
+        savedFolderId: savedRow?.folder_id ?? null,
+        note: noteText,
+        openTrials: trials.filter((t) => t.status === 'open'),
+        matchScore,
+      };
+    },
+  });
+
+  const { data: thumbUrls } = useQuery({
+    queryKey: ['playerDetailThumbs', data?.videos.map((v) => v.id)],
+    enabled: tab === 'Videos' && !!data?.videos.length,
+    queryFn: async () => {
+      const urls = await Promise.all(
+        data!.videos.map((v) => videosRepository.getVideoUrl(v.thumbnail_path || v.storage_path))
+      );
+      return Object.fromEntries(data!.videos.map((v, i) => [v.id, urls[i]]));
+    },
+  });
+
+  const openNotes = () => {
+    setNote(scoutData?.note ?? '');
+    setNotesOpen(true);
+  };
+
+  const saveNote = async () => {
+    if (!viewerId) return;
+    setSavingNote(true);
+    try {
+      await scoutingRepository.upsertNote(viewerId, id, note);
+      await refetchScoutData();
+      setNotesOpen(false);
+    } catch (err) {
+      Alert.alert('Could not save note', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const saveToFolder = async (folderId: string) => {
+    if (!viewerId) return;
+    try {
+      await scoutingRepository.savePlayerToFolder(viewerId, id, folderId);
+      await refetchScoutData();
+      setSaveOpen(false);
+    } catch (err) {
+      Alert.alert('Could not save player', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
+
+  const createFolderAndSave = async () => {
+    if (!viewerId || !newFolderName.trim()) return;
+    try {
+      const folder = await scoutingRepository.createFolder(viewerId, newFolderName.trim());
+      setNewFolderName('');
+      await saveToFolder(folder.id);
+    } catch (err) {
+      Alert.alert('Could not create folder', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
+
+  const inviteToTrial = async (trialId: string) => {
+    if (!viewerId) return;
+    try {
+      await trialsRepository.inviteToTrial(viewerId, trialId, id);
+      await refetchScoutData();
+      setInviteOpen(false);
+      Alert.alert('Invited', 'The player has been invited to this trial.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Please try again.';
+      Alert.alert('Could not invite player', message.includes('duplicate') ? 'Already invited or applied to this trial.' : message);
+    }
+  };
+
+  if (isLoading || !data) {
     return (
-      <SafeAreaView style={styles.root}>
-        <Text style={styles.notFound}>Player not found.</Text>
+      <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={colors.primary} />
       </SafeAreaView>
     );
   }
+
+  const player = data.publicView;
+  const savedFolderName = scoutData?.folders.find((f) => f.id === scoutData.savedFolderId)?.name ?? null;
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.cover}>
-          <Image source={{ uri: player.avatar }} style={styles.coverImage} />
+          <Image source={{ uri: player.avatar_url ?? images.avatarMale }} style={styles.coverImage} />
           <View style={styles.coverMask} />
           <View style={styles.coverTop}>
             <IconButton icon="chevron-left" light onPress={() => router.back()} />
@@ -54,33 +164,37 @@ export default function PlayerDetail() {
         </View>
 
         <View style={styles.headerBlock}>
-          <Image source={{ uri: player.avatar }} style={styles.avatar} />
-          <Text style={styles.name}>{player.name}</Text>
+          <Image source={{ uri: player.avatar_url ?? images.avatarMale }} style={styles.avatar} />
+          <Text style={styles.name}>{player.full_name || 'Unnamed player'}</Text>
           <Text style={styles.meta}>
-            {player.position} · {player.flag} {player.country}
+            {player.primary_position} · {player.nationality_name}
           </Text>
-          <Text style={styles.metaSub}>{player.age} years old · {player.club}</Text>
-          <View style={styles.ovrPill}>
-            <Text style={styles.ovrPillText}>{player.overall} OVR</Text>
+          <Text style={styles.metaSub}>{player.age ? `${player.age} years old` : ''} {player.club ? `· ${player.club}` : ''}</Text>
+          <View style={styles.pillRow}>
+            <View style={styles.ovrPill}>
+              <Text style={styles.ovrPillText}>{player.overall_rating ?? '—'} OVR</Text>
+            </View>
+            {role === 'scout' && scoutData?.matchScore != null && (
+              <View style={styles.matchPill}>
+                <Text style={styles.matchPillText}>{scoutData.matchScore}% Match</Text>
+              </View>
+            )}
           </View>
 
           {role === 'scout' && (
             <View style={styles.actionsRow}>
               <Pressable style={styles.saveActionBtn} onPress={() => setSaveOpen(true)}>
-                <Feather name="heart" size={15} color={savedFolder ? '#EF4444' : colors.textPrimary} />
-                <Text style={styles.saveActionText}>{savedFolder ? `Saved · ${savedFolder}` : 'Save'}</Text>
+                <Feather name="heart" size={15} color={savedFolderName ? '#EF4444' : colors.textPrimary} />
+                <Text style={styles.saveActionText}>{savedFolderName ? `Saved · ${savedFolderName}` : 'Save'}</Text>
               </Pressable>
               <Pressable
                 style={[styles.messageActionBtn, !scoutVerified && { opacity: 0.5 }]}
-                onPress={() =>
-                  scoutVerified &&
-                  router.push({ pathname: '/(scout-tabs)/messages', params: { playerId: player.id } })
-                }
+                onPress={() => scoutVerified && router.push({ pathname: '/(scout-tabs)/messages', params: { playerId: id } })}
               >
                 <Feather name="message-circle" size={15} color={colors.white} />
                 <Text style={styles.messageActionText}>Message</Text>
               </Pressable>
-              <Pressable style={styles.notesActionBtn} onPress={() => setNotesOpen(true)}>
+              <Pressable style={styles.notesActionBtn} onPress={openNotes}>
                 <Feather name="edit-3" size={16} color={colors.textPrimary} />
               </Pressable>
             </View>
@@ -91,9 +205,7 @@ export default function PlayerDetail() {
               onPress={() => scoutVerified && setInviteOpen(true)}
             >
               <Feather name="send" size={15} color={colors.primary} />
-              <Text style={styles.inviteActionText}>
-                {invitedTrialTitle ? `Invited · ${invitedTrialTitle}` : 'Invite to Trial'}
-              </Text>
+              <Text style={styles.inviteActionText}>Invite to Trial</Text>
             </Pressable>
           )}
           {role === 'scout' && !scoutVerified && (
@@ -115,12 +227,12 @@ export default function PlayerDetail() {
             <View style={{ gap: 16 }}>
               <View style={styles.detailsGrid}>
                 {[
-                  ['Position', player.position],
-                  ['Age', String(player.age)],
-                  ['Country', `${player.flag} ${player.country}`],
-                  ['City', player.city],
-                  ['Club', player.club],
-                  ['Videos', String(player.videoCount)],
+                  ['Position', player.primary_position ?? '—'],
+                  ['Age', player.age != null ? String(player.age) : '—'],
+                  ['Country', player.nationality_name ?? '—'],
+                  ['Club', player.club || '—'],
+                  ['Foot', player.preferred_foot ?? '—'],
+                  ['Videos', String(player.video_count ?? 0)],
                 ].map(([label, value]) => (
                   <View key={label} style={styles.detailCell}>
                     <Text style={styles.detailLabel}>{label}</Text>
@@ -142,41 +254,33 @@ export default function PlayerDetail() {
 
               <View style={styles.overallCard}>
                 <Text style={styles.overallLabel}>OVERALL</Text>
-                <Text style={styles.overallValue}>{player.overall}</Text>
+                <Text style={styles.overallValue}>{player.overall_rating ?? '—'}</Text>
               </View>
 
               <View style={{ gap: 10 }}>
-                {player.attributes.map((a) => (
+                {data.attributes.map((a) => (
                   <View key={a.key} style={styles.skillRow}>
-                    <Text style={styles.skillName}>{a.key}</Text>
+                    <Text style={styles.skillName}>{a.displayName}</Text>
                     <View style={styles.skillTrack}>
-                      <View style={[styles.skillFill, { width: `${a.val}%` }]} />
+                      <View style={[styles.skillFill, { width: `${a.value ?? 0}%` }]} />
                     </View>
-                    <Text style={styles.skillVal}>{a.val}</Text>
-                    <View style={[styles.confDot, { backgroundColor: CONFIDENCE_COLOR[a.confidence] }]} />
+                    <Text style={styles.skillVal}>{a.value ?? '—'}</Text>
+                    {a.confidence && <View style={[styles.confDot, { backgroundColor: CONFIDENCE_COLOR[a.confidence] }]} />}
                   </View>
                 ))}
-              </View>
-
-              <View style={styles.strengthsBox}>
-                <Text style={styles.strengthsTitle}>STRENGTHS</Text>
-                {player.strengths.map((s) => (
-                  <Text key={s} style={styles.strengthLine}>• {s}</Text>
-                ))}
-              </View>
-              <View style={styles.watchBox}>
-                <Text style={styles.watchTitle}>AREAS TO WATCH</Text>
-                {player.watchAreas.map((s) => (
-                  <Text key={s} style={styles.watchLine}>• {s}</Text>
-                ))}
+                {data.attributes.every((a) => a.value == null) && (
+                  <Text style={styles.disclaimerText}>No AI ratings yet — this player hasn't had a highlight analyzed.</Text>
+                )}
               </View>
             </View>
           )}
 
           {tab === 'Videos' && (
             <View style={styles.videoGrid}>
-              {Array.from({ length: player.videoCount }).map((_, i) => (
-                <View key={i} style={styles.videoThumb}>
+              {!data.videos.length && <Text style={styles.disclaimerText}>No videos uploaded yet.</Text>}
+              {data.videos.map((v) => (
+                <View key={v.id} style={styles.videoThumb}>
+                  {thumbUrls?.[v.id] && <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} />}
                   <View style={styles.videoPlay}>
                     <Feather name="play" size={12} color={colors.white} />
                   </View>
@@ -192,23 +296,24 @@ export default function PlayerDetail() {
         <Pressable style={styles.backdrop} onPress={() => setSaveOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Save Player</Text>
-            {FOLDERS.map((f) => (
-              <Pressable
-                key={f}
-                style={styles.folderRow}
-                onPress={() => {
-                  setSavedFolder(f);
-                  setSaveOpen(false);
-                }}
-              >
-                <View style={styles.radioDot}>{savedFolder === f && <View style={styles.radioDotFill} />}</View>
-                <Text style={styles.folderText}>{f}</Text>
+            {(scoutData?.folders ?? []).map((f) => (
+              <Pressable key={f.id} style={styles.folderRow} onPress={() => saveToFolder(f.id)}>
+                <View style={styles.radioDot}>{scoutData?.savedFolderId === f.id && <View style={styles.radioDotFill} />}</View>
+                <Text style={styles.folderText}>{f.name}</Text>
               </Pressable>
             ))}
-            <Pressable style={styles.folderRow}>
-              <Feather name="plus" size={16} color={colors.primary} />
-              <Text style={[styles.folderText, { color: colors.primary }]}>Create New Folder</Text>
-            </Pressable>
+            <View style={styles.newFolderRow}>
+              <TextInput
+                placeholder="New folder name"
+                placeholderTextColor={colors.textPlaceholder}
+                style={styles.newFolderInput}
+                value={newFolderName}
+                onChangeText={setNewFolderName}
+              />
+              <Pressable style={styles.newFolderBtn} onPress={createFolderAndSave} disabled={!newFolderName.trim()}>
+                <Feather name="plus" size={16} color={colors.primary} />
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -229,8 +334,8 @@ export default function PlayerDetail() {
                 onChangeText={setNote}
               />
             </View>
-            <Pressable style={styles.saveNoteBtn} onPress={() => setNotesOpen(false)}>
-              <Text style={styles.saveNoteText}>Save Note</Text>
+            <Pressable style={styles.saveNoteBtn} onPress={saveNote} disabled={savingNote}>
+              <Text style={styles.saveNoteText}>{savingNote ? 'Saving…' : 'Save Note'}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -242,22 +347,13 @@ export default function PlayerDetail() {
         <Pressable style={styles.backdrop} onPress={() => setInviteOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Invite to Trial</Text>
-            <Text style={styles.notesHint}>Choose one of your open trials to invite {player.name} to.</Text>
-            {MOCK_TRIALS.map((trial) => (
-              <Pressable
-                key={trial.id}
-                style={styles.trialInviteRow}
-                onPress={() => {
-                  setInvitedTrialTitle(trial.title);
-                  setInviteOpen(false);
-                }}
-              >
+            <Text style={styles.notesHint}>Choose one of your open trials to invite {player.full_name} to.</Text>
+            {!scoutData?.openTrials.length && <Text style={styles.notesHint}>You have no open trials — create one first.</Text>}
+            {(scoutData?.openTrials ?? []).map((trial) => (
+              <Pressable key={trial.id} style={styles.trialInviteRow} onPress={() => inviteToTrial(trial.id)}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.folderText}>{trial.title}</Text>
-                  <Text style={styles.trialInviteMeta}>{trial.location} · Deadline {trial.deadline}</Text>
-                </View>
-                <View style={styles.radioDot}>
-                  {invitedTrialTitle === trial.title && <View style={styles.radioDotFill} />}
+                  <Text style={styles.trialInviteMeta}>{trial.location} · Deadline {trial.application_deadline}</Text>
                 </View>
               </Pressable>
             ))}
@@ -280,8 +376,11 @@ const styles = StyleSheet.create({
   name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 10 },
   meta: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textBody, marginTop: 2 },
   metaSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 1 },
-  ovrPill: { backgroundColor: '#F0F5FF', borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6, marginTop: 10 },
+  pillRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  ovrPill: { backgroundColor: '#F0F5FF', borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6 },
   ovrPillText: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.primary },
+  matchPill: { backgroundColor: '#F0FDF4', borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6 },
+  matchPillText: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.success },
   actionsRow: { flexDirection: 'row', gap: 10, marginTop: 16, alignItems: 'center' },
   saveActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 10 },
   saveActionText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
@@ -316,14 +415,8 @@ const styles = StyleSheet.create({
   skillFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
   skillVal: { width: 24, textAlign: 'right', fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   confDot: { width: 8, height: 8, borderRadius: 4 },
-  strengthsBox: { backgroundColor: '#F0FDF4', borderRadius: radii.md, padding: 14, gap: 4 },
-  strengthsTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.success, letterSpacing: 1, marginBottom: 4 },
-  strengthLine: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textBody },
-  watchBox: { backgroundColor: '#FFF8E1', borderRadius: radii.md, padding: 14, gap: 4 },
-  watchTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.goldDark, letterSpacing: 1, marginBottom: 4 },
-  watchLine: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textBody },
   videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  videoThumb: { width: '31.5%', aspectRatio: 9 / 14, borderRadius: radii.sm, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  videoThumb: { width: '31.5%', aspectRatio: 9 / 14, borderRadius: radii.sm, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   videoPlay: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl, padding: 20, paddingBottom: 32 },
@@ -332,6 +425,9 @@ const styles = StyleSheet.create({
   radioDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   radioDotFill: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   folderText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  newFolderRow: { flexDirection: 'row', gap: 8, marginTop: 8, alignItems: 'center' },
+  newFolderInput: { flex: 1, height: 42, borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, paddingHorizontal: 12, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  newFolderBtn: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   trialInviteRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },
   trialInviteMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
   notesHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginBottom: 12 },

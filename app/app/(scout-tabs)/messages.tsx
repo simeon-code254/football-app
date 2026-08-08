@@ -1,32 +1,95 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
-import { MOCK_PLAYERS } from '../../src/data/mockPlayers';
+import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import * as messagesRepository from '../../src/repositories/messagesRepository';
+import type { MessageRow } from '../../src/repositories/messagesRepository';
+import * as profileRepository from '../../src/repositories/profileRepository';
 
-const CONVERSATIONS = [
-  { playerId: 'kevin-otieno', lastMessage: 'Thank you, I would love to attend the trial!', time: '2h', unread: 2 },
-  { playerId: 'ibrahim-toure', lastMessage: 'What time should I arrive on the 24th?', time: '1d', unread: 0 },
-];
+function timeAgo(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
 
 // Messaging (spec §24): conversation list + a simple thread. Contacting a
 // player always shows who you're talking to and their key stats up top, so
 // context is never lost. Gated behind scoutVerified per spec §3.
 export default function Messages() {
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
+  const userId = useSessionStore((s) => s.session?.user.id);
   const { playerId } = useLocalSearchParams<{ playerId?: string }>();
-  const [activeId, setActiveId] = useState<string | null>(playerId ?? null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
-  const activePlayer = activeId ? MOCK_PLAYERS.find((p) => p.id === activeId) : null;
+  const queryClient = useQueryClient();
 
-  // Deep-linked from Player Details' Message button — open that specific
-  // thread directly instead of landing on the generic conversation list.
+  const { data: conversations, refetch: refetchConversations } = useQuery({
+    queryKey: ['scoutConversations', userId],
+    enabled: !!userId && scoutVerified,
+    queryFn: () => messagesRepository.listConversations(userId!),
+  });
+
+  const { data: previews } = useQuery({
+    queryKey: ['scoutConversationPreviews', conversations?.map((c) => c.id), userId],
+    enabled: !!conversations?.length && !!userId,
+    queryFn: () => messagesRepository.getConversationPreviews(conversations!.map((c) => c.id), userId!),
+  });
+
+  // Deep-linked from Player Details' Message button — open (or create) that
+  // specific thread directly instead of landing on the generic list.
   useEffect(() => {
-    if (playerId) setActiveId(playerId);
-  }, [playerId]);
+    if (!playerId || !userId || !scoutVerified) return;
+    messagesRepository.getOrCreateConversation(userId, playerId).then((conv) => {
+      setActiveConversationId(conv.id);
+      refetchConversations();
+    });
+  }, [playerId, userId, scoutVerified]);
+
+  const activeConversation = conversations?.find((c) => c.id === activeConversationId);
+
+  const { data: activePlayerInfo } = useQuery({
+    queryKey: ['messageThreadPlayer', activeConversation?.player_id],
+    enabled: !!activeConversation?.player_id,
+    queryFn: () => profileRepository.getPlayerPublicView(activeConversation!.player_id),
+  });
+
+  const { data: messages, refetch: refetchMessages } = useQuery({
+    queryKey: ['threadMessages', activeConversationId],
+    enabled: !!activeConversationId,
+    queryFn: () => messagesRepository.listMessages(activeConversationId!),
+  });
+
+  useEffect(() => {
+    if (!activeConversationId || !userId) return;
+    messagesRepository.markMessagesRead(activeConversationId, userId).then(() => refetchConversations());
+    const unsubscribe = messagesRepository.subscribeToMessages(activeConversationId, (message) => {
+      queryClient.setQueryData<MessageRow[]>(['threadMessages', activeConversationId], (old) =>
+        old ? [...old, message] : [message]
+      );
+    });
+    return unsubscribe;
+  }, [activeConversationId, userId]);
+
+  const send = async () => {
+    if (!draft.trim() || !activeConversationId || !userId) return;
+    const body = draft.trim();
+    setDraft('');
+    try {
+      await messagesRepository.sendMessage(activeConversationId, userId, body);
+      refetchMessages();
+      refetchConversations();
+    } catch {
+      setDraft(body);
+    }
+  };
 
   if (!scoutVerified) {
     return (
@@ -49,7 +112,7 @@ export default function Messages() {
         <Text style={styles.title}>Messages</Text>
       </View>
 
-      {CONVERSATIONS.length === 0 ? (
+      {!conversations?.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />
           <Text style={styles.emptyTitle}>No conversations yet.</Text>
@@ -57,23 +120,24 @@ export default function Messages() {
         </View>
       ) : (
         <FlatList
-          data={CONVERSATIONS}
-          keyExtractor={(c) => c.playerId}
+          data={conversations}
+          keyExtractor={(c) => c.id}
           contentContainerStyle={{ padding: 20, gap: 10 }}
           renderItem={({ item }) => {
-            const player = MOCK_PLAYERS.find((p) => p.id === item.playerId)!;
+            const player = item.players;
+            const preview = previews?.[item.id];
             return (
-              <Pressable style={styles.convoRow} onPress={() => setActiveId(item.playerId)}>
-                <Image source={{ uri: player.avatar }} style={styles.convoAvatar} />
+              <Pressable style={styles.convoRow} onPress={() => setActiveConversationId(item.id)}>
+                <Image source={{ uri: player?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.convoName}>{player.name}</Text>
-                  <Text style={styles.convoLast} numberOfLines={1}>{item.lastMessage}</Text>
+                  <Text style={styles.convoName}>{player?.profiles?.full_name || 'Player'}</Text>
+                  <Text style={styles.convoLast} numberOfLines={1}>{preview?.lastMessage || 'Say hello!'}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={styles.convoTime}>{item.time}</Text>
-                  {item.unread > 0 && (
+                  {!!preview?.lastMessageAt && <Text style={styles.convoTime}>{timeAgo(preview.lastMessageAt)}</Text>}
+                  {!!preview?.unreadCount && (
                     <View style={styles.unreadDot}>
-                      <Text style={styles.unreadText}>{item.unread}</Text>
+                      <Text style={styles.unreadText}>{preview.unreadCount}</Text>
                     </View>
                   )}
                 </View>
@@ -83,33 +147,40 @@ export default function Messages() {
         />
       )}
 
-      <Modal visible={!!activePlayer} animationType="slide" onRequestClose={() => setActiveId(null)}>
+      <Modal visible={!!activeConversationId} animationType="slide" onRequestClose={() => setActiveConversationId(null)}>
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
             <View style={styles.threadHeader}>
-              <Pressable onPress={() => setActiveId(null)}>
+              <Pressable onPress={() => setActiveConversationId(null)}>
                 <Feather name="chevron-left" size={22} color={colors.textPrimary} />
               </Pressable>
-              {activePlayer && (
-                <>
-                  <Image source={{ uri: activePlayer.avatar }} style={styles.threadAvatar} />
-                  <View>
-                    <Text style={styles.threadName}>{activePlayer.name}</Text>
-                    <Text style={styles.threadMeta}>
-                      {activePlayer.position} · {activePlayer.flag} {activePlayer.country} · {activePlayer.overall} OVR
-                    </Text>
-                  </View>
-                </>
-              )}
-            </View>
-
-            <View style={styles.threadBody}>
-              <View style={styles.contextBubble}>
-                <Text style={styles.contextText}>
-                  You are contacting {activePlayer?.name} — {activePlayer?.position} · {activePlayer?.flag} {activePlayer?.country} · {activePlayer?.overall} OVR
+              <Image source={{ uri: activeConversation?.players?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar} />
+              <View>
+                <Text style={styles.threadName}>{activeConversation?.players?.profiles?.full_name || 'Player'}</Text>
+                <Text style={styles.threadMeta}>
+                  {activePlayerInfo ? `${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating ?? '—'} OVR` : ''}
                 </Text>
               </View>
             </View>
+
+            <FlatList
+              data={messages ?? []}
+              keyExtractor={(m) => m.id}
+              contentContainerStyle={styles.threadBody}
+              renderItem={({ item }) => (
+                <View style={[styles.bubble, item.sender_id === userId ? styles.bubbleMine : styles.bubbleTheirs]}>
+                  <Text style={item.sender_id === userId ? styles.bubbleTextMine : styles.bubbleText}>{item.body}</Text>
+                </View>
+              )}
+              ListEmptyComponent={
+                <View style={styles.contextBubble}>
+                  <Text style={styles.contextText}>
+                    You are contacting {activeConversation?.players?.profiles?.full_name || 'this player'}
+                    {activePlayerInfo ? ` — ${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating ?? '—'} OVR` : ''}
+                  </Text>
+                </View>
+              }
+            />
 
             <View style={styles.composeRow}>
               <Pressable style={styles.attachBtn}>
@@ -123,7 +194,7 @@ export default function Messages() {
                 onChangeText={setDraft}
                 multiline
               />
-              <Pressable style={styles.sendBtn} onPress={() => setDraft('')}>
+              <Pressable style={styles.sendBtn} onPress={send}>
                 <Feather name="send" size={16} color={colors.white} />
               </Pressable>
             </View>
@@ -152,9 +223,14 @@ const styles = StyleSheet.create({
   threadAvatar: { width: 38, height: 38, borderRadius: 19 },
   threadName: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
   threadMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
-  threadBody: { flex: 1, padding: 20 },
+  threadBody: { flexGrow: 1, padding: 20, gap: 8 },
   contextBubble: { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 12, alignSelf: 'flex-start', maxWidth: '90%' },
   contextText: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textBody, lineHeight: 18 },
+  bubble: { borderRadius: radii.md, padding: 10, maxWidth: '80%' },
+  bubbleMine: { backgroundColor: colors.primary, alignSelf: 'flex-end' },
+  bubbleTheirs: { backgroundColor: colors.surface, alignSelf: 'flex-start' },
+  bubbleText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  bubbleTextMine: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.white },
   composeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: colors.divider },
   attachBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   composeInput: { flex: 1, maxHeight: 100, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },

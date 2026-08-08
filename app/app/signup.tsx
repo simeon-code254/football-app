@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -9,6 +9,7 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { Checkbox } from '../src/components/Checkbox';
+import * as authRepository from '../src/repositories/authRepository';
 
 // Matches Matobev v4.dc.html's SIGNUP FORM block, including the scout-only
 // Organization/Club field — redesigned with a role-colored header (the flat
@@ -17,8 +18,42 @@ import { Checkbox } from '../src/components/Checkbox';
 export default function Signup() {
   const { role } = useLocalSearchParams<{ role?: 'player' | 'scout' }>();
   const isScout = role === 'scout';
+  const [fullName, setFullName] = useState('');
+  const [organization, setOrganization] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit =
+    acceptedTerms &&
+    acceptedPrivacy &&
+    fullName.trim() &&
+    email.trim() &&
+    password.length >= 8 &&
+    password === confirmPassword &&
+    (!isScout || organization.trim());
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    try {
+      await authRepository.signUp({
+        email: email.trim(),
+        password,
+        role: isScout ? 'scout' : 'player',
+        fullName: fullName.trim(),
+        organization: isScout ? organization.trim() : undefined,
+      });
+      router.push({ pathname: '/verify-email', params: { email: email.trim(), role: isScout ? 'scout' : 'player' } });
+    } catch (err) {
+      Alert.alert('Sign up failed', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -42,13 +77,34 @@ export default function Signup() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.fields}>
-          <AppTextField label="Full Name" icon="user" placeholder="Enter full name" />
+          <AppTextField label="Full Name" icon="user" placeholder="Enter full name" value={fullName} onChangeText={setFullName} />
           {isScout && (
-            <AppTextField label="Organization / Club" icon="briefcase" placeholder="Club or organization name" />
+            <AppTextField
+              label="Organization / Club"
+              icon="briefcase"
+              placeholder="Club or organization name"
+              value={organization}
+              onChangeText={setOrganization}
+            />
           )}
-          <AppTextField label="Email Address" icon="mail" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
-          <AppTextField label="Password" icon="lock" placeholder="Min 8 characters" isPassword />
-          <AppTextField label="Confirm Password" icon="lock" placeholder="Re-enter password" isPassword />
+          <AppTextField
+            label="Email Address"
+            icon="mail"
+            placeholder="you@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <AppTextField label="Password" icon="lock" placeholder="Min 8 characters" isPassword value={password} onChangeText={setPassword} />
+          <AppTextField
+            label="Confirm Password"
+            icon="lock"
+            placeholder="Re-enter password"
+            isPassword
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
         </View>
 
         <View style={styles.checksCard}>
@@ -61,9 +117,10 @@ export default function Signup() {
         </View>
 
         <PrimaryButton
-          label={`Create ${isScout ? 'Scout' : 'Player'} Account`}
-          disabled={!acceptedTerms || !acceptedPrivacy}
-          onPress={() => router.push('/verify-email')}
+          label={submitting ? 'Creating account…' : `Create ${isScout ? 'Scout' : 'Player'} Account`}
+          disabled={!canSubmit || submitting}
+          loading={submitting}
+          onPress={submit}
           style={styles.submitBtn}
         />
         <View style={styles.loginRow}>

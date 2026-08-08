@@ -76,7 +76,7 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 
 ## 3. Backend — everything built
 
-**25 migrations**, all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
+**27 migrations**, all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
 
 1. Extensions/enums (`position_code`)
 2. `countries` (Africa-only, 54 seeded rows)
@@ -103,10 +103,12 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 23. `admin_scout_verification` — **fixed a real bug**: admins previously had no RLS policy allowing them to approve a scout at all
 24. `tighten_scout_invite_policy` — closed a gap where a demoted scout could still invite off old trials
 25. `scout_verification_documents` + private storage bucket + `scouts.verification_notes`
+26. `queue_ai_analysis_jobs` — `SECURITY DEFINER` trigger auto-creates a queued `video_analysis_jobs` row on `ai_analysis` uploads (the table has no client-write policy at all — this trigger is the only path a job can ever be created)
+27. `scouts_country` — adds `scouts.country_code` (was missing; `scout-edit-profile.tsx`'s Country field had no backing column)
 
-**RLS is live-verified**, not just written — confirmed via the anon key (same path the app uses): seed data readable, unauthenticated writes to `player_attribute_scores`, `video_likes`, `profile_views`, and `scout_verification_documents` are all correctly blocked.
+**RLS is live-verified**, not just written — confirmed via the anon key (same path the app uses): seed data readable, unauthenticated writes to `player_attribute_scores`, `video_likes`, `profile_views`, and `scout_verification_documents` are all correctly blocked. See §5 for the full backend-integration verification pass (real authenticated writes, Realtime delivery, RLS spoof-blocking, etc.).
 
-**RN app wiring started but not finished**: `@supabase/supabase-js` + AsyncStorage + url-polyfill installed, `src/lib/supabase.ts` client module exists, `.env`/`.env.example` in place. **No screen actually calls Supabase yet** — everything still runs on `src/data/mockPlayers.ts`/`mockTrials.ts` and the Zustand store's manual role toggle. This is the next phase (see §5).
+**RN app wiring: complete** — every screen calls Supabase via `src/repositories/*.ts`, no screen touches mock data anymore (`src/data/mock*.ts` has been deleted). See §5.
 
 ### Credentials on file (do not re-request these)
 - Anon key: in `app/.env` (gitignored)
@@ -153,28 +155,43 @@ Confirmed after fixing: every top-level/dynamic route has at least one inbound n
 
 ---
 
-## 5. Next phase: backend wiring (already planned, not started)
+## 5. Backend integration — complete
 
-Full step-by-step plan lives in `C:\Users\Admin\.claude\plans\now-fancy-balloon.md` on this machine (local Claude Code plan file, not in the repo) — Section 6 "Build sequence mapped to screens." Summary:
+Every screen now runs on real Supabase data. `src/repositories/*.ts` (8 files: `auth`, `profile`, `videos`, `trials`, `scouting`, `messages`, `notifications`, `verification`) is the only layer that imports `src/lib/supabase.ts` — screens never call Supabase directly. `src/lib/database.types.ts` is generated from the live schema (`supabase gen types typescript --linked`); regenerate it after any future migration. `src/lib/queryClient.ts` + `@tanstack/react-query` (`QueryClientProvider` in `_layout.tsx`) is the data-fetching/caching layer across the whole app. `src/data/mock*.ts` has been deleted — nothing references it anymore.
 
-1. Auth + Profiles — `signup.tsx`/`login.tsx`/`verify-email.tsx`/`profile-complete.tsx`/`role-select.tsx` call real `supabase.auth.signUp`/`signInWithPassword`; delete Login's role toggle.
-2. Attributes (read-only) — AI Ratings/AI Analysis tabs query real (empty) data.
-3. Videos + Storage — `upload.tsx` does a real upload.
-4. Retire mock player data — Discover/Players/Home query `player_public_view`.
-5. Trials — real CRUD (once §4.1 above closes the player-side gap).
-6. Saved Players + Scouting Preferences — real persistence.
-7. Messaging — real `conversations`/`messages` + Realtime.
-8. Notifications — real data + Realtime (once §4.2 above exists).
+**Two new migrations landed this pass** (27 total now):
+- `queue_ai_analysis_jobs` — a `SECURITY DEFINER` trigger on `videos` that auto-creates a queued `video_analysis_jobs` row when `upload_intent='ai_analysis'` (the table has no client-write policy, so this trigger is the only path a job can ever be created — no player can fake a completed analysis).
+- `scouts_country` — adds `scouts.country_code` (was missing; `scout-edit-profile.tsx`'s Country field had no backing column).
 
-Build `src/repositories/*.ts` as the only layer that imports `src/lib/supabase.ts` — screens never call Supabase directly, same principle used throughout.
+**What each step covered** (all verified end-to-end against the live project with real, cleaned-up test accounts — not just "no type errors"):
+1. Auth — real `signUp`/`signIn`/`signOut`/password-reset/resend; `useSessionStore` now derives `role`/`scoutVerified` from a real session + `profiles`/`players`/`scouts` rows (`hydrate()`), no more manual toggles. Verified: signup trigger creates the right skeleton rows for both roles, incl. auto-seeded scout folders.
+2. Profile read/write — `profile-complete.tsx` (4-step wizard + avatar upload), `scout-edit-profile.tsx`, both Profile headers, Scouting Preferences form all read/write real rows. Verified: an authenticated RLS write actually persists (not just "no error").
+3. Attributes (read-only) — AI Ratings/AI Analysis tabs and Home's rating tiles query real `player_attribute_scores` via `attribute_definitions`, with an honest empty state (no scores yet — service_role-write-only).
+4. Discover/browse — `discover.tsx`, `players.tsx` (full filter sheet incl. multi-select position/country/foot), `compare.tsx` all query `player_public_view`.
+5. Video upload — `upload.tsx` does a real Storage upload (base64→ArrayBuffer via `expo-file-system`, not `fetch().blob()` — that path is known to corrupt uploads on Android) + thumbnail + `videos` insert. Verified the new trigger fires only for `ai_analysis` uploads.
+6. Reels — real vertical feed (`videos` + `player_public_view` join) with `expo-video` playback (only the centered clip plays), real like/save/comment/share/view backed by `video_likes`/`video_saves`/`video_comments` + the trigger-maintained counters and RPCs. Player Profile's Videos tab also got real thumbnails + a full-screen player.
+7. Trials — full CRUD: scout create (verified-gated), player apply, scout shortlist/accept/reject, scout invite-to-trial from Player Details. Verified the unverified→blocked→verified→allowed sequence, the status-change notification trigger, and RLS spoof-blocking on both the application-status and invite paths.
+8. Scouting tools — save-to-folder (incl. "Create New Folder", finally wired), private Scout Notes, `match_score` RPC (shown as a "% Match" pill on Player Details and used for scout Home's Recommended feed), real Scout Verification document upload. Verified `scout_notes`/`saved_players` are genuinely invisible to the player being saved/noted about (RLS silently returns 0 rows, not an error).
+9. Messaging — real `conversations`/`messages` on both sides, with a live Realtime subscription (`postgres_changes` on `messages`) pushed straight into the TanStack Query cache. Verified actual cross-client Realtime delivery, not just the DB write.
+10. Notifications — real `notifications` list/unread-count/mark-read on both dashboards' bells plus the `/notifications` screen, with a live Realtime subscription. Verified players cannot insert their own notifications directly (service_role/trigger-only, per the original design).
 
----
+**Known trade-offs / fast-follows, not blockers:**
+- Verify-email's "I've Verified My Email" can only succeed if a session already exists on-device (Supabase's default confirm-email flow doesn't hand back a session after signup) — no deep-link/`emailRedirectTo` auto-login is wired yet, so the honest fallback routes to Login.
+- Upload's UI copy says "up to 500MB" but the base64 upload path is realistically good for far less (~100MB) before memory becomes an issue — fine for MVP, a resumable/TUS upload would be the real fix later.
+- "Scout Saves" was dropped from the player's own Stats tab — `saved_players` is intentionally RLS-private to the saving scout, so a player has no honest way to see who saved them.
 
-## 6. Verification commands (for whoever resumes)
+## 6. Next phase: the AI analysis engine (not started, by design)
+
+Explicitly out of scope for the backend-integration pass per the user's own sequencing ("we will lastly work on the engine of ai analysis"). The schema is ready for it (`video_analysis_jobs`, `player_attribute_scores`/history, the new auto-queue trigger) — see the Phase 1 "AI Pipeline" section further down this file for the architecture recommendation (custom CV pipeline: detection → pose → tracking → action recognition → heuristic attribute scoring, phased A→D by what's genuinely computable at each stage).
+
+## 7. Verification commands (for whoever resumes)
 
 ```bash
 # Confirm migrations are still in sync
 cd matobev && SUPABASE_ACCESS_TOKEN=<pat> supabase migration list --linked
+
+# Regenerate types after any future migration
+cd matobev && SUPABASE_ACCESS_TOKEN=<pat> supabase gen types typescript --linked > app/src/lib/database.types.ts
 
 # Type-check + bundle-verify the app after any change
 cd app && npx tsc --noEmit && npx expo export -p web && rm -rf dist

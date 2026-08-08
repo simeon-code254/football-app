@@ -2,28 +2,85 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
-import { MOCK_SCOUTS } from '../src/data/mockScouts';
+import { images } from '../src/constants/images';
+import { useSessionStore } from '../src/store/useSessionStore';
+import * as messagesRepository from '../src/repositories/messagesRepository';
+import type { MessageRow } from '../src/repositories/messagesRepository';
 
-const CONVERSATIONS = [
-  { scoutId: 'scout-simeon', lastMessage: 'Great highlight! When can you attend a trial?', time: '1h', unread: 1 },
-  { scoutId: 'scout-grace', lastMessage: "Thanks for applying, we'll be in touch.", time: '2d', unread: 0 },
-];
+function timeAgo(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours / 24)}d`;
+}
 
 // The player-side counterpart to (scout-tabs)/messages.tsx — previously
 // there was no way for a player to see or reply to a scout's message
-// anywhere in the app, even though a scout could message them.
+// anywhere in the app, even though a scout could message them. Players can
+// never create a new conversation (RLS: only a verified scout can), only
+// reply to threads a scout has already opened.
 export default function Messages() {
+  const userId = useSessionStore((s) => s.session?.user.id);
   const { scoutId } = useLocalSearchParams<{ scoutId?: string }>();
-  const [activeId, setActiveId] = useState<string | null>(scoutId ?? null);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
-  const activeScout = activeId ? MOCK_SCOUTS.find((s) => s.id === activeId) : null;
+  const queryClient = useQueryClient();
+
+  const { data: conversations, refetch: refetchConversations } = useQuery({
+    queryKey: ['playerConversations', userId],
+    enabled: !!userId,
+    queryFn: () => messagesRepository.listConversations(userId!),
+  });
+
+  const { data: previews } = useQuery({
+    queryKey: ['playerConversationPreviews', conversations?.map((c) => c.id), userId],
+    enabled: !!conversations?.length && !!userId,
+    queryFn: () => messagesRepository.getConversationPreviews(conversations!.map((c) => c.id), userId!),
+  });
 
   useEffect(() => {
-    if (scoutId) setActiveId(scoutId);
-  }, [scoutId]);
+    if (!scoutId || !conversations) return;
+    const existing = conversations.find((c) => c.scout_id === scoutId);
+    if (existing) setActiveConversationId(existing.id);
+  }, [scoutId, conversations]);
+
+  const activeConversation = conversations?.find((c) => c.id === activeConversationId);
+
+  const { data: messages, refetch: refetchMessages } = useQuery({
+    queryKey: ['playerThreadMessages', activeConversationId],
+    enabled: !!activeConversationId,
+    queryFn: () => messagesRepository.listMessages(activeConversationId!),
+  });
+
+  useEffect(() => {
+    if (!activeConversationId || !userId) return;
+    messagesRepository.markMessagesRead(activeConversationId, userId).then(() => refetchConversations());
+    const unsubscribe = messagesRepository.subscribeToMessages(activeConversationId, (message) => {
+      queryClient.setQueryData<MessageRow[]>(['playerThreadMessages', activeConversationId], (old) =>
+        old ? [...old, message] : [message]
+      );
+    });
+    return unsubscribe;
+  }, [activeConversationId, userId]);
+
+  const send = async () => {
+    if (!draft.trim() || !activeConversationId || !userId) return;
+    const body = draft.trim();
+    setDraft('');
+    try {
+      await messagesRepository.sendMessage(activeConversationId, userId, body);
+      refetchMessages();
+      refetchConversations();
+    } catch {
+      setDraft(body);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -33,7 +90,7 @@ export default function Messages() {
         <View style={{ width: 36 }} />
       </View>
 
-      {CONVERSATIONS.length === 0 ? (
+      {!conversations?.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />
           <Text style={styles.emptyTitle}>No conversations yet.</Text>
@@ -41,27 +98,25 @@ export default function Messages() {
         </View>
       ) : (
         <FlatList
-          data={CONVERSATIONS}
-          keyExtractor={(c) => c.scoutId}
+          data={conversations}
+          keyExtractor={(c) => c.id}
           contentContainerStyle={{ padding: 20, gap: 10 }}
           renderItem={({ item }) => {
-            const scout = MOCK_SCOUTS.find((s) => s.id === item.scoutId)!;
+            const scout = item.scouts;
+            const preview = previews?.[item.id];
             return (
-              <Pressable style={styles.convoRow} onPress={() => setActiveId(item.scoutId)}>
-                <Image source={{ uri: scout.avatar }} style={styles.convoAvatar} />
+              <Pressable style={styles.convoRow} onPress={() => setActiveConversationId(item.id)}>
+                <Image source={{ uri: scout?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar} />
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Text style={styles.convoName}>{scout.name}</Text>
-                    {scout.verified && <Feather name="check-circle" size={12} color={colors.success} />}
-                  </View>
-                  <Text style={styles.convoOrg}>{scout.organization}</Text>
-                  <Text style={styles.convoLast} numberOfLines={1}>{item.lastMessage}</Text>
+                  <Text style={styles.convoName}>{scout?.profiles?.full_name || 'Scout'}</Text>
+                  {!!scout?.organization && <Text style={styles.convoOrg}>{scout.organization}</Text>}
+                  <Text style={styles.convoLast} numberOfLines={1}>{preview?.lastMessage || 'New conversation'}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={styles.convoTime}>{item.time}</Text>
-                  {item.unread > 0 && (
+                  {!!preview?.lastMessageAt && <Text style={styles.convoTime}>{timeAgo(preview.lastMessageAt)}</Text>}
+                  {!!preview?.unreadCount && (
                     <View style={styles.unreadDot}>
-                      <Text style={styles.unreadText}>{item.unread}</Text>
+                      <Text style={styles.unreadText}>{preview.unreadCount}</Text>
                     </View>
                   )}
                 </View>
@@ -71,32 +126,38 @@ export default function Messages() {
         />
       )}
 
-      <Modal visible={!!activeScout} animationType="slide" onRequestClose={() => setActiveId(null)}>
+      <Modal visible={!!activeConversationId} animationType="slide" onRequestClose={() => setActiveConversationId(null)}>
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
             <View style={styles.threadHeader}>
-              <Pressable onPress={() => setActiveId(null)}>
+              <Pressable onPress={() => setActiveConversationId(null)}>
                 <Feather name="chevron-left" size={22} color={colors.textPrimary} />
               </Pressable>
-              {activeScout && (
-                <>
-                  <Image source={{ uri: activeScout.avatar }} style={styles.threadAvatar} />
-                  <View>
-                    <Text style={styles.threadName}>{activeScout.name}</Text>
-                    <Text style={styles.threadMeta}>{activeScout.organization}</Text>
-                  </View>
-                </>
-              )}
-            </View>
-
-            <View style={styles.threadBody}>
-              <View style={styles.contextBubble}>
-                <Text style={styles.contextText}>
-                  {activeScout?.name} · {activeScout?.organization}
-                  {activeScout?.verified ? ' · Verified Scout' : ''}
-                </Text>
+              <Image source={{ uri: activeConversation?.scouts?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar} />
+              <View>
+                <Text style={styles.threadName}>{activeConversation?.scouts?.profiles?.full_name || 'Scout'}</Text>
+                <Text style={styles.threadMeta}>{activeConversation?.scouts?.organization || ''}</Text>
               </View>
             </View>
+
+            <FlatList
+              data={messages ?? []}
+              keyExtractor={(m) => m.id}
+              contentContainerStyle={styles.threadBody}
+              renderItem={({ item }) => (
+                <View style={[styles.bubble, item.sender_id === userId ? styles.bubbleMine : styles.bubbleTheirs]}>
+                  <Text style={item.sender_id === userId ? styles.bubbleTextMine : styles.bubbleText}>{item.body}</Text>
+                </View>
+              )}
+              ListEmptyComponent={
+                <View style={styles.contextBubble}>
+                  <Text style={styles.contextText}>
+                    {activeConversation?.scouts?.profiles?.full_name || 'This scout'}
+                    {activeConversation?.scouts?.organization ? ` · ${activeConversation.scouts.organization}` : ''}
+                  </Text>
+                </View>
+              }
+            />
 
             <View style={styles.composeRow}>
               <Pressable style={styles.attachBtn}>
@@ -110,7 +171,7 @@ export default function Messages() {
                 onChangeText={setDraft}
                 multiline
               />
-              <Pressable style={styles.sendBtn} onPress={() => setDraft('')}>
+              <Pressable style={styles.sendBtn} onPress={send}>
                 <Feather name="send" size={16} color={colors.white} />
               </Pressable>
             </View>
@@ -140,9 +201,14 @@ const styles = StyleSheet.create({
   threadAvatar: { width: 38, height: 38, borderRadius: 19 },
   threadName: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
   threadMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
-  threadBody: { flex: 1, padding: 20 },
+  threadBody: { flexGrow: 1, padding: 20, gap: 8 },
   contextBubble: { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 12, alignSelf: 'flex-start', maxWidth: '90%' },
   contextText: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textBody, lineHeight: 18 },
+  bubble: { borderRadius: radii.md, padding: 10, maxWidth: '80%' },
+  bubbleMine: { backgroundColor: colors.primary, alignSelf: 'flex-end' },
+  bubbleTheirs: { backgroundColor: colors.surface, alignSelf: 'flex-start' },
+  bubbleText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  bubbleTextMine: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.white },
   composeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: colors.divider },
   attachBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   composeInput: { flex: 1, maxHeight: 100, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },

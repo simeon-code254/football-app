@@ -1,42 +1,80 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
-import { PLAYER_NOTIFICATIONS, SCOUT_NOTIFICATIONS, type MockNotification, type NotificationType } from '../src/data/mockNotifications';
+import * as notificationsRepository from '../src/repositories/notificationsRepository';
+import type { NotificationRow } from '../src/repositories/notificationsRepository';
 
-const TYPE_ICON: Record<NotificationType, React.ComponentProps<typeof Feather>['name']> = {
-  ai_analysis_complete: 'trending-up',
-  new_message: 'message-circle',
-  trial_invitation: 'send',
+const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
   trial_status_change: 'clipboard',
-  scout_verified: 'check-circle',
-  new_scout_view: 'eye',
-  system: 'bell',
+  new_message: 'message-circle',
+  scout_verification: 'check-circle',
 };
 
-// Bell icons existed on both dashboards with a static badge and nowhere to
-// go — this is the screen behind them. notifications table + Realtime are
-// already live on the backend; this reads from mock data until wiring.
-export default function Notifications() {
-  const role = useSessionStore((s) => s.role);
-  const [items, setItems] = useState<MockNotification[]>(role === 'scout' ? SCOUT_NOTIFICATIONS : PLAYER_NOTIFICATIONS);
+function timeAgo(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
-  const markRead = (id: string) => setItems((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n)));
+// Bell icons existed on both dashboards with a static badge and nowhere to
+// go — this is the screen behind them, backed by the real notifications
+// table + a live Realtime subscription for new arrivals.
+export default function Notifications() {
+  const userId = useSessionStore((s) => s.session?.user.id);
+  const queryClient = useQueryClient();
+
+  const { data: items, refetch } = useQuery({
+    queryKey: ['notifications', userId],
+    enabled: !!userId,
+    queryFn: () => notificationsRepository.listNotifications(userId!),
+  });
+
+  useEffect(() => {
+    if (!userId) return;
+    const unsubscribe = notificationsRepository.subscribeToNotifications(userId, (n) => {
+      queryClient.setQueryData<NotificationRow[]>(['notifications', userId], (old) => (old ? [n, ...old] : [n]));
+    });
+    return unsubscribe;
+  }, [userId]);
+
+  const markRead = async (id: string) => {
+    queryClient.setQueryData<NotificationRow[]>(['notifications', userId], (old) =>
+      old?.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+    );
+    await notificationsRepository.markAsRead(id);
+  };
+
+  const markAllRead = async () => {
+    if (!userId) return;
+    queryClient.setQueryData<NotificationRow[]>(['notifications', userId], (old) =>
+      old?.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() }))
+    );
+    await notificationsRepository.markAllAsRead(userId);
+    refetch();
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <IconButton icon="chevron-left" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 36 }} />
+        <Pressable onPress={markAllRead} hitSlop={8}>
+          <Text style={styles.markAllText}>Mark all read</Text>
+        </Pressable>
       </View>
 
       <FlatList
-        data={items}
+        data={items ?? []}
         keyExtractor={(n) => n.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
@@ -46,19 +84,22 @@ export default function Notifications() {
             <Text style={styles.emptyTitle}>No notifications yet.</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => markRead(item.id)}>
-            <View style={[styles.iconWrap, !item.read && styles.iconWrapUnread]}>
-              <Feather name={TYPE_ICON[item.type]} size={16} color={item.read ? colors.textMuted : colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, !item.read && styles.titleUnread]}>{item.title}</Text>
-              <Text style={styles.body}>{item.body}</Text>
-              <Text style={styles.time}>{item.time}</Text>
-            </View>
-            {!item.read && <View style={styles.dot} />}
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          const read = !!item.read_at;
+          return (
+            <Pressable style={styles.row} onPress={() => !read && markRead(item.id)}>
+              <View style={[styles.iconWrap, !read && styles.iconWrapUnread]}>
+                <Feather name={TYPE_ICON[item.type] ?? 'bell'} size={16} color={read ? colors.textMuted : colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.title, !read && styles.titleUnread]}>{item.title}</Text>
+                {!!item.body && <Text style={styles.body}>{item.body}</Text>}
+                <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
+              </View>
+              {!read && <View style={styles.dot} />}
+            </Pressable>
+          );
+        }}
       />
     </SafeAreaView>
   );
@@ -68,6 +109,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
+  markAllText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.primary },
   list: { padding: 20, paddingTop: 8 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyTitle: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
