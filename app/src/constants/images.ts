@@ -6,15 +6,22 @@ const u = (id: string) => `https://images.unsplash.com/${id}?w=1200&q=80&auto=fo
 
 export const images = {
   // Action / scene photography
-  splashHero: u('photo-1641280173256-0ac1b2f4cd78'), // player kicking ball on a field
   onboardSlide1: u('photo-1751394216135-8d99807a88a8'), // player on green field
   onboardSlide2: u('photo-1751394210161-fb7e64c0ea1a'), // player dribbling — motion, pairs with "AI analyzes your skills"
   onboardSlide3: u('photo-1652664845183-c6083bc286fc'), // group of young men — pairs with "connect with scouts"
-  welcomeHero: u('photo-1751394215726-31a4972d3835'), // player standing on field
   authHero: u('photo-1652665314612-c48e10a01598'), // players on the beach, Conakry, Guinea — used on Login/Role Select headers
   reelsClip: u('photo-1751394215141-30fc819f0018'), // player on field, used as the Reels placeholder clip
 
   // Portraits (avatars) — shot in Lagos, Nigeria and from a Nigerian-portrait set
   avatarMale: u('photo-1531299983330-093763e1d963'),
   avatarFemale: u('photo-1602342323893-b11f757957c9'),
+} as const;
+
+// User-supplied photos (assets/) — bundled locally, no network fetch needed.
+// `standing player.jpg` is intentionally excluded: it carries a visible
+// Creative Market preview watermark and isn't cleared for use.
+export const localImages = {
+  splashHero: require('../../assets/celebrating.png'),
+  welcomeHero: require('../../assets/holding ball.jpg'),
+  avatarPlaceholder: require('../../assets/avatar.jpg'),
 } as const;

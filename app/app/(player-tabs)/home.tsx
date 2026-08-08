@@ -50,7 +50,7 @@ export default function Home() {
               <Text style={styles.ratingLabel}>Overall Rating</Text>
               <Text style={styles.ratingValue}>82</Text>
             </View>
-            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/(tabs)/profile')}>
+            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/(player-tabs)/profile')}>
               <Text style={styles.viewReportText}>View Report</Text>
               <Feather name="arrow-right" size={14} color={colors.white} />
             </Pressable>
@@ -70,13 +70,13 @@ export default function Home() {
         </LinearGradient>
 
         <View style={styles.quickActions}>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/(tabs)/upload')}>
+          <Pressable style={styles.actionCard} onPress={() => router.push('/(player-tabs)/upload')}>
             <View style={[styles.actionIcon, { backgroundColor: '#EBF2FF' }]}>
               <Feather name="upload" size={20} color={colors.primary} />
             </View>
             <Text style={styles.actionLabel}>Upload Highlight</Text>
           </Pressable>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/(tabs)/discover')}>
+          <Pressable style={styles.actionCard} onPress={() => router.push('/(player-tabs)/discover')}>
             <View style={[styles.actionIcon, { backgroundColor: '#FFF8E1' }]}>
               <Feather name="award" size={20} color={colors.goldDark} />
             </View>

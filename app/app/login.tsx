@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,11 +9,19 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { images } from '../src/constants/images';
+import { useSessionStore, type Role } from '../src/store/useSessionStore';
 
 // Matches Matobev v4.dc.html's LOGIN block — given a hero photo (the mockup
 // had none on this screen, which read as bare) and a password visibility
-// toggle, which a static HTML mockup can't express.
+// toggle, which a static HTML mockup can't express. There's no backend yet
+// to tell us which role an account has, so login includes a lightweight
+// "continue as" toggle — a real build replaces this with the role read off
+// the authenticated user record.
 export default function Login() {
+  const [role, setRoleLocal] = useState<Role>('player');
+  const setRole = useSessionStore((s) => s.setRole);
+  const setScoutVerified = useSessionStore((s) => s.setScoutVerified);
+
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <View style={styles.hero}>
@@ -26,6 +35,19 @@ export default function Login() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.sub}>Sign in to continue</Text>
+
+        <View style={styles.roleToggle}>
+          {(['player', 'scout'] as const).map((r) => {
+            const active = role === r;
+            return (
+              <Pressable key={r} style={[styles.roleOption, active && styles.roleOptionActive]} onPress={() => setRoleLocal(r)}>
+                <Text style={[styles.roleOptionText, active && styles.roleOptionTextActive]}>
+                  Continue as {r === 'player' ? 'Player' : 'Scout'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <View style={styles.fields}>
           <AppTextField label="Email" icon="mail" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" />
@@ -51,7 +73,19 @@ export default function Login() {
           </Pressable>
         </View>
 
-        <PrimaryButton label="Sign In" onPress={() => router.replace('/(tabs)/home')} style={styles.submitBtn} />
+        <PrimaryButton
+          label="Sign In"
+          onPress={() => {
+            setRole(role);
+            if (role === 'scout') {
+              setScoutVerified(true);
+              router.replace('/(scout-tabs)/home');
+            } else {
+              router.replace('/(player-tabs)/home');
+            }
+          }}
+          style={styles.submitBtn}
+        />
 
         <View style={styles.signupRow}>
           <Text style={styles.signupText}>Don't have an account? </Text>
@@ -72,6 +106,11 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 28, paddingTop: 24, paddingBottom: 32, flexGrow: 1 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.displayLg, color: colors.textPrimary, marginBottom: 4 },
   sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 28 },
+  roleToggle: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, padding: 4, marginBottom: 20 },
+  roleOption: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
+  roleOptionActive: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+  roleOptionText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted },
+  roleOptionTextActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
   fields: { gap: 14, marginBottom: 12 },
   forgotRow: { alignItems: 'flex-end', marginBottom: 24 },
   forgotText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.primary },

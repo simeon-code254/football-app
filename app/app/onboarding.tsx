@@ -84,7 +84,11 @@ export default function Onboarding() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  hero: { flex: 0.58, overflow: 'hidden' },
+  // NOTE: siblings in a flex:1 column are relative WEIGHTS, not percentages —
+  // `flex: 0.58` next to `flex: 1` gave the hero only 0.58/1.58 (~37%) of the
+  // height instead of the intended 58%, which is what made the image look
+  // cropped and left the content pane oversized. 3:2 (60/40) fixes that.
+  hero: { flex: 3, overflow: 'hidden' },
   heroImage: { width: '100%', height: '100%' },
   heroMask: {
     position: 'absolute',
@@ -97,12 +101,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
   },
   content: {
-    flex: 1,
+    flex: 2,
     paddingHorizontal: 28,
     paddingTop: 20,
     paddingBottom: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
   },
   textBlock: { alignItems: 'center', maxWidth: 300 },
   title: {

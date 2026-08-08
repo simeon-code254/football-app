@@ -2,27 +2,27 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { SecondaryButton } from '../src/components/SecondaryButton';
-import { images } from '../src/constants/images';
+import { localImages } from '../src/constants/images';
+import { Logo } from '../src/components/Logo';
 
 // Matches Matobev v4.dc.html's WELCOME block.
 export default function Welcome() {
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <View style={styles.hero}>
-        <Image source={{ uri: images.welcomeHero }} style={styles.heroImage} resizeMode="cover" />
+        <Image source={localImages.welcomeHero} style={styles.heroImage} resizeMode="cover" />
         <LinearGradient
           colors={['rgba(26,109,255,0.1)', 'rgba(255,255,255,0.7)', '#ffffff']}
           locations={[0, 0.85, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.badge}>
-          <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.badgeGradient}>
-            <Feather name="target" size={26} color={colors.white} />
-          </LinearGradient>
+          <View style={styles.badgeCard}>
+            <Logo size={38} />
+          </View>
         </View>
       </View>
 
@@ -41,7 +41,9 @@ export default function Welcome() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  hero: { flex: 0.45, overflow: 'visible' },
+  // Same relative-weight fix as onboarding.tsx: 9:11 = 45:55, matching the
+  // mockup's intended split instead of the ~31:69 the old 0.45-vs-1 gave.
+  hero: { flex: 9, overflow: 'visible' },
   heroImage: { width: '100%', height: '100%' },
   badge: {
     position: 'absolute',
@@ -54,15 +56,16 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
   },
-  badgeGradient: {
+  badgeCard: {
     width: 56,
     height: 56,
     borderRadius: 16,
+    backgroundColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
-    flex: 1,
+    flex: 11,
     paddingTop: 40,
     paddingHorizontal: 28,
     paddingBottom: 28,

@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ImageBackground, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
-import { images } from '../src/constants/images';
+import { localImages } from '../src/constants/images';
+import { Logo } from '../src/components/Logo';
 
 const SPLASH_DURATION_MS = 3000;
 
@@ -31,7 +31,7 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.root}>
-      <ImageBackground source={{ uri: images.splashHero }} style={styles.bg} resizeMode="cover">
+      <ImageBackground source={localImages.splashHero} style={styles.bg} resizeMode="cover">
         <LinearGradient
           colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.4)', 'rgba(10,22,40,0.85)']}
           locations={[0, 0.55, 1]}
@@ -39,9 +39,7 @@ export default function SplashScreen() {
         />
         <View style={styles.content}>
           <View style={styles.badgeWrap}>
-            <LinearGradient colors={[colors.gold, colors.goldDark]} style={styles.badge}>
-              <Feather name="target" size={28} color={colors.white} />
-            </LinearGradient>
+            <Logo variant="white" size={72} />
           </View>
           <Text style={styles.wordmark}>MATOBEV</Text>
           <Text style={styles.tagline}>DISCOVER · ANALYZE · CONNECT</Text>
@@ -67,13 +65,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   badgeWrap: { marginBottom: 16 },
-  badge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   wordmark: {
     fontFamily: fontFamily.extraBold,
     fontSize: fontSize.hero,

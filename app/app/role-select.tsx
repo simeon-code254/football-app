@@ -8,6 +8,7 @@ import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
+import { useSessionStore } from '../src/store/useSessionStore';
 
 type Role = 'player' | 'scout';
 
@@ -32,6 +33,7 @@ const ROLES: { key: Role; label: string; icon: React.ComponentProps<typeof Feath
 // mockup had none on this screen, which read as bare white space up top).
 export default function RoleSelect() {
   const [selected, setSelected] = useState<Role | null>(null);
+  const setRole = useSessionStore((s) => s.setRole);
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
@@ -74,7 +76,11 @@ export default function RoleSelect() {
 
         <PrimaryButton
           label={selected ? `Continue as ${selected === 'player' ? 'Player' : 'Scout'}` : 'Continue'}
-          onPress={() => selected && router.push({ pathname: '/signup', params: { role: selected } })}
+          onPress={() => {
+            if (!selected) return;
+            setRole(selected);
+            router.push({ pathname: '/signup', params: { role: selected } });
+          }}
           disabled={!selected}
           style={styles.continueBtn}
         />

@@ -69,7 +69,7 @@ export default function ProfileComplete() {
 
   const next = () => {
     if (isLast) {
-      router.replace('/(tabs)/home');
+      router.replace('/(player-tabs)/home');
     } else {
       setStep((s) => Math.min(s + 1, 4));
     }

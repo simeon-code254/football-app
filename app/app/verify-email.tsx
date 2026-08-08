@@ -4,9 +4,16 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
+import { useSessionStore } from '../src/store/useSessionStore';
 
-// Matches Matobev v4.dc.html's EMAIL VERIFICATION block.
+// Matches Matobev v4.dc.html's EMAIL VERIFICATION block. Scouts skip the
+// player-specific profile wizard (position/foot/jersey make no sense for a
+// scout) and land straight on their dashboard, starting unverified — real
+// scout verification is an admin review step, not a self-serve form.
 export default function VerifyEmail() {
+  const role = useSessionStore((s) => s.role);
+  const setScoutVerified = useSessionStore((s) => s.setScoutVerified);
+
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.content}>
@@ -20,7 +27,14 @@ export default function VerifyEmail() {
         </Text>
         <PrimaryButton
           label="I've Verified My Email"
-          onPress={() => router.push('/profile-complete')}
+          onPress={() => {
+            if (role === 'scout') {
+              setScoutVerified(false);
+              router.replace('/(scout-tabs)/home');
+            } else {
+              router.push('/profile-complete');
+            }
+          }}
           style={styles.cta}
         />
         <Text style={styles.resendText}>

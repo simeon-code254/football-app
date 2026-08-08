@@ -48,7 +48,10 @@ export default function RootLayout() {
         <Stack.Screen name="verify-email" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="profile-complete" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="login" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(player-tabs)" />
+        <Stack.Screen name="(scout-tabs)" />
+        <Stack.Screen name="player/[id]" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="trial/[id]" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </View>
   );
