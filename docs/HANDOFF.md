@@ -26,37 +26,45 @@ All paths relative to `app/app/` (Expo Router file-based routing).
 | Welcome | `welcome.tsx` | Done |
 | Role Select | `role-select.tsx` | Done — sets role in Zustand store |
 | Signup | `signup.tsx` | Done — role-aware (scout gets an Organization field), password visibility toggle |
-| Verify Email | `verify-email.tsx` | Done — branches: player → Profile Complete, scout → straight to Scout Dashboard. **"Resend" link is dead** (see §4) |
-| Profile Complete | `profile-complete.tsx` | Done — 4-step wizard (Personal → Football Info → Bio → Social), player-only |
-| Login | `login.tsx` | Done, but has a **temporary "Continue as Player/Scout" toggle** standing in for real post-auth role routing — delete this when wiring auth. **"Forgot Password?" link is dead** (see §4) |
+| Verify Email | `verify-email.tsx` | Done — branches: player → Profile Complete, scout → straight to Scout Dashboard. Resend has a real cooldown/sent state (actual `supabase.auth.resend()` call still pending backend wiring) |
+| Profile Complete | `profile-complete.tsx` | Done — 4-step wizard (Personal → Football Info → Bio → Social), player-only. Doubles as Edit Profile via `?mode=edit` |
+| Login | `login.tsx` | Done, but has a **temporary "Continue as Player/Scout" toggle** standing in for real post-auth role routing — delete this when wiring auth. Forgot Password now wired to a real screen |
+| Forgot Password | `forgot-password.tsx` | Done — email → sent confirmation (real `resetPasswordForEmail` call pending backend wiring) |
 
 ### Player tabs — `(player-tabs)/`
 | Screen | File | Status |
 |---|---|---|
-| Home | `home.tsx` | Done — rating card, quick actions, Trials Near You (cards, **not tappable**), Recent Activity |
-| Reels | `reels.tsx` | Done UI — like/comment/share/save icons with counts (now backed by real tables), but **single static video, no swipe feed, no comment thread** |
+| Home | `home.tsx` | Done — rating card, quick actions, Trials Near You (now real data, tappable), Recent Activity, bell → Notifications |
+| Reels | `reels.tsx` | Done — real vertical paging feed (multiple clips), working like/save/share/comment with a real comment sheet |
 | Upload | `upload.tsx` | Done — Highlight/AI-Analysis toggle, title/description/match/opponent/tags form |
 | Discover | `discover.tsx` | Done — search, position-chip filters, trending list |
-| Profile | `profile.tsx` | Done — About/Videos/AI Ratings/Stats tabs + **Settings section (just added)** |
+| Profile | `profile.tsx` | Done — About/Videos/AI Ratings/Stats tabs, Settings section, Edit Profile entry point (pencil icon on cover) |
 
 ### Scout tabs — `(scout-tabs)/`
 | Screen | File | Status |
 |---|---|---|
-| Home (Scout Dashboard) | `home.tsx` | Done — verification banner (now wired to `/scout-verification`), global search, quick actions, scouting overview, Recommended For You (with match-reason), Recently Uploaded, Top Performers leaderboard, Active Trials |
-| Players (Discover) | `players.tsx` | Done — real filter bottom sheet (position, age range, min overall, country, foot) |
+| Home (Scout Dashboard) | `home.tsx` | Done — verification banner (wired to `/scout-verification`), global search, quick actions, scouting overview, Recommended For You (with match-reason), Recently Uploaded, Top Performers leaderboard, Active Trials, bell → Notifications |
+| Players (Discover) | `players.tsx` | Done — real filter bottom sheet, Compare mode (checkbox select → `/compare`), cards now navigate to Player Details |
 | Trials | `trials.tsx` | Done — list + Create Trial modal form |
-| Messages | `messages.tsx` | Done UI — conversation list + thread, verification-gated |
-| Profile | `profile.tsx` | Done — bio/org/positions/activity, Settings list, working Scouting Preferences form, **verification CTA (just added)** |
+| Messages | `messages.tsx` | Done — conversation list + thread, verification-gated, accepts a `playerId` param to deep-link into a specific thread |
+| Profile | `profile.tsx` | Done — bio/org/positions/activity, Settings list, working Scouting Preferences form, verification CTA, Edit Profile link |
 
-### Dynamic routes
+### Dynamic + standalone routes
 | Screen | File | Status |
 |---|---|---|
-| Player Details | `player/[id].tsx` | Done — Overview/AI Analysis (confidence-annotated attributes)/Videos tabs, Save-to-folder, private Scout Notes, **Invite to Trial (just added)** |
-| Trial Detail | `trial/[id].tsx` | Done — applicant status tabs (pending/shortlisted/accepted/rejected), bulk select + actions |
-| Scout Verification | `scout-verification.tsx` | **Just added** — document upload flow (ID, proof of organization, optional certification) via `expo-document-picker`; submission itself is stubbed pending backend wiring |
+| Player Details | `player/[id].tsx` | Done — Overview/AI Analysis (confidence-annotated attributes)/Videos tabs, Save-to-folder, private Scout Notes, Invite to Trial, Message (deep-links to a specific thread) |
+| Trial Detail | `trial/[id].tsx` | Done — role-aware: scout gets applicant status tabs + bulk actions, player gets trial info + Apply/status view |
+| Scout Verification | `scout-verification.tsx` | Done — document upload flow (ID, proof of organization, optional certification) via `expo-document-picker`; submission itself stubbed pending backend wiring |
+| Player Trials | `trials.tsx` | Done — Open Trials / My Applications, reachable from player Home |
+| Notifications | `notifications.tsx` | Done — role-aware list, mark-as-read, reachable from both dashboards' bell icons |
+| Compare Players | `compare.tsx` | Done — side-by-side attribute table for 2–3 selected players |
+| Scout Edit Profile | `scout-edit-profile.tsx` | Done — name/organization/country/bio |
 
 ### Shared components — `src/components/`
 `PrimaryButton`, `SecondaryButton`, `IconButton` (has a `light` variant for photo headers), `AppTextField` (has `isPassword` for show/hide toggle), `SelectField` (modal picker), `TypeaheadField` (type-ahead combobox, used for Africa-only nationality), `Checkbox`, `RatingBadge`, `PlayerCard`, `ScoutPlayerCard` (the signature FIFA-card-style scout view), `Logo` (color/white variants from the uploaded mark).
+
+### Mock data — `src/data/`
+`mockPlayers.ts`, `mockTrials.ts` (+ `MY_APPLICATIONS` for the player-side application-status view), `mockNotifications.ts`, `mockReels.ts`.
 
 ### Design system
 `src/theme/` (colors, typography, spacing extracted from the original mockup), `src/constants/images.ts` (verified African-context Unsplash photos + local uploaded assets), `src/constants/africanCountries.ts` (54-country list, Africa-only scope), `src/constants/football.ts` (12-position enum, genders).
@@ -107,27 +115,22 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 
 ---
 
-## 4. Recommended: UI screens/fixes to build *before* resuming backend wiring
+## 4. UI screens/fixes — all closed
 
-Wiring screens to real data is much cheaper if the screens and navigation are already complete — otherwise you end up wiring something, then immediately reshaping it. In priority order:
+Everything listed here previously is now built (commit `51b8687`). Kept as a record of what was closed and how, in case any of it needs revisiting:
 
-1. **Player Trials screen — the single biggest gap.** There is currently **no way for a player to browse or apply to a trial anywhere in the app.** Home's "Trials Near You" cards aren't tappable. Scouts can create trials and invite players, but a player can't independently discover and apply to one. Needs: a Trials tab or a screen reachable from Home, listing open trials (reuse `trials` schema + `trial_applications` insert-as-player path, already fully supported by RLS), with an Apply action and a way to see application status (My Applications).
+1. **Player Trials** — `app/trials.tsx` (Open Trials / My Applications segments) + `trial/[id].tsx` made role-aware (player gets an Apply flow, scout keeps applicant management). Home's "Trials Near You" now reads real `MOCK_TRIALS` (was a second, disconnected hardcoded array before) and is tappable.
+2. **Notifications** — `app/notifications.tsx`, wired to both dashboards' bell icons. `src/data/mockNotifications.ts` shaped to match the `notifications` table.
+3. **Forgot Password** — `app/forgot-password.tsx`, wired to Login.
+4. **Resend on Verify Email** — real cooldown-timer + sent-confirmation state (still stubbed for the actual `supabase.auth.resend()` call, marked `TODO(backend wiring)`).
+5. **Message deep link** — `player/[id].tsx` passes `?playerId=` to `(scout-tabs)/messages.tsx`, which opens that thread directly.
+6. **Reels as a feed** — rebuilt on a paging `FlatList` (multiple clips, swipe between them), working like/save/share/comment (local state, matches `video_likes`/`video_saves`/`video_comments` shape), real comment bottom-sheet. `src/data/mockReels.ts`.
+7. **Edit Profile** — `profile-complete.tsx` doubles as an edit flow via `?mode=edit` (pre-filled, "Save Changes", cancel-out X). Scout counterpart: `app/scout-edit-profile.tsx`.
+8. **Compare Players** — selection mode (checkbox overlay + floating bar) on `(scout-tabs)/players.tsx`, `app/compare.tsx` for the side-by-side attribute table.
 
-2. **Notifications screen.** The bell icon exists on both dashboards with a static badge, but tapping it goes nowhere — there's no list screen. The `notifications` table + Realtime are ready; this is a pure UI gap.
+**Still deliberately not built**: in-app Admin UI (separate web dashboard is the architecture decision), Google/Apple social auth buttons (decorative), skeleton/loading/error states (falls out of the wiring work itself).
 
-3. **Forgot Password flow.** `login.tsx`'s "Forgot Password?" is dead text. Needs a screen (email input → Supabase's `resetPasswordForEmail`) — small, but blocks a real auth flow from being complete.
-
-4. **Wire "Resend" on Verify Email** — currently dead text, same screen, needs a loading/success state once connected to `supabase.auth.resend()`.
-
-5. **Message button should open a specific conversation, not the generic tab.** `player/[id].tsx`'s Message button currently just navigates to `/(scout-tabs)/messages` (the conversation list) instead of directly into a thread with that player. Small fix, but matters for the UX to make sense once real.
-
-6. **Reels needs to actually be a feed.** Right now it's one static video with no scroll/swipe between clips, and no comment-thread UI (comment count shows, but there's no screen to read or write comments — `video_comments` table is ready). Doesn't have to be perfect, but "swipe to next video" and a basic comment sheet are expected Reels behavior.
-
-7. **Edit Profile.** `profile-complete.tsx` is a one-time wizard; there's no way to edit profile fields afterward. Either make that wizard re-enterable in an "edit" mode, or build a dedicated Edit Profile screen.
-
-8. **Compare Players** — named in the original scout spec, never built. Lower priority than the above; needs a multi-select-from-list + side-by-side attribute view. No new schema needed, purely UI.
-
-**Not recommended to build yet**: an in-app Admin UI (deliberately out of scope — separate web dashboard was the architecture decision, and `admins` table has zero policies for `authenticated`/`anon` by design), Google/Apple social auth buttons (decorative, fine to leave until real auth priorities settle), skeleton/loading/error states (worth doing, but naturally falls out of the wiring work itself rather than needing to precede it).
+**One config change worth knowing about**: `experiments.typedRoutes` was disabled in `app.json`. The generated route-types file (`.expo/types/router.d.ts`) proved unreliable — `expo export` only sometimes regenerated it, with no dependable manual trigger found, and it caused repeated false-positive type errors on every new route (unrelated to actual bugs). Routes work identically at runtime either way; this just drops compile-time literal-route-string checking. If re-enabling it later, expect to need `npx expo start` (not just `export`) running at least once to populate the types file.
 
 ---
 
