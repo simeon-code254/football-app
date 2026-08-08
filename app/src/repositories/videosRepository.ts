@@ -28,11 +28,16 @@ export type CreateVideoInput = {
   uploadIntent: 'highlight_only' | 'ai_analysis';
   durationSeconds?: number;
   /** Normalized (0-1) tap point from the upload flow's "tag yourself" step —
-   * where the uploader tapped themselves on the first frame. Only set for
-   * ai_analysis uploads where the user completed that optional step; the AI
-   * service falls back to its own heuristic when absent. */
+   * where the uploader tapped themselves on the extracted frame — plus the
+   * timestamp (ms into the video) that frame was taken from. The AI service
+   * needs the timestamp because the subject moves: the same (x,y) means a
+   * different thing a few seconds later, so it has to know which of its own
+   * independently-decoded frames the tap actually corresponds to. Only set
+   * for ai_analysis uploads where the user completed that optional step;
+   * the AI service falls back to its own heuristic when absent. */
   subjectHintX?: number;
   subjectHintY?: number;
+  subjectHintTimeMs?: number;
 };
 
 export async function createVideo(input: CreateVideoInput): Promise<VideoRow> {
@@ -52,6 +57,7 @@ export async function createVideo(input: CreateVideoInput): Promise<VideoRow> {
       duration_seconds: input.durationSeconds,
       subject_hint_x: input.subjectHintX,
       subject_hint_y: input.subjectHintY,
+      subject_hint_time_ms: input.subjectHintTimeMs,
       // No transcoding/moderation pipeline yet — the clip is watchable
       // immediately. video_analysis_jobs.status is what tracks AI progress.
       status: 'ready',

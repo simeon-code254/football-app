@@ -1064,6 +1064,7 @@ export type Database = {
           share_count: number
           status: string
           storage_path: string
+          subject_hint_time_ms: number | null
           subject_hint_x: number | null
           subject_hint_y: number | null
           tags: string[]
@@ -1086,6 +1087,7 @@ export type Database = {
           share_count?: number
           status?: string
           storage_path: string
+          subject_hint_time_ms?: number | null
           subject_hint_x?: number | null
           subject_hint_y?: number | null
           tags?: string[]
@@ -1108,6 +1110,7 @@ export type Database = {
           share_count?: number
           status?: string
           storage_path?: string
+          subject_hint_time_ms?: number | null
           subject_hint_x?: number | null
           subject_hint_y?: number | null
           tags?: string[]

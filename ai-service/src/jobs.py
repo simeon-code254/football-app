@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from src.config import POLL_INTERVAL_SECONDS
 from src.pipeline.run import run_pipeline
+from src.pipeline.subject import SubjectHint
 from src.scoring import write_scores
 from src.supabase_client import get_client
 
@@ -72,7 +73,10 @@ async def process_job(job_id: str) -> None:
     try:
         job_res = (
             await client.table("video_analysis_jobs")
-            .select("*, videos(storage_path, subject_hint_x, subject_hint_y), players(is_goalkeeper, height_cm)")
+            .select(
+                "*, videos(storage_path, subject_hint_x, subject_hint_y, subject_hint_time_ms), "
+                "players(is_goalkeeper, height_cm)"
+            )
             .eq("id", job_id)
             .single()
             .execute()
@@ -83,8 +87,16 @@ async def process_job(job_id: str) -> None:
 
         video_bytes = await client.storage.from_("videos").download(video["storage_path"])
 
-        hint_x, hint_y = video.get("subject_hint_x"), video.get("subject_hint_y")
-        subject_hint = (hint_x, hint_y) if hint_x is not None and hint_y is not None else None
+        hint_x, hint_y, hint_ms = (
+            video.get("subject_hint_x"),
+            video.get("subject_hint_y"),
+            video.get("subject_hint_time_ms"),
+        )
+        subject_hint = (
+            SubjectHint(x=hint_x, y=hint_y, time_s=hint_ms / 1000)
+            if hint_x is not None and hint_y is not None and hint_ms is not None
+            else None
+        )
 
         result = await asyncio.to_thread(
             run_pipeline, video_bytes, player.get("height_cm"), bool(player.get("is_goalkeeper")), subject_hint

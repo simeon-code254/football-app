@@ -7,7 +7,7 @@ from src.pipeline.attributes import compute_movement_stats, resolve_confidence, 
 from src.pipeline.calibrate import pixels_per_meter
 from src.pipeline.detect_track import track_frames
 from src.pipeline.extract import extract_frames
-from src.pipeline.subject import select_subject
+from src.pipeline.subject import SubjectHint, select_subject
 
 
 @dataclass
@@ -22,7 +22,7 @@ def run_pipeline(
     video_bytes: bytes,
     player_height_cm: int | None,
     is_goalkeeper: bool,
-    subject_hint: tuple[float, float] | None = None,
+    subject_hint: SubjectHint | None = None,
 ) -> PipelineResult:
     t0 = time.monotonic()
 

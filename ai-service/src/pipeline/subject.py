@@ -1,7 +1,24 @@
 import math
 from dataclasses import dataclass
 
+from src.config import FPS_SAMPLE_RATE
 from src.pipeline.detect_track import PERSON_CLASS, Detection
+
+# How far (in seconds) from the tap's actual timestamp we'll still trust a
+# match. The tap frame is decoded client-side (expo-video-thumbnails) and
+# the service decodes its own frames independently (OpenCV) — they won't
+# line up exactly, but the subject also won't have teleported. Wide enough
+# to absorb decoder disagreement, narrow enough that a match outside this
+# window is more likely "some other frame that happens to line up" than
+# genuinely the tapped moment.
+HINT_TIME_TOLERANCE_S = 2.0
+
+
+@dataclass
+class SubjectHint:
+    x: float  # normalized 0-1
+    y: float  # normalized 0-1
+    time_s: float  # when this (x,y) was captured, seconds into the clip
 
 
 @dataclass
@@ -19,19 +36,28 @@ def _center_and_area(xyxy: tuple[float, float, float, float]) -> tuple[float, fl
     return cx, cy, area
 
 
-def _match_hint(
-    per_frame: list[list[Detection]], frame_width: int, frame_height: int, hint: tuple[float, float]
-) -> int | None:
-    """hint is normalized (0-1) x,y from the upload flow's tap-to-confirm
-    step. Scans frames in order for the first person detection whose box
-    contains the tapped point; that detection's track ID becomes the
-    subject, no heuristic guessing needed. Returns None if the tap never
-    lands inside any detected person's box (e.g. detection missed that
-    frame, or the user tapped background) — caller falls back to the
-    heuristic in that case."""
-    px, py = hint[0] * frame_width, hint[1] * frame_height
-    for frame_dets in per_frame:
-        for det in frame_dets:
+def _match_hint(per_frame: list[list[Detection]], frame_width: int, frame_height: int, hint: SubjectHint) -> int | None:
+    """The tap is only meaningful near the moment it was taken — the subject
+    moves, so the same (x,y) means something different a few seconds later.
+    Searches this service's own sampled frames ordered by how close their
+    timestamp is to hint.time_s (closest first), within
+    HINT_TIME_TOLERANCE_S, for the first person detection whose box
+    contains the tapped point. Returns None (caller falls back to the
+    heuristic) if nothing matches within that window — a match found far
+    from the real tap moment is more likely coincidence than the same
+    person, so this deliberately does not fall back to searching the whole
+    clip.
+    """
+    px, py = hint.x * frame_width, hint.y * frame_height
+    target_frame_idx = hint.time_s * FPS_SAMPLE_RATE
+    max_frame_delta = HINT_TIME_TOLERANCE_S * FPS_SAMPLE_RATE
+
+    frame_order = sorted(range(len(per_frame)), key=lambda i: abs(i - target_frame_idx))
+
+    for frame_idx in frame_order:
+        if abs(frame_idx - target_frame_idx) > max_frame_delta:
+            break  # frame_order is sorted by distance — nothing further out will be closer
+        for det in per_frame[frame_idx]:
             if det.cls != PERSON_CLASS:
                 continue
             x1, y1, x2, y2 = det.xyxy
@@ -44,11 +70,11 @@ def select_subject(
     per_frame: list[list[Detection]],
     frame_width: int,
     frame_height: int,
-    hint: tuple[float, float] | None = None,
+    hint: SubjectHint | None = None,
 ) -> SubjectResult:
-    """If `hint` (a normalized tap point from the upload flow) is given and
-    lands inside a detected person's box in any sampled frame, that track
-    is the subject — no guessing, dominance_margin=1.0, hint_matched=True.
+    """If `hint` (a timestamped tap point from the upload flow) is given and
+    lands inside a detected person's box near that timestamp, that track is
+    the subject — no guessing, dominance_margin=1.0, hint_matched=True.
     Otherwise falls back to the heuristic below: NOT a solved problem, see
     ai-service/README.md. Picks the person track with the most screen time,
     largest average size, and most central average position, weighted

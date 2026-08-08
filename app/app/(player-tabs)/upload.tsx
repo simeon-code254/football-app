@@ -17,6 +17,11 @@ type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | n
 type TagFrame = { uri: string; width: number; height: number };
 type SubjectHint = { x: number; y: number }; // normalized 0-1, relative to TagFrame
 
+// The frame the "tag yourself" step shows is taken at this fixed offset —
+// the AI service needs to know it too (subjectHintTimeMs), since the same
+// tapped (x,y) means a different thing once the subject has moved.
+const TAG_FRAME_TIME_MS = 500;
+
 // Matches the mockup's UPLOAD tab: Highlight Reel / AI Analysis mode toggle,
 // dashed drop zone, Title/Description/Match/Opponent/Tags, Upload & Publish.
 // `uploadMode` maps directly to the `videos.upload_intent` field in the
@@ -71,7 +76,7 @@ export default function Upload() {
     setExtractingFrame(true);
     try {
       if (!tagFrame) {
-        const thumb = await VideoThumbnails.getThumbnailAsync(video.uri, { time: 500 });
+        const thumb = await VideoThumbnails.getThumbnailAsync(video.uri, { time: TAG_FRAME_TIME_MS });
         setTagFrame({ uri: thumb.uri, width: thumb.width, height: thumb.height });
       }
       setTagModalOpen(true);
@@ -93,7 +98,7 @@ export default function Upload() {
 
       let thumbnailPath: string | undefined;
       try {
-        const thumbUri = tagFrame?.uri ?? (await VideoThumbnails.getThumbnailAsync(video.uri, { time: 500 })).uri;
+        const thumbUri = tagFrame?.uri ?? (await VideoThumbnails.getThumbnailAsync(video.uri, { time: TAG_FRAME_TIME_MS })).uri;
         thumbnailPath = await videosRepository.uploadVideoThumbnail(userId, videoId, thumbUri);
       } catch {
         // Thumbnail generation can fail on some formats/platforms — the
@@ -119,6 +124,7 @@ export default function Upload() {
         durationSeconds: video.durationMs ? Math.round(video.durationMs / 1000) : undefined,
         subjectHintX: mode === 'ai' ? subjectHint?.x : undefined,
         subjectHintY: mode === 'ai' ? subjectHint?.y : undefined,
+        subjectHintTimeMs: mode === 'ai' && subjectHint ? TAG_FRAME_TIME_MS : undefined,
       });
 
       Alert.alert('Uploaded', 'Your video has been published.', [

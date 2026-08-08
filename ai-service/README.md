@@ -68,15 +68,23 @@ The first run downloads YOLOv8n's pretrained weights automatically into
 
 - **Subject-player disambiguation**: the upload flow has an optional "Tag
   Yourself" step (`app/(player-tabs)/upload.tsx`) — the uploader taps
-  themselves on a frame before publishing, stored as a normalized point on
-  `videos.subject_hint_x/y`. If present, `select_subject()` finds whichever
-  detected person's box contains that point in any sampled frame and uses
-  it directly (`dominance_margin=1.0`, `hint_matched=True` in
-  `result_summary`) — no guessing. **Only when no hint was given, or the tap
-  never lands inside a detected box**, it falls back to a heuristic (most
-  screen time + largest average size + most central position) that is NOT
-  solved — a highlight clip's subject can leave and re-enter frame across
-  cuts and get missed by it. See `src/pipeline/subject.py`.
+  themselves on a frame before publishing, stored as a normalized point
+  (`videos.subject_hint_x/y`) **plus the timestamp that frame was taken
+  from** (`subject_hint_time_ms`). The timestamp matters because the
+  subject moves — the same (x,y) means something different a few seconds
+  later, and the tap frame is decoded client-side (expo-video-thumbnails)
+  while the service decodes its own frames independently (OpenCV), so they
+  don't line up exactly. `select_subject()` searches its own sampled frames
+  ordered by closeness to that timestamp (within `HINT_TIME_TOLERANCE_S`,
+  2s) for the first person box containing the tapped point, and uses that
+  track directly (`dominance_margin=1.0`, `hint_matched=True` in
+  `result_summary`) — no guessing. A match found outside that time window
+  is deliberately *not* trusted (more likely coincidence than the same
+  person), and it falls back the same as when no hint was given at all.
+  **Only then** does it fall back to a heuristic (most screen time +
+  largest average size + most central position) that is NOT solved — a
+  highlight clip's subject can leave and re-enter frame across cuts and get
+  missed by it. See `src/pipeline/subject.py`.
 - **Pixel→meter calibration** has no camera calibration/homography — it
   uses the subject's average bounding-box height against `players.height_cm`
   (or a 170cm default) as a proxy for real-world scale. Assumes a roughly
