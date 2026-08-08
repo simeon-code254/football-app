@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +18,8 @@ import * as authRepository from '../src/repositories/authRepository';
 export default function Signup() {
   const { role } = useLocalSearchParams<{ role?: 'player' | 'scout' }>();
   const isScout = role === 'scout';
+  const submitLock = useRef(false);
+  const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('');
   const [email, setEmail] = useState('');
@@ -26,6 +28,7 @@ export default function Signup() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [retryAt, setRetryAt] = useState<number | null>(null);
 
   const canSubmit =
     acceptedTerms &&
@@ -34,10 +37,14 @@ export default function Signup() {
     email.trim() &&
     password.length >= 8 &&
     password === confirmPassword &&
-    (!isScout || organization.trim());
+    (!isScout || organization.trim()) &&
+    (!retryAt || Date.now() >= retryAt);
+
+  const retryLabel = retryAt ? `Try again in ${Math.max(1, Math.ceil((retryAt - Date.now()) / 1000))}s` : null;
 
   const submit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || submitting || submitLock.current) return;
+    submitLock.current = true;
     setSubmitting(true);
     try {
       await authRepository.signUp({
@@ -49,8 +56,18 @@ export default function Signup() {
       });
       router.push({ pathname: '/verify-email', params: { email: email.trim(), role: isScout ? 'scout' : 'player' } });
     } catch (err) {
+      const status = typeof err === 'object' && err && 'status' in err ? Number((err as { status?: unknown }).status) : null;
+      if (status === 429) {
+        const nextRetryAt = Date.now() + 60_000;
+        setRetryAt(nextRetryAt);
+        if (cooldownRef.current) clearTimeout(cooldownRef.current);
+        cooldownRef.current = setTimeout(() => setRetryAt(null), 60_000);
+        Alert.alert('Too many sign up attempts', 'Please wait a minute before trying again.');
+        return;
+      }
       Alert.alert('Sign up failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };

@@ -38,9 +38,9 @@ export default function ScoutEditProfile() {
         ]);
         setCountryCodeByName(Object.fromEntries(countries.map((c) => [c.name, c.code])));
         setFullName(profile.full_name ?? '');
-        setOrganization(scout.organization ?? '');
-        setCountry(countries.find((c) => c.code === scout.country_code)?.name ?? '');
-        setBio(scout.bio ?? '');
+        setOrganization(scout?.organization ?? '');
+        setCountry(scout?.country_code ? countries.find((c) => c.code === scout.country_code)?.name ?? '' : '');
+        setBio(scout?.bio ?? '');
       } catch (err) {
         Alert.alert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
       } finally {

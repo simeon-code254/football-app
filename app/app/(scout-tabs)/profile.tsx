@@ -53,7 +53,7 @@ export default function ScoutProfile() {
         scoutingRepository.listSavedPlayers(userId!),
         scoutingRepository.getPreferences(userId!),
       ]);
-      const countryName = countries.find((c) => c.code === scout.country_code)?.name ?? null;
+      const countryName = scout ? countries.find((c) => c.code === scout.country_code)?.name ?? null : null;
       return { profile, scout, countryName, trialsRun: trials.length, playersContacted: conversations.length, savedCount: saved.length, prefs };
     },
   });
@@ -100,10 +100,10 @@ export default function ScoutProfile() {
         </View>
         <Text style={styles.verifiedLabel}>{scoutVerified ? 'Verified Scout' : 'Verification Pending'}</Text>
         <Text style={styles.org}>
-          {[data?.scout.organization, data?.countryName].filter(Boolean).join(' · ') || '—'}
+          {[data?.scout?.organization, data?.countryName].filter(Boolean).join(' · ') || '—'}
         </Text>
         <Text style={styles.since}>
-          {data?.scout.scout_since ? `Scout since ${new Date(data.scout.scout_since).getFullYear()}` : ''}
+          {data?.scout?.scout_since ? `Scout since ${new Date(data.scout.scout_since).getFullYear()}` : ''}
         </Text>
         <Pressable style={styles.editProfileLink} onPress={() => router.push('/scout-edit-profile')}>
           <Feather name="edit-2" size={12} color={colors.primary} />
@@ -119,7 +119,7 @@ export default function ScoutProfile() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.bio}>{data?.scout.bio || 'No bio yet — add one from Edit Profile.'}</Text>
+        <Text style={styles.bio}>{data?.scout?.bio || 'No bio yet — add one from Edit Profile.'}</Text>
       </View>
 
       <View style={styles.section}>

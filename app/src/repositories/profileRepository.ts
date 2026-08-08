@@ -8,7 +8,7 @@ export type ScoutRow = Database['public']['Tables']['scouts']['Row'];
 export type PlayerPublicView = Database['public']['Views']['player_public_view']['Row'];
 export type CountryRow = Database['public']['Tables']['countries']['Row'];
 type PlayerUpdate = Database['public']['Tables']['players']['Update'];
-type ScoutUpdate = Database['public']['Tables']['scouts']['Update'];
+type ScoutInsert = Database['public']['Tables']['scouts']['Insert'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 export async function getMyProfile(userId: string): Promise<ProfileRow> {
@@ -23,8 +23,8 @@ export async function getMyPlayer(userId: string): Promise<PlayerRow> {
   return data;
 }
 
-export async function getMyScout(userId: string): Promise<ScoutRow> {
-  const { data, error } = await supabase.from('scouts').select('*').eq('id', userId).single();
+export async function getMyScout(userId: string): Promise<ScoutRow | null> {
+  const { data, error } = await supabase.from('scouts').select('*').eq('id', userId).maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -39,8 +39,8 @@ export async function updatePlayer(userId: string, patch: PlayerUpdate) {
   if (error) throw error;
 }
 
-export async function updateScout(userId: string, patch: ScoutUpdate) {
-  const { error } = await supabase.from('scouts').update(patch).eq('id', userId);
+export async function updateScout(userId: string, patch: Omit<ScoutInsert, 'id'>) {
+  const { error } = await supabase.from('scouts').upsert({ id: userId, ...patch }, { onConflict: 'id' });
   if (error) throw error;
 }
 

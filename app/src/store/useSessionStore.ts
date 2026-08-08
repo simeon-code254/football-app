@@ -52,7 +52,7 @@ export const useSessionStore = create<SessionState>((set) => ({
           player: null,
           scout,
           role,
-          scoutVerified: scout.verification_status === 'verified',
+          scoutVerified: scout?.verification_status === 'verified',
         });
       } else {
         const player = await profileRepository.getMyPlayer(session.user.id);
