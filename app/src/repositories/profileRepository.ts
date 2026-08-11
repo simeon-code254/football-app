@@ -78,7 +78,21 @@ export type PlayerFilters = {
   ids?: string[];
 };
 
-export async function listPlayerPublicViews(filters: PlayerFilters = {}): Promise<PlayerPublicView[]> {
+export type PlayerPage = { items: PlayerPublicView[]; hasMore: boolean };
+
+// Previously unbounded -- every filter/sort branch pulled the entire
+// player_public_view table on every call, fine at today's test-data scale
+// but a real problem well before the app reaches meaningful user counts.
+// Uses a pageSize+1 over-fetch (.range(from, from+pageSize)) to derive
+// hasMore without a second count query.
+export async function listPlayerPublicViews(
+  filters: PlayerFilters = {},
+  pagination: { page?: number; pageSize?: number } = {}
+): Promise<PlayerPage> {
+  const pageSize = pagination.pageSize ?? 20;
+  const from = (pagination.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
   let query = supabase.from('player_public_view').select('*');
   if (filters.ids) query = query.in('id', filters.ids);
   if (filters.position) query = query.eq('primary_position', filters.position);
@@ -93,9 +107,13 @@ export async function listPlayerPublicViews(filters: PlayerFilters = {}): Promis
   if (filters.sortBy === 'name') query = query.order('full_name', { ascending: true, nullsFirst: false });
   else if (filters.sortBy === 'age') query = query.order('age', { ascending: true, nullsFirst: false });
   else query = query.order('overall_rating', { ascending: false, nullsFirst: false });
+  query = query.range(from, to);
+
   const { data, error } = await query;
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
 }
 
 export type AttributeScore = {

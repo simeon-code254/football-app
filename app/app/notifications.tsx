@@ -35,7 +35,7 @@ function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | 
     case 'analysis_complete':
     case 'analysis_skipped':
     case 'analysis_failed':
-      return '/(player-tabs)/profile';
+      return '/ai-ratings';
     case 'scout_verification':
       return '/(scout-tabs)/home';
     default:

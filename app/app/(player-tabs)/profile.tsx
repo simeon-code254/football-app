@@ -12,6 +12,7 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { showAlert } from '../../src/lib/alert';
 
 function VideoPreview({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => p.play());
@@ -132,7 +133,11 @@ export default function Profile() {
 
       <View style={styles.tabRow}>
         {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} style={styles.tabItem}>
+          <Pressable
+            key={t}
+            onPress={() => (t === 'AI Ratings' ? router.push('/ai-ratings') : setTab(t))}
+            style={styles.tabItem}
+          >
             <Text style={[styles.tabLabel, tab === t && styles.tabLabelActive]}>{t}</Text>
             {tab === t && <View style={styles.tabIndicator} />}
           </Pressable>
@@ -169,44 +174,40 @@ export default function Profile() {
               </Text>
             )}
             {(data?.videos ?? []).map((v) => (
-              <Pressable key={v.id} style={styles.videoThumb} onPress={() => openVideo(v.storage_path)}>
+              <Pressable
+                key={v.id}
+                style={styles.videoThumb}
+                onPress={() =>
+                  v.is_removed
+                    ? showAlert(
+                        'Video removed',
+                        v.removed_reason || 'This video was removed by an admin for violating community guidelines.'
+                      )
+                    : openVideo(v.storage_path)
+                }
+              >
                 {thumbUrls?.[v.id] ? (
-                  <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} />
+                  <Image
+                    source={{ uri: thumbUrls[v.id] }}
+                    style={[StyleSheet.absoluteFill, v.is_removed && styles.videoThumbDimmed]}
+                  />
                 ) : (
                   <View style={[StyleSheet.absoluteFill, styles.videoThumbPlaceholder]}>
                     <Feather name="film" size={22} color={colors.textPlaceholder} />
                   </View>
                 )}
-                <View style={styles.videoPlay}>
-                  <Text style={styles.videoPlayGlyph}>▶</Text>
-                </View>
+                {v.is_removed ? (
+                  <View style={styles.removedBadge}>
+                    <Feather name="eye-off" size={11} color={colors.white} />
+                    <Text style={styles.removedBadgeText}>Removed</Text>
+                  </View>
+                ) : (
+                  <View style={styles.videoPlay}>
+                    <Text style={styles.videoPlayGlyph}>▶</Text>
+                  </View>
+                )}
               </Pressable>
             ))}
-          </View>
-        )}
-
-        {tab === 'AI Ratings' && (
-          <View style={{ gap: 14 }}>
-            <Text style={styles.aiNote}>
-              Ratings update automatically as new highlights are analyzed by the AI pipeline.
-            </Text>
-            {isProvisionalRating && (
-              <Text style={styles.provisionalNote}>
-                Provisional — {presentAttrCount} of {totalAttrCount} attributes assessed so far.
-              </Text>
-            )}
-            {(data?.attributes ?? []).map((attr) => (
-              <View key={attr.key} style={styles.skillRow}>
-                <Text style={styles.skillName}>{attr.displayName}</Text>
-                <View style={styles.skillTrack}>
-                  <View style={[styles.skillFill, { width: `${attr.value ?? 0}%` }]} />
-                </View>
-                <Text style={styles.skillVal}>{attr.value ?? '—'}</Text>
-              </View>
-            ))}
-            {data && data.attributes.every((a) => a.value == null) && (
-              <Text style={styles.aiNote}>No ratings yet — upload a highlight with AI Analysis enabled.</Text>
-            )}
           </View>
         )}
 
@@ -288,16 +289,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   videoThumbPlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted },
+  videoThumbDimmed: { opacity: 0.35 },
+  removedBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.error,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  removedBadgeText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.white },
   videoPlay: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   videoPlayGlyph: { color: colors.white, fontSize: 11 },
   videoCloseBtn: { position: 'absolute', top: 50, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  aiNote: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, lineHeight: 18 },
   provisionalNote: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, textAlign: 'center', marginTop: 4 },
-  skillRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  skillName: { width: 110, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
-  skillTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.surfaceMuted, overflow: 'hidden' },
-  skillFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
-  skillVal: { width: 28, textAlign: 'right', fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   statRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 14 },
   statRowLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
   statRowValue: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.textPrimary },

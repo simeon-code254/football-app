@@ -14,6 +14,7 @@ import * as scoutingRepository from '../../src/repositories/scoutingRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
 import { QueryState } from '../../src/components/QueryState';
+import { ReportModal } from '../../src/components/ReportModal';
 
 const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
 
@@ -39,6 +40,7 @@ export default function PlayerDetail() {
   const [note, setNote] = useState('');
   const [savingNote, setSavingNote] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['playerDetail', id],
@@ -167,6 +169,9 @@ export default function PlayerDetail() {
           <View style={styles.coverMask} />
           <View style={styles.coverTop}>
             <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
+            {viewerId && viewerId !== id && (
+              <IconButton icon="flag" light accessibilityLabel="Report this player" onPress={() => setReportOpen(true)} />
+            )}
           </View>
         </View>
 
@@ -372,6 +377,15 @@ export default function PlayerDetail() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ReportModal
+        visible={reportOpen}
+        title="Report Player"
+        targetType="profile"
+        targetId={id}
+        reporterId={viewerId ?? ''}
+        onClose={() => setReportOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -382,7 +396,7 @@ const styles = StyleSheet.create({
   cover: { height: 160 },
   coverImage: { width: '100%', height: '100%' },
   coverMask: { position: 'absolute', bottom: -1, left: 0, right: 0, height: 24, backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
-  coverTop: { position: 'absolute', top: 8, left: 20 },
+  coverTop: { position: 'absolute', top: 8, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' },
   headerBlock: { alignItems: 'center', marginTop: -44, paddingHorizontal: 20 },
   avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
   name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 10 },

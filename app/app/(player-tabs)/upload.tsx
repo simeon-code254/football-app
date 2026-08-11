@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, Platform, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
@@ -60,6 +60,19 @@ async function getVideoFrame(videoUri: string, timeMs: number): Promise<TagFrame
   return { uri: thumb.uri, width: thumb.width, height: thumb.height };
 }
 
+// The picked file's URI was previously handed straight to <Image> -- an
+// image decoder trying to parse a video container's raw bytes as pixel data
+// is exactly what produced the garbled/distorted preview. A real player,
+// same as everywhere else video is shown in this app.
+function VideoPreviewPlayer({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />;
+}
+
 // Matches the mockup's UPLOAD tab: Highlight Reel / AI Analysis mode toggle,
 // dashed drop zone, Title/Description/Match/Opponent/Tags, Upload & Publish.
 // `uploadMode` maps directly to the `videos.upload_intent` field in the
@@ -90,6 +103,15 @@ export default function Upload() {
     setVideo(null);
     setTagFrame(null);
     setSubjectHint(null);
+  };
+
+  const resetForm = () => {
+    resetVideo();
+    setTitle('');
+    setDescription('');
+    setMatchName('');
+    setOpponent('');
+    setTags('');
   };
 
   const pickVideo = async () => {
@@ -172,12 +194,17 @@ export default function Upload() {
         subjectHintTimeMs: mode === 'ai' && subjectHint ? TAG_FRAME_TIME_MS : undefined,
       });
 
+      // Previously this always force-navigated to Profile on OK, regardless
+      // of mode -- for a highlight-only upload nothing new shows up there
+      // (it's on Reels), and even for AI mode the analysis hasn't finished
+      // yet, so jumping away felt arbitrary rather than useful. Just reset
+      // the form and let the user decide where to go next.
       showAlert(
         mode === 'ai' ? 'Uploaded — Queued for Analysis' : 'Uploaded',
         mode === 'ai'
-          ? "Your video was submitted successfully and is queued for AI analysis. You'll see your ratings on your profile once processing completes."
+          ? "Your video was submitted successfully and is queued for AI analysis. You'll see your ratings in AI Ratings once processing completes."
           : 'Your video has been published to your highlights.',
-        [{ text: 'OK', onPress: () => router.push('/(player-tabs)/profile') }]
+        [{ text: 'OK', onPress: resetForm }]
       );
     } catch (err) {
       showAlert('Upload Failed', err instanceof Error ? err.message : 'Something went wrong submitting your video. Please try again.');
@@ -203,11 +230,7 @@ export default function Upload() {
 
         {video ? (
           <View style={styles.videoPreview}>
-            <Image source={{ uri: video.uri }} style={styles.videoPreviewImage} />
-            <View style={styles.videoPreviewOverlay}>
-              <Feather name="film" size={22} color={colors.white} />
-              <Text style={styles.videoPreviewText}>Video selected</Text>
-            </View>
+            <VideoPreviewPlayer uri={video.uri} />
             <Pressable style={styles.videoRemoveBtn} onPress={resetVideo}>
               <Feather name="x" size={14} color={colors.white} />
             </Pressable>
@@ -375,10 +398,15 @@ const styles = StyleSheet.create({
   },
   dropTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8 },
   dropSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
-  videoPreview: { height: 160, borderRadius: radii.xl, overflow: 'hidden', marginBottom: 20, backgroundColor: '#000' },
-  videoPreviewImage: { width: '100%', height: '100%', opacity: 0.6 },
-  videoPreviewOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  videoPreviewText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.white },
+  videoPreview: {
+    width: '70%',
+    alignSelf: 'center',
+    aspectRatio: 9 / 16,
+    borderRadius: radii.xl,
+    overflow: 'hidden',
+    marginBottom: 20,
+    backgroundColor: '#000',
+  },
   videoRemoveBtn: { position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   tagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 12, marginBottom: 20 },
   tagIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },

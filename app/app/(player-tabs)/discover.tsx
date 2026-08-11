@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
@@ -44,16 +44,31 @@ export default function Discover() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const { data: players, isLoading, isRefetching, error, refetch } = useQuery({
-    queryKey: ['discoverTrending', debouncedQuery, sortBy],
-    queryFn: () => profileRepository.listPlayerPublicViews({ search: debouncedQuery || undefined, sortBy }),
+  const PAGE_SIZE = 20;
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['discoverTrending', debouncedQuery, sortBy, filter],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      profileRepository.listPlayerPublicViews(
+        { search: debouncedQuery || undefined, sortBy, positions: CATEGORY_POSITIONS[filter] ?? undefined },
+        { page: pageParam, pageSize: PAGE_SIZE }
+      ),
+    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined),
   });
-
-  const filtered = useMemo(() => {
-    const allowed = CATEGORY_POSITIONS[filter];
-    if (!allowed) return players ?? [];
-    return (players ?? []).filter((p) => p.primary_position && allowed.includes(p.primary_position));
-  }, [players, filter]);
+  // Position-category filtering moved server-side (via `positions` above) --
+  // filtering client-side after a paginated fetch would break page
+  // accounting (a "full" page server-side could come back mostly empty
+  // after filtering, while hasMore still reflects the unfiltered count).
+  const filtered = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -102,6 +117,9 @@ export default function Discover() {
         ListHeaderComponent={<Text style={styles.sectionTitle}>Trending Players</Text>}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
+        onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
           <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
             <Text style={styles.emptyText}>No players found.</Text>

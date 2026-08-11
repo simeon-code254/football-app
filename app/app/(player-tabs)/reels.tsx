@@ -24,11 +24,13 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import type { CommentWithAuthor } from '../../src/repositories/videosRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { ReportModal } from '../../src/components/ReportModal';
 
 type ReelState = {
   id: string;
   videoUrl: string;
   storagePath: string;
+  creatorId: string;
   creatorName: string;
   creatorAvatar: string;
   badge: string;
@@ -54,6 +56,7 @@ async function buildFeed(userId: string): Promise<ReelState[]> {
     id: v.id,
     videoUrl: urls[i],
     storagePath: v.storage_path,
+    creatorId: v.player_id,
     creatorName: v.players?.profiles?.full_name || 'Player',
     creatorAvatar: v.players?.profiles?.avatar_url || images.avatarMale,
     badge: [v.players?.primary_position, v.players?.overall_rating != null ? `${v.players.overall_rating} OVR` : null]
@@ -78,6 +81,7 @@ function ReelItem({
   onSave,
   onShare,
   onOpenComments,
+  onReport,
 }: {
   item: ReelState;
   height: number;
@@ -86,6 +90,7 @@ function ReelItem({
   onSave: () => void;
   onShare: () => void;
   onOpenComments: () => void;
+  onReport?: () => void;
 }) {
   const player = useVideoPlayer(item.videoUrl, (p) => {
     p.loop = true;
@@ -143,6 +148,11 @@ function ReelItem({
           <Feather name="bookmark" size={26} color={item.saved ? colors.gold : colors.white} />
           <Text style={styles.actionCount}>{formatCount(item.saveCount)}</Text>
         </Pressable>
+        {onReport && (
+          <Pressable style={styles.actionItem} onPress={onReport} accessibilityLabel="Report this video">
+            <Feather name="flag" size={24} color={colors.white} />
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.bottomInfo}>
@@ -182,6 +192,7 @@ export default function Reels() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [reportTarget, setReportTarget] = useState<string | null>(null);
   const viewedRef = useRef<Set<string>>(new Set());
 
   const { data: comments } = useQuery({
@@ -261,9 +272,10 @@ export default function Reels() {
         onSave={() => toggleSave(item.id)}
         onShare={() => share(item.id)}
         onOpenComments={() => setCommentsFor(item.id)}
+        onReport={item.creatorId !== userId ? () => setReportTarget(item.id) : undefined}
       />
     ),
-    [viewportHeight, activeId, reels, isFocused]
+    [viewportHeight, activeId, reels, isFocused, userId]
   );
 
   return (
@@ -334,6 +346,15 @@ export default function Reels() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <ReportModal
+        visible={!!reportTarget}
+        title="Report Video"
+        targetType="video"
+        targetId={reportTarget ?? ''}
+        reporterId={userId ?? ''}
+        onClose={() => setReportTarget(null)}
+      />
     </View>
   );
 }

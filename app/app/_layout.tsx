@@ -36,6 +36,7 @@ export default function RootLayout() {
   const sessionStatus = useSessionStore((s) => s.status);
   const role = useSessionStore((s) => s.role);
   const player = useSessionStore((s) => s.player);
+  const profile = useSessionStore((s) => s.profile);
   const hydrate = useSessionStore((s) => s.hydrate);
   const segments = useSegments();
 
@@ -60,11 +61,26 @@ export default function RootLayout() {
   ]);
   useEffect(() => {
     if (!ready || sessionStatus !== 'signed-in' || role !== 'player' || !player) return;
+    if (profile?.is_active === false) return; // suspension gate below takes priority
     const top = segments[0] ?? '';
     if (!player.profile_completed && !AUTH_STACK_SCREENS.has(top)) {
       router.replace('/profile-complete');
     }
-  }, [ready, sessionStatus, role, player, segments]);
+  }, [ready, sessionStatus, role, player, profile, segments]);
+
+  // Same enforcement shape as above, but keyed only on profile (applies to
+  // both roles — an admin can suspend a scout too, not just players). A
+  // real UI-level lockout: hides the whole app behind /suspended, though it
+  // doesn't block writes at the RLS layer (a separate, larger change) and
+  // won't evict someone already mid-session until their next auth event.
+  const SUSPENSION_EXEMPT_SCREENS = new Set([...AUTH_STACK_SCREENS, 'suspended']);
+  useEffect(() => {
+    if (!ready || sessionStatus !== 'signed-in' || !profile) return;
+    const top = segments[0] ?? '';
+    if (profile.is_active === false && !SUSPENSION_EXEMPT_SCREENS.has(top)) {
+      router.replace('/suspended');
+    }
+  }, [ready, sessionStatus, profile, segments]);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready) await SplashScreen.hideAsync();
@@ -96,6 +112,9 @@ export default function RootLayout() {
             <Stack.Screen name="scout-verification" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="trials" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="news" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="ai-ratings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="suspended" />
             <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="compare" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="scout-edit-profile" options={{ animation: 'slide_from_right' }} />

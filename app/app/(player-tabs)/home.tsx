@@ -73,6 +73,9 @@ export default function Home() {
             <Text style={styles.name}>{data?.profile.full_name || 'Welcome'}</Text>
           </View>
           <View style={styles.headerActions}>
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/news')}>
+              <Feather name="file-text" size={18} color="#333" />
+            </Pressable>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/notifications')}>
               <Feather name="bell" size={18} color="#333" />
               {!!unreadCount && <View style={styles.dot} />}
@@ -87,7 +90,7 @@ export default function Home() {
               <Text style={styles.ratingLabel}>Overall Rating</Text>
               <Text style={styles.ratingValue}>{data?.player.overall_rating != null ? data.player.overall_rating : '—'}</Text>
             </View>
-            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/(player-tabs)/profile')}>
+            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/ai-ratings')}>
               <Text style={styles.viewReportText}>View Report</Text>
               <Feather name="arrow-right" size={14} color={colors.white} />
             </Pressable>

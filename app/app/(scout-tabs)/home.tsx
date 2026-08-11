@@ -78,13 +78,16 @@ export default function ScoutDashboard() {
     queryKey: ['scoutRecommended', userId, prefs],
     enabled: !!userId,
     queryFn: async () => {
-      const players = await profileRepository.listPlayerPublicViews({
-        positions: prefs?.positions?.length ? prefs.positions : undefined,
-        countryCodes: prefs?.countries?.length ? prefs.countries : undefined,
-        ageMin: prefs?.age_min ?? undefined,
-        ageMax: prefs?.age_max ?? undefined,
-        minOverall: prefs?.min_overall ?? undefined,
-      });
+      const { items: players } = await profileRepository.listPlayerPublicViews(
+        {
+          positions: prefs?.positions?.length ? prefs.positions : undefined,
+          countryCodes: prefs?.countries?.length ? prefs.countries : undefined,
+          ageMin: prefs?.age_min ?? undefined,
+          ageMax: prefs?.age_max ?? undefined,
+          minOverall: prefs?.min_overall ?? undefined,
+        },
+        { pageSize: 24 }
+      );
       const top = players.slice(0, 4);
       return Promise.all(
         top.map(async (p) => {
@@ -134,18 +137,21 @@ export default function ScoutDashboard() {
   const { data: topPerformers } = useQuery({
     queryKey: ['scoutTopPerformers', topFilter, prefs, scout?.country_code],
     enabled: !!userId,
-    queryFn: () => {
-      if (topFilter === 'My Positions') return profileRepository.listPlayerPublicViews({ positions: prefs?.positions });
-      if (topFilter === 'Under 18') return profileRepository.listPlayerPublicViews({ ageMax: 17 });
-      if (topFilter === 'Under 21') return profileRepository.listPlayerPublicViews({ ageMax: 20 });
+    queryFn: async () => {
+      if (topFilter === 'My Positions')
+        return (await profileRepository.listPlayerPublicViews({ positions: prefs?.positions }, { pageSize: 24 })).items;
+      if (topFilter === 'Under 18')
+        return (await profileRepository.listPlayerPublicViews({ ageMax: 17 }, { pageSize: 24 })).items;
+      if (topFilter === 'Under 21')
+        return (await profileRepository.listPlayerPublicViews({ ageMax: 20 }, { pageSize: 24 })).items;
       if (topFilter === 'My Region') {
         // Without a country_code, "showing everyone" would silently mislabel
         // an unfiltered list as region-filtered -- return nothing instead so
         // the empty state can prompt the scout to set their country.
         if (!scout?.country_code) return [];
-        return profileRepository.listPlayerPublicViews({ countryCode: scout.country_code });
+        return (await profileRepository.listPlayerPublicViews({ countryCode: scout.country_code }, { pageSize: 24 })).items;
       }
-      return profileRepository.listPlayerPublicViews({});
+      return (await profileRepository.listPlayerPublicViews({}, { pageSize: 24 })).items;
     },
   });
 
@@ -180,14 +186,19 @@ export default function ScoutDashboard() {
               )}
             </View>
           </View>
-          <Pressable style={styles.bellBtn} onPress={() => router.push('/notifications')}>
-            <Feather name="bell" size={18} color="#333" />
-            {!!unreadCount && (
-              <View style={styles.bellDot}>
-                <Text style={styles.bellDotText}>{unreadCount}</Text>
-              </View>
-            )}
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Pressable style={styles.bellBtn} onPress={() => router.push('/news')}>
+              <Feather name="file-text" size={18} color="#333" />
+            </Pressable>
+            <Pressable style={styles.bellBtn} onPress={() => router.push('/notifications')}>
+              <Feather name="bell" size={18} color="#333" />
+              {!!unreadCount && (
+                <View style={styles.bellDot}>
+                  <Text style={styles.bellDotText}>{unreadCount}</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
         </View>
 
         {!scoutVerified && scout?.verification_status === 'rejected' ? (

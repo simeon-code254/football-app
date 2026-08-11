@@ -12,6 +12,7 @@ import type { MessageRow } from '../../src/repositories/messagesRepository';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import { QueryState } from '../../src/components/QueryState';
 import { showAlert } from '../../src/lib/alert';
+import { ReportModal } from '../../src/components/ReportModal';
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -31,6 +32,7 @@ export default function Messages() {
   const { playerId } = useLocalSearchParams<{ playerId?: string }>();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [reportOpen, setReportOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: conversations, isLoading, isRefetching, error, refetch: refetchConversations } = useQuery({
@@ -166,12 +168,15 @@ export default function Messages() {
                 <Feather name="chevron-left" size={22} color={colors.textPrimary} />
               </Pressable>
               <Image source={{ uri: activeConversation?.players?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar} />
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.threadName}>{activeConversation?.players?.profiles?.full_name || 'Player'}</Text>
                 <Text style={styles.threadMeta}>
                   {activePlayerInfo ? `${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating ?? '—'} OVR` : ''}
                 </Text>
               </View>
+              <Pressable onPress={() => setReportOpen(true)} hitSlop={8} accessibilityLabel="Report this player">
+                <Feather name="flag" size={18} color={colors.textMuted} />
+              </Pressable>
             </View>
 
             <FlatList
@@ -222,6 +227,15 @@ export default function Messages() {
           </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
+
+      <ReportModal
+        visible={reportOpen}
+        title="Report User"
+        targetType="profile"
+        targetId={activeConversation?.player_id ?? ''}
+        reporterId={userId ?? ''}
+        onClose={() => setReportOpen(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
@@ -70,22 +70,38 @@ export default function DiscoverPlayers() {
   });
   const savedIds = savedRows?.map((r) => r.player_id) ?? [];
 
-  const { data: results, isLoading, isRefetching, error, refetch } = useQuery({
+  const PAGE_SIZE = 20;
+  const {
+    data,
+    isLoading,
+    isRefetching,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['discoverPlayers', debouncedQuery, filters, sortBy, savedOnly, savedIds],
     enabled: !savedOnly || savedRows != null,
-    queryFn: () =>
-      profileRepository.listPlayerPublicViews({
-        ids: savedOnly ? savedIds : undefined,
-        search: debouncedQuery || undefined,
-        positions: filters.positions.length ? filters.positions : undefined,
-        countryCodes: filters.countries.length ? filters.countries : undefined,
-        preferredFoot: filters.foot.length ? filters.foot : undefined,
-        ageMin: filters.minAge ? Number(filters.minAge) : undefined,
-        ageMax: filters.maxAge ? Number(filters.maxAge) : undefined,
-        minOverall: filters.minOverall ? Number(filters.minOverall) : undefined,
-        sortBy,
-      }),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      profileRepository.listPlayerPublicViews(
+        {
+          ids: savedOnly ? savedIds : undefined,
+          search: debouncedQuery || undefined,
+          positions: filters.positions.length ? filters.positions : undefined,
+          countryCodes: filters.countries.length ? filters.countries : undefined,
+          preferredFoot: filters.foot.length ? filters.foot : undefined,
+          ageMin: filters.minAge ? Number(filters.minAge) : undefined,
+          ageMax: filters.maxAge ? Number(filters.maxAge) : undefined,
+          minOverall: filters.minOverall ? Number(filters.minOverall) : undefined,
+          sortBy,
+        },
+        { page: pageParam, pageSize: PAGE_SIZE }
+      ),
+    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined),
   });
+  const results = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
 
   const toggleCompareMode = () => {
     setCompareMode((v) => !v);
@@ -171,11 +187,14 @@ export default function DiscoverPlayers() {
       )}
 
       <FlatList
-        data={results ?? []}
+        data={results}
         keyExtractor={(p) => p.id ?? ''}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
+        onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
           <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
             <View style={styles.empty}>

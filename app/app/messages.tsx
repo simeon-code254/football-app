@@ -12,6 +12,7 @@ import * as messagesRepository from '../src/repositories/messagesRepository';
 import type { MessageRow } from '../src/repositories/messagesRepository';
 import { QueryState } from '../src/components/QueryState';
 import { showAlert } from '../src/lib/alert';
+import { ReportModal } from '../src/components/ReportModal';
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -32,6 +33,7 @@ export default function Messages() {
   const { scoutId } = useLocalSearchParams<{ scoutId?: string }>();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [reportOpen, setReportOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: conversations, isLoading, isRefetching, error, refetch: refetchConversations } = useQuery({
@@ -145,10 +147,13 @@ export default function Messages() {
                 <Feather name="chevron-left" size={22} color={colors.textPrimary} />
               </Pressable>
               <Image source={{ uri: activeConversation?.scouts?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar} />
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.threadName}>{activeConversation?.scouts?.profiles?.full_name || 'Scout'}</Text>
                 <Text style={styles.threadMeta}>{activeConversation?.scouts?.organization || ''}</Text>
               </View>
+              <Pressable onPress={() => setReportOpen(true)} hitSlop={8} accessibilityLabel="Report this scout">
+                <Feather name="flag" size={18} color={colors.textMuted} />
+              </Pressable>
             </View>
 
             <FlatList
@@ -199,6 +204,15 @@ export default function Messages() {
           </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
+
+      <ReportModal
+        visible={reportOpen}
+        title="Report User"
+        targetType="profile"
+        targetId={activeConversation?.scout_id ?? ''}
+        reporterId={userId ?? ''}
+        onClose={() => setReportOpen(false)}
+      />
     </SafeAreaView>
   );
 }
