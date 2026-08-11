@@ -1,36 +1,26 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
-import * as authRepository from '../../src/repositories/authRepository';
+import { IconButton } from '../../src/components/IconButton';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as scoutingRepository from '../../src/repositories/scoutingRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as messagesRepository from '../../src/repositories/messagesRepository';
 import { POSITIONS } from '../../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../../src/constants/africanCountries';
-
-const SETTINGS_SECTIONS: { title: string; icon: React.ComponentProps<typeof Feather>['name'] }[] = [
-  { title: 'Account', icon: 'user' },
-  { title: 'Security', icon: 'shield' },
-  { title: 'Notifications', icon: 'bell' },
-  { title: 'Privacy', icon: 'eye-off' },
-  { title: 'Scouting Preferences', icon: 'sliders' },
-  { title: 'Language', icon: 'globe' },
-  { title: 'Theme', icon: 'moon' },
-  { title: 'Help', icon: 'help-circle' },
-];
+import { showAlert } from '../../src/lib/alert';
+import { QueryState } from '../../src/components/QueryState';
 
 // Scout Profile (spec §26) + Settings (§27) + Scouting Preferences (§28) —
 // preferences feed the Recommended For You / match-score logic (spec §29),
 // which is why it lives as a real (if locally-stored) form, not a stub.
 export default function ScoutProfile() {
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
-  const clearSession = useSessionStore((s) => s.clear);
   const userId = useSessionStore((s) => s.session?.user.id);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [prefPositions, setPrefPositions] = useState<string[]>([]);
@@ -40,7 +30,7 @@ export default function ScoutProfile() {
   const [minOverall, setMinOverall] = useState('');
   const [savingPrefs, setSavingPrefs] = useState(false);
 
-  const { data, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['scoutProfileScreen', userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -84,7 +74,7 @@ export default function ScoutProfile() {
       await refetch();
       setPrefsOpen(false);
     } catch (err) {
-      Alert.alert('Could not save preferences', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not save preferences', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSavingPrefs(false);
     }
@@ -92,7 +82,11 @@ export default function ScoutProfile() {
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
       <View style={styles.header}>
+        <View style={styles.headerSettingsBtn}>
+          <IconButton icon="settings" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+        </View>
         <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
         <View style={styles.nameRow}>
           <Text style={styles.name}>{data?.profile.full_name || 'Complete your profile'}</Text>
@@ -150,37 +144,17 @@ export default function ScoutProfile() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
+        <Text style={styles.sectionTitle}>Scouting Preferences</Text>
         <View style={styles.settingsList}>
-          {SETTINGS_SECTIONS.map((s) => (
-            <Pressable
-              key={s.title}
-              style={styles.settingsRow}
-              onPress={() => s.title === 'Scouting Preferences' && setPrefsOpen(true)}
-            >
-              <Feather name={s.icon} size={17} color={colors.textBody} style={{ width: 24 }} />
-              <Text style={styles.settingsText}>{s.title}</Text>
-              <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
-            </Pressable>
-          ))}
+          <Pressable style={styles.settingsRow} onPress={() => setPrefsOpen(true)}>
+            <Feather name="sliders" size={17} color={colors.textBody} style={{ width: 24 }} />
+            <Text style={styles.settingsText}>Preferred positions, age & rating filters</Text>
+            <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
+          </Pressable>
         </View>
-
-        <Pressable
-          style={styles.logoutRow}
-          onPress={async () => {
-            await authRepository.signOut();
-            clearSession();
-            router.replace('/welcome');
-          }}
-        >
-          <Feather name="log-out" size={17} color={colors.error} style={{ width: 24 }} />
-          <Text style={[styles.settingsText, { color: colors.error }]}>Logout</Text>
-        </Pressable>
-        <Pressable style={styles.logoutRow}>
-          <Feather name="trash-2" size={17} color={colors.textPlaceholder} style={{ width: 24 }} />
-          <Text style={[styles.settingsText, { color: colors.textPlaceholder }]}>Delete Account</Text>
-        </Pressable>
       </View>
+
+      </QueryState>
 
       <Modal visible={prefsOpen} animationType="slide" onRequestClose={() => setPrefsOpen(false)}>
         <View style={styles.prefsRoot}>
@@ -243,6 +217,7 @@ export default function ScoutProfile() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { alignItems: 'center', paddingTop: 32, paddingBottom: 20 },
+  headerSettingsBtn: { position: 'absolute', top: 44, right: 16, zIndex: 1 },
   avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surfaceMuted },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
   name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary },
@@ -266,7 +241,6 @@ const styles = StyleSheet.create({
   settingsList: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
   settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
   settingsText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
-  logoutRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 14, marginTop: 10 },
   prefsRoot: { flex: 1, backgroundColor: colors.surface, paddingTop: 50 },
   prefsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 10 },
   prefsTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary },

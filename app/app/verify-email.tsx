@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { AppTextField } from '../src/components/AppTextField';
+import { IconButton } from '../src/components/IconButton';
 import * as authRepository from '../src/repositories/authRepository';
 import * as profileRepository from '../src/repositories/profileRepository';
 import { useSessionStore } from '../src/store/useSessionStore';
+import { showAlert } from '../src/lib/alert';
 
 const RESEND_COOLDOWN_S = 30;
 
@@ -45,7 +47,7 @@ export default function VerifyEmail() {
         });
       }, 1000);
     } catch (err) {
-      Alert.alert('Could not resend', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not resend', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -112,6 +114,9 @@ export default function VerifyEmail() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <View style={styles.header}>
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
+      </View>
       <View style={styles.content}>
         <View style={styles.iconBadge}>
           <Feather name="mail" size={36} color={colors.primary} />
@@ -163,6 +168,7 @@ export default function VerifyEmail() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
+  header: { paddingHorizontal: 20, paddingTop: 4 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   iconBadge: {
     width: 80,

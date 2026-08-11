@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, fontFamily, fontSize, radii } from '../src/theme';
@@ -10,6 +10,7 @@ import { TypeaheadField } from '../src/components/TypeaheadField';
 import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
+import { showAlert } from '../src/lib/alert';
 
 // Scouts had no way to edit their profile after signup, same gap as the
 // player side — this is the scout counterpart (lighter than the player's
@@ -42,7 +43,7 @@ export default function ScoutEditProfile() {
         setCountry(scout?.country_code ? countries.find((c) => c.code === scout.country_code)?.name ?? '' : '');
         setBio(scout?.bio ?? '');
       } catch (err) {
-        Alert.alert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
+        showAlert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
       } finally {
         setLoading(false);
       }
@@ -64,7 +65,7 @@ export default function ScoutEditProfile() {
       await hydrate(session);
       router.replace('/(scout-tabs)/profile');
     } catch (err) {
-      Alert.alert('Could not save profile', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not save profile', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSaving(false);
     }
@@ -81,11 +82,12 @@ export default function ScoutEditProfile() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={{ width: 36 }} />
       </View>
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <AppTextField label="Full Name" icon="user" placeholder="Your name" value={fullName} onChangeText={setFullName} />
         <AppTextField label="Organization / Club" icon="briefcase" placeholder="Club or organization" value={organization} onChangeText={setOrganization} />
@@ -114,6 +116,7 @@ export default function ScoutEditProfile() {
           style={{ marginTop: 8 }}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

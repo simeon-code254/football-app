@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { POSITIONS } from '../../src/constants/football';
+import { showAlert } from '../../src/lib/alert';
+import { QueryState } from '../../src/components/QueryState';
 
 function parseDate(text: string): string | null {
   const parts = text.split(/\D+/).filter(Boolean);
@@ -43,7 +45,7 @@ export default function Trials() {
   const [description, setDescription] = useState('');
   const [publishing, setPublishing] = useState(false);
 
-  const { data: trials, isLoading, refetch } = useQuery({
+  const { data: trials, isLoading, error, refetch } = useQuery({
     queryKey: ['myTrials', userId],
     enabled: !!userId,
     queryFn: () => trialsRepository.listMyTrials(userId!),
@@ -68,7 +70,7 @@ export default function Trials() {
     const trialDateIso = parseDate(trialDate);
     const deadlineIso = parseDate(deadline);
     if (!title.trim() || !club.trim() || !location.trim() || !trialDateIso || !deadlineIso) {
-      Alert.alert('Missing details', 'Fill in title, club, location, trial date and deadline (DD / MM / YYYY).');
+      showAlert('Missing details', 'Fill in title, club, location, trial date and deadline (DD / MM / YYYY).');
       return;
     }
     setPublishing(true);
@@ -89,7 +91,7 @@ export default function Trials() {
       setCreateOpen(false);
       refetch();
     } catch (err) {
-      Alert.alert('Could not create trial', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not create trial', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setPublishing(false);
     }
@@ -116,9 +118,8 @@ export default function Trials() {
       )}
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
-        ) : !trials?.length ? (
+        <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+        {!trials?.length ? (
           <View style={styles.empty}>
             <Feather name="clipboard" size={28} color={colors.textPlaceholder} />
             <Text style={styles.emptyTitle}>You don't have any active trials.</Text>
@@ -148,6 +149,7 @@ export default function Trials() {
             );
           })
         )}
+        </QueryState>
       </ScrollView>
 
       <Modal visible={createOpen} animationType="slide" onRequestClose={() => setCreateOpen(false)}>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, Modal, TextInput, KeyboardAvoidingView, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ import { images } from '../src/constants/images';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as messagesRepository from '../src/repositories/messagesRepository';
 import type { MessageRow } from '../src/repositories/messagesRepository';
+import { QueryState } from '../src/components/QueryState';
+import { showAlert } from '../src/lib/alert';
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -32,7 +34,7 @@ export default function Messages() {
   const [draft, setDraft] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: conversations, refetch: refetchConversations } = useQuery({
+  const { data: conversations, isLoading, isRefetching, error, refetch: refetchConversations } = useQuery({
     queryKey: ['playerConversations', userId],
     enabled: !!userId,
     queryFn: () => messagesRepository.listConversations(userId!),
@@ -58,6 +60,11 @@ export default function Messages() {
     queryFn: () => messagesRepository.listMessages(activeConversationId!),
   });
 
+  const threadListRef = useRef<FlatList<MessageRow>>(null);
+  useEffect(() => {
+    if (messages?.length) requestAnimationFrame(() => threadListRef.current?.scrollToEnd({ animated: true }));
+  }, [messages?.length]);
+
   useEffect(() => {
     if (!activeConversationId || !userId) return;
     messagesRepository.markMessagesRead(activeConversationId, userId).then(() => refetchConversations());
@@ -77,19 +84,21 @@ export default function Messages() {
       await messagesRepository.sendMessage(activeConversationId, userId, body);
       refetchMessages();
       refetchConversations();
-    } catch {
+    } catch (err) {
       setDraft(body);
+      showAlert('Message not sent', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Messages</Text>
         <View style={{ width: 36 }} />
       </View>
 
+      <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations}>
       {!conversations?.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />
@@ -101,6 +110,7 @@ export default function Messages() {
           data={conversations}
           keyExtractor={(c) => c.id}
           contentContainerStyle={{ padding: 20, gap: 10 }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetchConversations} colors={[colors.primary]} tintColor={colors.primary} />}
           renderItem={({ item }) => {
             const scout = item.scouts;
             const preview = previews?.[item.id];
@@ -125,6 +135,7 @@ export default function Messages() {
           }}
         />
       )}
+      </QueryState>
 
       <Modal visible={!!activeConversationId} animationType="slide" onRequestClose={() => setActiveConversationId(null)}>
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -141,14 +152,24 @@ export default function Messages() {
             </View>
 
             <FlatList
+              ref={threadListRef}
               data={messages ?? []}
               keyExtractor={(m) => m.id}
               contentContainerStyle={styles.threadBody}
-              renderItem={({ item }) => (
-                <View style={[styles.bubble, item.sender_id === userId ? styles.bubbleMine : styles.bubbleTheirs]}>
-                  <Text style={item.sender_id === userId ? styles.bubbleTextMine : styles.bubbleText}>{item.body}</Text>
-                </View>
-              )}
+              renderItem={({ item }) => {
+                const mine = item.sender_id === userId;
+                return (
+                  <View style={mine ? styles.bubbleRowMine : styles.bubbleRowTheirs}>
+                    <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
+                      <Text style={mine ? styles.bubbleTextMine : styles.bubbleText}>{item.body}</Text>
+                    </View>
+                    <Text style={styles.bubbleMeta}>
+                      {timeAgo(item.created_at)}
+                      {mine ? (item.read_at ? ' · Read' : ' · Sent') : ''}
+                    </Text>
+                  </View>
+                );
+              }}
               ListEmptyComponent={
                 <View style={styles.contextBubble}>
                   <Text style={styles.contextText}>
@@ -204,6 +225,9 @@ const styles = StyleSheet.create({
   threadBody: { flexGrow: 1, padding: 20, gap: 8 },
   contextBubble: { backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 12, alignSelf: 'flex-start', maxWidth: '90%' },
   contextText: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textBody, lineHeight: 18 },
+  bubbleRowMine: { alignItems: 'flex-end' },
+  bubbleRowTheirs: { alignItems: 'flex-start' },
+  bubbleMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, marginTop: 2, marginHorizontal: 2 },
   bubble: { borderRadius: radii.md, padding: 10, maxWidth: '80%' },
   bubbleMine: { backgroundColor: colors.primary, alignSelf: 'flex-end' },
   bubbleTheirs: { backgroundColor: colors.surface, alignSelf: 'flex-start' },

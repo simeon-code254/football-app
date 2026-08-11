@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as verificationRepository from '../src/repositories/verificationRepository';
+import * as profileRepository from '../src/repositories/profileRepository';
+import { showAlert } from '../src/lib/alert';
 
 type DocType = 'id_document' | 'proof_of_organization' | 'certification';
 
@@ -43,9 +46,28 @@ type PickedFile = { name: string; uri: string; mimeType?: string | null };
 // Supabase, same as the rest of the app right now.
 export default function ScoutVerification() {
   const userId = useSessionStore((s) => s.session?.user.id);
+  const queryClient = useQueryClient();
   const [files, setFiles] = useState<Partial<Record<DocType, PickedFile>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Revisiting this screen after already submitting (a past session, or
+  // just navigating back) always showed the blank form again -- `submitted`
+  // was local-only state, so there was no way to tell "already submitted,
+  // under review" from "never submitted", and a rejected scout had no
+  // visible reason at all.
+  const { data: scout } = useQuery({
+    queryKey: ['scoutVerificationStatus', userId],
+    enabled: !!userId,
+    queryFn: () => profileRepository.getMyScout(userId!),
+  });
+  const { data: existingDocs } = useQuery({
+    queryKey: ['scoutVerificationDocs', userId],
+    enabled: !!userId,
+    queryFn: () => verificationRepository.listMyDocuments(userId!),
+  });
+  const alreadyUnderReview = scout?.verification_status === 'pending' && (existingDocs?.length ?? 0) > 0;
+  const rejected = scout?.verification_status === 'rejected';
 
   const requiredMet = SLOTS.filter((s) => s.required).every((s) => files[s.type]);
 
@@ -69,15 +91,16 @@ export default function ScoutVerification() {
       for (const [type, file] of entries) {
         await verificationRepository.uploadVerificationDocument(userId, type, file.uri, file.name);
       }
+      queryClient.invalidateQueries({ queryKey: ['scoutVerificationDocs', userId] });
       setSubmitted(true);
     } catch (err) {
-      Alert.alert('Submission failed', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Submission failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (submitted) {
+  if (submitted || alreadyUnderReview) {
     return (
       <SafeAreaView style={styles.root}>
         <View style={styles.successWrap}>
@@ -97,12 +120,20 @@ export default function ScoutVerification() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Verification Documents</Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {rejected && (
+          <View style={styles.rejectedBanner}>
+            <Feather name="x-circle" size={16} color={colors.error} />
+            <Text style={styles.rejectedBannerText}>
+              {scout?.verification_notes || "Your previous submission wasn't approved."} Please review and resubmit below.
+            </Text>
+          </View>
+        )}
         <Text style={styles.intro}>
           Submit the documents below so our team can verify your scout account. Verified scouts can message players
           and create public trials.
@@ -156,6 +187,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   content: { padding: 20, paddingTop: 8, gap: 18 },
   intro: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, lineHeight: 20 },
+  rejectedBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FEF2F2', borderRadius: radii.md, padding: 12 },
+  rejectedBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.error, lineHeight: 18 },
   slot: { gap: 6 },
   slotHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   slotLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },

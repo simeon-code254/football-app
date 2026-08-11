@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admins: {
@@ -192,6 +167,47 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_id_fkey"
             columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_posts: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          is_published: boolean
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_posts_author_id_fkey"
+            columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -438,18 +454,21 @@ export type Database = {
         Row: {
           id: number
           viewed_at: string
+          viewed_day: string | null
           viewed_profile_id: string
           viewer_id: string
         }
         Insert: {
           id?: never
           viewed_at?: string
+          viewed_day?: string | null
           viewed_profile_id: string
           viewer_id: string
         }
         Update: {
           id?: never
           viewed_at?: string
+          viewed_day?: string | null
           viewed_profile_id?: string
           viewer_id?: string
         }
@@ -476,8 +495,12 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_active: boolean
           phone: string | null
           role: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_reason: string | null
           updated_at: string
         }
         Insert: {
@@ -485,8 +508,12 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          is_active?: boolean
           phone?: string | null
           role: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           updated_at?: string
         }
         Update: {
@@ -494,11 +521,77 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_active?: boolean
           phone?: string | null
           role?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_suspended_by_fkey"
+            columns: ["suspended_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_player_folders: {
         Row: {
@@ -838,7 +931,7 @@ export type Database = {
           id: string
           location: string
           positions: Database["public"]["Enums"]["position_code"][]
-          scout_id: string
+          scout_id: string | null
           status: string
           title: string
           trial_date: string
@@ -854,7 +947,7 @@ export type Database = {
           id?: string
           location: string
           positions?: Database["public"]["Enums"]["position_code"][]
-          scout_id: string
+          scout_id?: string | null
           status?: string
           title: string
           trial_date: string
@@ -870,7 +963,7 @@ export type Database = {
           id?: string
           location?: string
           positions?: Database["public"]["Enums"]["position_code"][]
-          scout_id?: string
+          scout_id?: string | null
           status?: string
           title?: string
           trial_date?: string
@@ -1056,10 +1149,14 @@ export type Database = {
           description: string | null
           duration_seconds: number | null
           id: string
+          is_removed: boolean
           like_count: number
           match_name: string | null
           opponent: string | null
           player_id: string
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
           save_count: number
           share_count: number
           status: string
@@ -1079,10 +1176,14 @@ export type Database = {
           description?: string | null
           duration_seconds?: number | null
           id?: string
+          is_removed?: boolean
           like_count?: number
           match_name?: string | null
           opponent?: string | null
           player_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           save_count?: number
           share_count?: number
           status?: string
@@ -1102,10 +1203,14 @@ export type Database = {
           description?: string | null
           duration_seconds?: number | null
           id?: string
+          is_removed?: boolean
           like_count?: number
           match_name?: string | null
           opponent?: string | null
           player_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
           save_count?: number
           share_count?: number
           status?: string
@@ -1132,6 +1237,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1326,9 +1438,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       position_code: [

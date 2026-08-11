@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Image, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as Linking from 'expo-linking';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
@@ -14,6 +15,7 @@ import { POSITIONS, GENDERS } from '../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
+import { showAlert } from '../src/lib/alert';
 
 const STEP_TITLES = ['Personal Details', 'Football Info', 'About You', 'Social Links'];
 const FOOT_OPTIONS = ['Right', 'Left', 'Both'] as const;
@@ -135,7 +137,7 @@ export default function ProfileComplete() {
         });
         setExistingAvatarUrl(profile.avatar_url);
       } catch (err) {
-        Alert.alert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
+        showAlert('Could not load profile', err instanceof Error ? err.message : 'Please try again.');
       } finally {
         setLoadingEdit(false);
       }
@@ -145,7 +147,13 @@ export default function ProfileComplete() {
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to set a profile photo.');
+      showAlert(
+        'Permission needed',
+        'Allow photo library access to set a profile photo.',
+        perm.canAskAgain || Platform.OS === 'web'
+          ? undefined
+          : [{ text: 'Cancel', style: 'cancel' }, { text: 'Open Settings', onPress: () => Linking.openSettings() }]
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -203,7 +211,7 @@ export default function ProfileComplete() {
       await hydrate(session);
       router.replace(isEdit ? '/(player-tabs)/profile' : '/(player-tabs)/home');
     } catch (err) {
-      Alert.alert('Could not save profile', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not save profile', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSaving(false);
     }
@@ -211,11 +219,11 @@ export default function ProfileComplete() {
 
   const next = () => {
     if (step === 1 && !step1Valid) {
-      Alert.alert('Missing details', 'Full name, date of birth, and nationality are required.');
+      showAlert('Missing details', 'Full name, date of birth, and nationality are required.');
       return;
     }
     if (step === 2 && !step2Valid) {
-      Alert.alert('Missing details', 'Select your primary position.');
+      showAlert('Missing details', 'Select your primary position.');
       return;
     }
     if (isLast) {
@@ -252,6 +260,7 @@ export default function ProfileComplete() {
         </View>
       </View>
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {step === 1 && (
           <View style={styles.stepBody}>
@@ -260,7 +269,7 @@ export default function ProfileComplete() {
                 <Image source={{ uri: photoUri ?? existingAvatarUrl ?? undefined }} style={styles.photoPreview} />
               ) : (
                 <>
-                  <Feather name="camera" size={22} color="#9CA3AF" />
+                  <Feather name="camera" size={22} color={colors.textDisabled} />
                   <Text style={styles.photoUploadLabel}>Add Photo</Text>
                 </>
               )}
@@ -343,7 +352,7 @@ export default function ProfileComplete() {
         )}
 
         <View style={styles.navRow}>
-          {step > 1 && <IconButton icon="chevron-left" onPress={() => setStep((s) => s - 1)} size={52} style={styles.backBtn} />}
+          {step > 1 && <IconButton icon="chevron-left" accessibilityLabel="Previous step" onPress={() => setStep((s) => s - 1)} size={52} style={styles.backBtn} />}
           <PrimaryButton
             label={saving ? 'Saving…' : isLast ? (isEdit ? 'Save Changes' : 'Complete Profile') : 'Continue'}
             onPress={next}
@@ -353,6 +362,7 @@ export default function ProfileComplete() {
           />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -384,7 +394,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   photoUploadFilled: { borderStyle: 'solid', borderColor: colors.primary },
-  photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: 9, color: '#9CA3AF', marginTop: 2 },
+  photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: 9, color: colors.textDisabled, marginTop: 2 },
   photoPreview: { width: '100%', height: '100%', borderRadius: 40 },
   footRow: { flexDirection: 'row', gap: 8 },
   footPill: {

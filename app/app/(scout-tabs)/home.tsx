@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import * as messagesRepository from '../../src/repositories/messagesRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
+import { QueryState } from '../../src/components/QueryState';
 
 const TOP_FILTERS = ['All', 'My Region', 'My Positions', 'Under 18', 'Under 21'] as const;
 
@@ -35,7 +36,7 @@ export default function ScoutDashboard() {
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
   const userId = useSessionStore((s) => s.session?.user.id);
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading, isRefetching: profileRefetching, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ['scoutHomeProfile', userId],
     enabled: !!userId,
     queryFn: () => profileRepository.getMyProfile(userId!),
@@ -119,12 +120,14 @@ export default function ScoutDashboard() {
 
   const { data: uploadThumbs } = useQuery({
     queryKey: ['scoutRecentUploadThumbs', recentUploads?.map((v) => v.id)],
-    enabled: !!recentUploads?.length,
+    enabled: !!recentUploads?.some((v) => v.thumbnail_path),
     queryFn: async () => {
-      const urls = await Promise.all(
-        recentUploads!.map((v) => videosRepository.getVideoUrl(v.thumbnail_path || v.storage_path))
-      );
-      return Object.fromEntries(recentUploads!.map((v, i) => [v.id, urls[i]]));
+      // A video with no real thumbnail used to fall back to a signed URL
+      // for the video FILE itself, handed to an <Image> that can't decode
+      // it -- rendered as nothing. Only real thumbnails get a URL here.
+      const withThumb = recentUploads!.filter((v) => v.thumbnail_path);
+      const urls = await Promise.all(withThumb.map((v) => videosRepository.getVideoUrl(v.thumbnail_path!)));
+      return Object.fromEntries(withThumb.map((v, i) => [v.id, urls[i]]));
     },
   });
 
@@ -135,7 +138,13 @@ export default function ScoutDashboard() {
       if (topFilter === 'My Positions') return profileRepository.listPlayerPublicViews({ positions: prefs?.positions });
       if (topFilter === 'Under 18') return profileRepository.listPlayerPublicViews({ ageMax: 17 });
       if (topFilter === 'Under 21') return profileRepository.listPlayerPublicViews({ ageMax: 20 });
-      if (topFilter === 'My Region' && scout?.country_code) return profileRepository.listPlayerPublicViews({ countryCode: scout.country_code });
+      if (topFilter === 'My Region') {
+        // Without a country_code, "showing everyone" would silently mislabel
+        // an unfiltered list as region-filtered -- return nothing instead so
+        // the empty state can prompt the scout to set their country.
+        if (!scout?.country_code) return [];
+        return profileRepository.listPlayerPublicViews({ countryCode: scout.country_code });
+      }
       return profileRepository.listPlayerPublicViews({});
     },
   });
@@ -148,7 +157,11 @@ export default function ScoutDashboard() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <QueryState isLoading={profileLoading} error={profileError} onRetry={refetchProfile}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={profileRefetching} onRefresh={refetchProfile} colors={[colors.primary]} tintColor={colors.primary} />}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -160,6 +173,8 @@ export default function ScoutDashboard() {
                   <Feather name="check-circle" size={12} color={colors.success} />
                   <Text style={styles.verifiedText}>Verified Scout</Text>
                 </View>
+              ) : scout?.verification_status === 'rejected' ? (
+                <Text style={[styles.pendingText, { color: colors.error }]}>Verification Rejected</Text>
               ) : (
                 <Text style={styles.pendingText}>Verification Pending</Text>
               )}
@@ -175,14 +190,24 @@ export default function ScoutDashboard() {
           </Pressable>
         </View>
 
-        {!scoutVerified && (
-          <Pressable style={styles.verifyBanner} onPress={() => router.push('/scout-verification')}>
-            <Feather name="alert-circle" size={16} color={colors.goldDark} />
-            <Text style={styles.verifyBannerText}>
-              Complete verification to message players and create trials.
+        {!scoutVerified && scout?.verification_status === 'rejected' ? (
+          <Pressable style={[styles.verifyBanner, styles.verifyBannerRejected]} onPress={() => router.push('/scout-verification')}>
+            <Feather name="x-circle" size={16} color={colors.error} />
+            <Text style={[styles.verifyBannerText, { color: colors.error }]}>
+              {scout?.verification_notes || "Your verification wasn't approved. Please review and resubmit."}
             </Text>
-            <Text style={styles.verifyBannerCta}>Complete</Text>
+            <Text style={[styles.verifyBannerCta, { color: colors.error }]}>Resubmit</Text>
           </Pressable>
+        ) : (
+          !scoutVerified && (
+            <Pressable style={styles.verifyBanner} onPress={() => router.push('/scout-verification')}>
+              <Feather name="alert-circle" size={16} color={colors.goldDark} />
+              <Text style={styles.verifyBannerText}>
+                Complete verification to message players and create trials.
+              </Text>
+              <Text style={styles.verifyBannerCta}>Complete</Text>
+            </Pressable>
+          )
         )}
 
         {/* Global search */}
@@ -200,7 +225,7 @@ export default function ScoutDashboard() {
             disabled={!scoutVerified}
             onPress={() => router.push('/(scout-tabs)/trials')}
           />
-          <QuickAction icon="heart" label="Saved Players" onPress={() => router.push('/(scout-tabs)/players')} />
+          <QuickAction icon="heart" label="Saved Players" onPress={() => router.push('/(scout-tabs)/players?saved=1')} />
           <QuickAction icon="clipboard" label="Applications" onPress={() => router.push('/(scout-tabs)/trials')} />
         </View>
 
@@ -229,7 +254,7 @@ export default function ScoutDashboard() {
             <Text style={styles.emptyText}>No recommendations yet — set your Scouting Preferences.</Text>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
-              {recommended.map((r, i) => (
+              {recommended.map((r) => (
                 <ScoutPlayerCard
                   key={r.player.id}
                   id={r.player.id ?? ''}
@@ -240,7 +265,7 @@ export default function ScoutDashboard() {
                   country={r.player.nationality_name}
                   age={r.player.age}
                   topAttributes={r.attrs}
-                  matchReasons={i === 0 ? r.reasons : undefined}
+                  matchReasons={r.reasons.length ? r.reasons : undefined}
                   saved={r.saved}
                   onToggleSave={() => toggleSave(r.player.id ?? '', r.saved)}
                 />
@@ -258,7 +283,13 @@ export default function ScoutDashboard() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
               {recentUploads.map((v) => (
                 <Pressable key={v.id} style={styles.uploadCard} onPress={() => router.push({ pathname: '/player/[id]', params: { id: v.player_id } })}>
-                  {uploadThumbs?.[v.id] && <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} />}
+                  {uploadThumbs?.[v.id] ? (
+                    <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} />
+                  ) : (
+                    <View style={[styles.uploadThumb, styles.uploadThumbPlaceholder]}>
+                      <Feather name="film" size={20} color={colors.textPlaceholder} />
+                    </View>
+                  )}
                   <View style={styles.uploadPlay}>
                     <Feather name="play" size={14} color={colors.white} />
                   </View>
@@ -288,7 +319,11 @@ export default function ScoutDashboard() {
           </ScrollView>
           <View style={styles.leaderboard}>
             {!topPerformers?.length ? (
-              <Text style={[styles.emptyText, { padding: 14 }]}>No players match this filter.</Text>
+              <Text style={[styles.emptyText, { padding: 14 }]}>
+                {topFilter === 'My Region' && !scout?.country_code
+                  ? 'Set your country in Edit Profile to filter by region.'
+                  : 'No players match this filter.'}
+              </Text>
             ) : (
               topPerformers.slice(0, 4).map((p, i) => (
                 <Pressable key={p.id} style={styles.leaderRow} onPress={() => router.push({ pathname: '/player/[id]', params: { id: p.id ?? '' } })}>
@@ -326,6 +361,7 @@ export default function ScoutDashboard() {
           )}
         </View>
       </ScrollView>
+      </QueryState>
     </SafeAreaView>
   );
 }
@@ -375,6 +411,7 @@ const styles = StyleSheet.create({
   bellDot: { position: 'absolute', top: -4, right: -4, backgroundColor: '#FF4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: colors.surface },
   bellDotText: { fontFamily: fontFamily.bold, fontSize: 9, color: colors.white },
   verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF8E1', marginHorizontal: 20, borderRadius: radii.md, padding: 12, marginBottom: 14 },
+  verifyBannerRejected: { backgroundColor: '#FEF2F2' },
   verifyBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: '#7A5C00' },
   verifyBannerCta: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.goldDark },
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, height: 46, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: 14, marginBottom: 16 },
@@ -394,6 +431,7 @@ const styles = StyleSheet.create({
   overviewLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
   uploadCard: { width: 160, backgroundColor: colors.surface, borderRadius: radii.lg, overflow: 'hidden', paddingBottom: 10 },
   uploadThumb: { width: '100%', height: 110 },
+  uploadThumbPlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted },
   uploadPlay: { position: 'absolute', top: 40, left: 66, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
   uploadName: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary, marginTop: 8, marginHorizontal: 10 },
   uploadMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginHorizontal: 10, marginTop: 1 },

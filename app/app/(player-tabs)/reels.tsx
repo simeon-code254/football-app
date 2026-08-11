@@ -11,8 +11,10 @@ import {
   Platform,
   Image,
   ViewToken,
+  RefreshControl,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Feather } from '@expo/vector-icons';
@@ -21,6 +23,7 @@ import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import type { CommentWithAuthor } from '../../src/repositories/videosRepository';
+import { QueryState } from '../../src/components/QueryState';
 
 type ReelState = {
   id: string;
@@ -87,15 +90,29 @@ function ReelItem({
   const player = useVideoPlayer(item.videoUrl, (p) => {
     p.loop = true;
   });
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (isActive) player.play();
+    // Reset any manual pause once this item becomes active again (e.g. it
+    // scrolled away and back) -- re-entering a reel should always autoplay.
+    if (isActive) setPaused(false);
+  }, [isActive]);
+
+  useEffect(() => {
+    if (isActive && !paused) player.play();
     else player.pause();
-  }, [isActive, player]);
+  }, [isActive, paused, player]);
 
   return (
     <View style={{ height, width: '100%' }}>
-      <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+      <Pressable style={StyleSheet.absoluteFill} onPress={() => setPaused((p) => !p)}>
+        <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+      </Pressable>
+      {paused && (
+        <View style={[StyleSheet.absoluteFill, styles.pauseOverlay]} pointerEvents="none">
+          <Feather name="play" size={40} color="rgba(255,255,255,0.9)" />
+        </View>
+      )}
       <LinearGradient
         colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.65)']}
         locations={[0, 0.4, 1]}
@@ -145,8 +162,12 @@ function ReelItem({
 // centered clip actually playing (expo-video), matching how a real feed
 // should behave rather than auto-playing every mounted row at once.
 export default function Reels() {
+  // Tabs stay mounted when you switch away from them -- without this, a
+  // playing reel's audio/video kept running in the background on every
+  // other tab, since nothing ever told its player to stop.
+  const isFocused = useIsFocused();
   const userId = useSessionStore((s) => s.session?.user.id);
-  const { data: initialReels } = useQuery({
+  const { data: initialReels, isLoading, isRefetching, error, refetch } = useQuery({
     queryKey: ['reelsFeed', userId],
     enabled: !!userId,
     queryFn: () => buildFeed(userId!),
@@ -235,19 +256,26 @@ export default function Reels() {
       <ReelItem
         item={item}
         height={viewportHeight}
-        isActive={item.id === activeId}
+        isActive={item.id === activeId && isFocused}
         onLike={() => toggleLike(item.id)}
         onSave={() => toggleSave(item.id)}
         onShare={() => share(item.id)}
         onOpenComments={() => setCommentsFor(item.id)}
       />
     ),
-    [viewportHeight, activeId, reels]
+    [viewportHeight, activeId, reels, isFocused]
   );
 
   return (
     <View style={styles.root} onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}>
-      {viewportHeight > 0 && (
+      {viewportHeight > 0 && (isLoading || error) && (
+        <View style={{ height: viewportHeight }}>
+          <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+            <View />
+          </QueryState>
+        </View>
+      )}
+      {viewportHeight > 0 && !isLoading && !error && (
         <FlatList
           data={reels}
           keyExtractor={(r) => r.id}
@@ -259,6 +287,7 @@ export default function Reels() {
           getItemLayout={(_, index) => ({ length: viewportHeight, offset: viewportHeight * index, index })}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.white]} tintColor={colors.white} />}
           ListEmptyComponent={
             <View style={{ height: viewportHeight, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: colors.white, fontFamily: fontFamily.medium }}>No highlights yet.</Text>
@@ -282,11 +311,7 @@ export default function Reels() {
               ListEmptyComponent={<Text style={styles.noComments}>No comments yet — be the first.</Text>}
               renderItem={({ item }: { item: CommentWithAuthor }) => (
                 <View style={styles.commentRow}>
-                  {item.profiles?.avatar_url ? (
-                    <Image source={{ uri: item.profiles.avatar_url }} style={styles.commentAvatarFallback} />
-                  ) : (
-                    <View style={styles.commentAvatarFallback} />
-                  )}
+                  <Image source={{ uri: item.profiles?.avatar_url ?? images.avatarMale }} style={styles.commentAvatarFallback} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.commentAuthor}>{item.profiles?.full_name || 'Player'}</Text>
                     <Text style={styles.commentText}>{item.body}</Text>
@@ -315,6 +340,7 @@ export default function Reels() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
+  pauseOverlay: { alignItems: 'center', justifyContent: 'center' },
   badge: {
     position: 'absolute',
     top: 16,

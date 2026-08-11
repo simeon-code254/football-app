@@ -17,6 +17,8 @@ import { colors } from '../src/theme';
 import { queryClient } from '../src/lib/queryClient';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
+import { GlobalAlert } from '../src/components/GlobalAlert';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -77,27 +79,31 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="welcome" />
-          <Stack.Screen name="role-select" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="signup" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="verify-email" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="profile-complete" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="login" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="(player-tabs)" />
-          <Stack.Screen name="(scout-tabs)" />
-          <Stack.Screen name="player/[id]" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="trial/[id]" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="scout-verification" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="trials" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="compare" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="scout-edit-profile" options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="messages" options={{ animation: 'slide_from_right' }} />
-        </Stack>
+        <ErrorBoundary>
+          <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="role-select" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="signup" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="verify-email" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="profile-complete" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="login" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="(player-tabs)" />
+            <Stack.Screen name="(scout-tabs)" />
+            <Stack.Screen name="player/[id]" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="trial/[id]" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="scout-verification" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="trials" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="forgot-password" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="compare" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="scout-edit-profile" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="messages" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+          </Stack>
+        </ErrorBoundary>
+        <GlobalAlert />
       </View>
     </QueryClientProvider>
   );

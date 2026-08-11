@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -8,10 +8,10 @@ import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { IconButton } from '../../src/components/IconButton';
-import * as authRepository from '../../src/repositories/authRepository';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
+import { QueryState } from '../../src/components/QueryState';
 
 function VideoPreview({ url }: { url: string }) {
   const player = useVideoPlayer(url, (p) => p.play());
@@ -22,16 +22,6 @@ const COVER = images.onboardSlide1;
 const AVATAR = images.avatarMale;
 
 const TABS = ['About', 'Videos', 'AI Ratings', 'Stats'] as const;
-
-const SETTINGS_SECTIONS: { title: string; icon: React.ComponentProps<typeof Feather>['name'] }[] = [
-  { title: 'Account', icon: 'user' },
-  { title: 'Security', icon: 'shield' },
-  { title: 'Notifications', icon: 'bell' },
-  { title: 'Privacy', icon: 'eye-off' },
-  { title: 'Language', icon: 'globe' },
-  { title: 'Theme', icon: 'moon' },
-  { title: 'Help', icon: 'help-circle' },
-];
 
 function formatCompact(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -44,10 +34,9 @@ function formatCompact(n: number): string {
 // built out here with real content matching the app's data model.
 export default function Profile() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('About');
-  const clearSession = useSessionStore((s) => s.clear);
   const userId = useSessionStore((s) => s.session?.user.id);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['playerProfileScreen', userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -87,12 +76,15 @@ export default function Profile() {
 
   const { data: thumbUrls } = useQuery({
     queryKey: ['profileVideoThumbs', data?.videos.map((v) => v.id)],
-    enabled: tab === 'Videos' && !!data?.videos.length,
+    enabled: tab === 'Videos' && !!data?.videos.some((v) => v.thumbnail_path),
     queryFn: async () => {
-      const urls = await Promise.all(
-        data!.videos.map((v) => videosRepository.getVideoUrl(v.thumbnail_path || v.storage_path))
-      );
-      return Object.fromEntries(data!.videos.map((v, i) => [v.id, urls[i]]));
+      // Falling back to storage_path (the video file itself) here used to
+      // hand an <Image> a video URL it can't decode -- rendered as nothing,
+      // indistinguishable from a loading thumbnail. Only real thumbnails
+      // get a signed URL; videos without one get an honest placeholder.
+      const withThumb = data!.videos.filter((v) => v.thumbnail_path);
+      const urls = await Promise.all(withThumb.map((v) => videosRepository.getVideoUrl(v.thumbnail_path!)));
+      return Object.fromEntries(withThumb.map((v, i) => [v.id, urls[i]]));
     },
   });
 
@@ -104,11 +96,13 @@ export default function Profile() {
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
       <View style={styles.coverWrap}>
         <Image source={{ uri: COVER }} style={styles.cover} />
         <View style={styles.coverMask} />
         <View style={styles.editBtnWrap}>
-          <IconButton icon="edit-2" light onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })} />
+          <IconButton icon="settings" light accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+          <IconButton icon="edit-2" light accessibilityLabel="Edit profile" onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })} />
         </View>
       </View>
 
@@ -176,7 +170,13 @@ export default function Profile() {
             )}
             {(data?.videos ?? []).map((v) => (
               <Pressable key={v.id} style={styles.videoThumb} onPress={() => openVideo(v.storage_path)}>
-                {thumbUrls?.[v.id] && <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} />}
+                {thumbUrls?.[v.id] ? (
+                  <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} />
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, styles.videoThumbPlaceholder]}>
+                    <Feather name="film" size={22} color={colors.textPlaceholder} />
+                  </View>
+                )}
                 <View style={styles.videoPlay}>
                   <Text style={styles.videoPlayGlyph}>▶</Text>
                 </View>
@@ -229,34 +229,7 @@ export default function Profile() {
         )}
       </View>
 
-      <View style={styles.settingsSection}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-        <View style={styles.settingsList}>
-          {SETTINGS_SECTIONS.map((s) => (
-            <Pressable key={s.title} style={styles.settingsRow}>
-              <Feather name={s.icon} size={17} color={colors.textBody} style={{ width: 24 }} />
-              <Text style={styles.settingsText}>{s.title}</Text>
-              <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
-            </Pressable>
-          ))}
-        </View>
-
-        <Pressable
-          style={styles.logoutRow}
-          onPress={async () => {
-            await authRepository.signOut();
-            clearSession();
-            router.replace('/welcome');
-          }}
-        >
-          <Feather name="log-out" size={17} color={colors.error} style={{ width: 24 }} />
-          <Text style={[styles.settingsText, { color: colors.error }]}>Logout</Text>
-        </Pressable>
-        <Pressable style={styles.logoutRow}>
-          <Feather name="trash-2" size={17} color={colors.textPlaceholder} style={{ width: 24 }} />
-          <Text style={[styles.settingsText, { color: colors.textPlaceholder }]}>Delete Account</Text>
-        </Pressable>
-      </View>
+      </QueryState>
 
       <Modal visible={!!playingVideoUrl} animationType="fade" onRequestClose={() => setPlayingVideoUrl(null)}>
         <View style={{ flex: 1, backgroundColor: '#000' }}>
@@ -274,7 +247,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   coverWrap: { height: 140 },
   cover: { width: '100%', height: '100%' },
-  editBtnWrap: { position: 'absolute', top: 44, right: 16 },
+  editBtnWrap: { position: 'absolute', top: 44, right: 16, flexDirection: 'row', gap: 8 },
   coverMask: {
     position: 'absolute',
     bottom: -1,
@@ -314,6 +287,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
+  videoThumbPlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted },
   videoPlay: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   videoPlayGlyph: { color: colors.white, fontSize: 11 },
   videoCloseBtn: { position: 'absolute', top: 50, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
@@ -327,10 +301,4 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 14 },
   statRowLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
   statRowValue: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.textPrimary },
-  settingsSection: { paddingHorizontal: 20, marginTop: 8, paddingBottom: 32 },
-  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 10 },
-  settingsList: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
-  settingsText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
-  logoutRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 14, marginTop: 10 },
 });

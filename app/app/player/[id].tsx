@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +12,8 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as scoutingRepository from '../../src/repositories/scoutingRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
+import { showAlert } from '../../src/lib/alert';
+import { QueryState } from '../../src/components/QueryState';
 
 const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
 
@@ -38,7 +40,7 @@ export default function PlayerDetail() {
   const [savingNote, setSavingNote] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['playerDetail', id],
     enabled: !!id,
     queryFn: async () => {
@@ -100,7 +102,7 @@ export default function PlayerDetail() {
       await refetchScoutData();
       setNotesOpen(false);
     } catch (err) {
-      Alert.alert('Could not save note', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not save note', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSavingNote(false);
     }
@@ -113,7 +115,7 @@ export default function PlayerDetail() {
       await refetchScoutData();
       setSaveOpen(false);
     } catch (err) {
-      Alert.alert('Could not save player', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not save player', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -124,7 +126,7 @@ export default function PlayerDetail() {
       setNewFolderName('');
       await saveToFolder(folder.id);
     } catch (err) {
-      Alert.alert('Could not create folder', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not create folder', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -134,17 +136,19 @@ export default function PlayerDetail() {
       await trialsRepository.inviteToTrial(viewerId, trialId, id);
       await refetchScoutData();
       setInviteOpen(false);
-      Alert.alert('Invited', 'The player has been invited to this trial.');
+      showAlert('Invited', 'The player has been invited to this trial.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Please try again.';
-      Alert.alert('Could not invite player', message.includes('duplicate') ? 'Already invited or applied to this trial.' : message);
+      showAlert('Could not invite player', message.includes('duplicate') ? 'Already invited or applied to this trial.' : message);
     }
   };
 
-  if (isLoading || !data) {
+  if (isLoading || error || !data) {
     return (
       <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator color={colors.primary} />
+        <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+          <Text style={styles.notFound}>Player not found.</Text>
+        </QueryState>
       </SafeAreaView>
     );
   }
@@ -162,7 +166,7 @@ export default function PlayerDetail() {
           <Image source={{ uri: player.avatar_url ?? images.avatarMale }} style={styles.coverImage} />
           <View style={styles.coverMask} />
           <View style={styles.coverTop}>
-            <IconButton icon="chevron-left" light onPress={() => router.back()} />
+            <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
           </View>
         </View>
 

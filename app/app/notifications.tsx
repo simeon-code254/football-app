@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,12 +9,39 @@ import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as notificationsRepository from '../src/repositories/notificationsRepository';
 import type { NotificationRow } from '../src/repositories/notificationsRepository';
+import { QueryState } from '../src/components/QueryState';
 
 const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
   trial_status_change: 'clipboard',
+  trial_invitation: 'clipboard',
   new_message: 'message-circle',
   scout_verification: 'check-circle',
+  analysis_complete: 'bar-chart-2',
+  analysis_skipped: 'bar-chart-2',
+  analysis_failed: 'alert-circle',
 };
+
+// Every notification carries enough in `data` to know where it's actually
+// about — previously tapping one only marked it read and went nowhere,
+// even though the destination was always derivable.
+function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | null): string | null {
+  const data = (item.data as Record<string, unknown> | null) ?? {};
+  switch (item.type) {
+    case 'trial_status_change':
+    case 'trial_invitation':
+      return data.trial_id ? `/trial/${data.trial_id}` : null;
+    case 'new_message':
+      return role === 'scout' ? '/(scout-tabs)/messages' : '/messages';
+    case 'analysis_complete':
+    case 'analysis_skipped':
+    case 'analysis_failed':
+      return '/(player-tabs)/profile';
+    case 'scout_verification':
+      return '/(scout-tabs)/home';
+    default:
+      return null;
+  }
+}
 
 function timeAgo(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -31,9 +58,10 @@ function timeAgo(iso: string) {
 // table + a live Realtime subscription for new arrivals.
 export default function Notifications() {
   const userId = useSessionStore((s) => s.session?.user.id);
+  const role = useSessionStore((s) => s.role);
   const queryClient = useQueryClient();
 
-  const { data: items, refetch } = useQuery({
+  const { data: items, isLoading, isRefetching, error, refetch } = useQuery({
     queryKey: ['notifications', userId],
     enabled: !!userId,
     queryFn: () => notificationsRepository.listNotifications(userId!),
@@ -66,18 +94,20 @@ export default function Notifications() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Notifications</Text>
         <Pressable onPress={markAllRead} hitSlop={8}>
           <Text style={styles.markAllText}>Mark all read</Text>
         </Pressable>
       </View>
 
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
       <FlatList
         data={items ?? []}
         keyExtractor={(n) => n.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Feather name="bell-off" size={28} color={colors.textPlaceholder} />
@@ -87,7 +117,14 @@ export default function Notifications() {
         renderItem={({ item }) => {
           const read = !!item.read_at;
           return (
-            <Pressable style={styles.row} onPress={() => !read && markRead(item.id)}>
+            <Pressable
+              style={styles.row}
+              onPress={() => {
+                if (!read) markRead(item.id);
+                const dest = routeForNotification(item, role);
+                if (dest) router.push(dest);
+              }}
+            >
               <View style={[styles.iconWrap, !read && styles.iconWrapUnread]}>
                 <Feather name={TYPE_ICON[item.type] ?? 'bell'} size={16} color={read ? colors.textMuted : colors.primary} />
               </View>
@@ -101,6 +138,7 @@ export default function Notifications() {
           );
         }}
       />
+      </QueryState>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -10,6 +10,7 @@ import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { images } from '../src/constants/images';
 import * as authRepository from '../src/repositories/authRepository';
+import { showAlert } from '../src/lib/alert';
 import * as profileRepository from '../src/repositories/profileRepository';
 import { useSessionStore } from '../src/store/useSessionStore';
 
@@ -40,7 +41,7 @@ export default function Login() {
         router.replace(player.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
       }
     } catch (err) {
-      Alert.alert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Sign in failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -48,11 +49,12 @@ export default function Login() {
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.hero}>
         <Image source={{ uri: images.authHero }} style={styles.heroImage} resizeMode="cover" />
         <LinearGradient colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.75)']} style={StyleSheet.absoluteFill} />
         <View style={styles.heroTop}>
-          <IconButton icon="chevron-left" light onPress={() => router.back()} />
+          <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
         </View>
       </View>
 
@@ -114,6 +116,7 @@ export default function Login() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

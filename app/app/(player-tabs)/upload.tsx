@@ -1,16 +1,18 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert, Modal } from 'react-native';
+import { useRef, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, Platform, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import * as Crypto from 'expo-crypto';
+import * as Linking from 'expo-linking';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
+import { showAlert } from '../../src/lib/alert';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | null };
@@ -21,6 +23,42 @@ type SubjectHint = { x: number; y: number }; // normalized 0-1, relative to TagF
 // the AI service needs to know it too (subjectHintTimeMs), since the same
 // tapped (x,y) means a different thing once the subject has moved.
 const TAG_FRAME_TIME_MS = 500;
+
+// expo-video-thumbnails has no web implementation at all — its .web.ts
+// throws `ExpoVideoThumbnails not supported on Expo Web` unconditionally
+// (confirmed by reading node_modules directly). This draws the frame onto a
+// <canvas> instead, which works in every browser Expo Web targets.
+async function getWebFrame(videoUri: string, timeMs: number): Promise<TagFrame> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = 'anonymous';
+    video.src = videoUri;
+    video.onloadedmetadata = () => {
+      video.currentTime = Math.min(timeMs / 1000, Math.max(0, (video.duration || 0) - 0.05));
+    };
+    video.onseeked = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas 2D context unavailable'));
+        return;
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      resolve({ uri: canvas.toDataURL('image/jpeg', 0.9), width: canvas.width, height: canvas.height });
+    };
+    video.onerror = () => reject(new Error('Failed to load the video for frame extraction'));
+  });
+}
+
+async function getVideoFrame(videoUri: string, timeMs: number): Promise<TagFrame> {
+  if (Platform.OS === 'web') return getWebFrame(videoUri, timeMs);
+  const thumb = await VideoThumbnails.getThumbnailAsync(videoUri, { time: timeMs });
+  return { uri: thumb.uri, width: thumb.width, height: thumb.height };
+}
 
 // Matches the mockup's UPLOAD tab: Highlight Reel / AI Analysis mode toggle,
 // dashed drop zone, Title/Description/Match/Opponent/Tags, Upload & Publish.
@@ -46,7 +84,7 @@ export default function Upload() {
   const [subjectHint, setSubjectHint] = useState<SubjectHint | null>(null);
   const [tagModalOpen, setTagModalOpen] = useState(false);
   const [extractingFrame, setExtractingFrame] = useState(false);
-  const [frameBoxSize, setFrameBoxSize] = useState({ width: 0, height: 0 });
+  const frameRef = useRef<View>(null);
 
   const resetVideo = () => {
     setVideo(null);
@@ -57,7 +95,15 @@ export default function Upload() {
   const pickVideo = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to upload a highlight video.');
+      // A plain "denied" message was a dead end -- canAskAgain=false means
+      // re-prompting won't work, the OS Settings app is the only way back.
+      showAlert(
+        'Permission needed',
+        'Allow photo library access to upload a highlight video.',
+        perm.canAskAgain || Platform.OS === 'web'
+          ? undefined
+          : [{ text: 'Cancel', style: 'cancel' }, { text: 'Open Settings', onPress: () => Linking.openSettings() }]
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -76,12 +122,11 @@ export default function Upload() {
     setExtractingFrame(true);
     try {
       if (!tagFrame) {
-        const thumb = await VideoThumbnails.getThumbnailAsync(video.uri, { time: TAG_FRAME_TIME_MS });
-        setTagFrame({ uri: thumb.uri, width: thumb.width, height: thumb.height });
+        setTagFrame(await getVideoFrame(video.uri, TAG_FRAME_TIME_MS));
       }
       setTagModalOpen(true);
     } catch {
-      Alert.alert(
+      showAlert(
         'Could not load a frame',
         "You can still upload — the AI will use its own best guess for who to track."
       );
@@ -98,7 +143,7 @@ export default function Upload() {
 
       let thumbnailPath: string | undefined;
       try {
-        const thumbUri = tagFrame?.uri ?? (await VideoThumbnails.getThumbnailAsync(video.uri, { time: TAG_FRAME_TIME_MS })).uri;
+        const thumbUri = tagFrame?.uri ?? (await getVideoFrame(video.uri, TAG_FRAME_TIME_MS)).uri;
         thumbnailPath = await videosRepository.uploadVideoThumbnail(userId, videoId, thumbUri);
       } catch {
         // Thumbnail generation can fail on some formats/platforms — the
@@ -127,11 +172,15 @@ export default function Upload() {
         subjectHintTimeMs: mode === 'ai' && subjectHint ? TAG_FRAME_TIME_MS : undefined,
       });
 
-      Alert.alert('Uploaded', 'Your video has been published.', [
-        { text: 'OK', onPress: () => router.push('/(player-tabs)/profile') },
-      ]);
+      showAlert(
+        mode === 'ai' ? 'Uploaded — Queued for Analysis' : 'Uploaded',
+        mode === 'ai'
+          ? "Your video was submitted successfully and is queued for AI analysis. You'll see your ratings on your profile once processing completes."
+          : 'Your video has been published to your highlights.',
+        [{ text: 'OK', onPress: () => router.push('/(player-tabs)/profile') }]
+      );
     } catch (err) {
-      Alert.alert('Upload failed', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Upload Failed', err instanceof Error ? err.message : 'Something went wrong submitting your video. Please try again.');
     } finally {
       setPublishing(false);
     }
@@ -174,10 +223,16 @@ export default function Upload() {
         {mode === 'ai' && video && (
           <Pressable style={styles.tagRow} onPress={openTagModal} disabled={extractingFrame}>
             <View style={styles.tagIconWrap}>
-              <Feather name={subjectHint ? 'check-circle' : 'crosshair'} size={16} color={subjectHint ? colors.success : colors.primary} />
+              {extractingFrame ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name={subjectHint ? 'check-circle' : 'crosshair'} size={16} color={subjectHint ? colors.success : colors.primary} />
+              )}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.tagRowTitle}>{subjectHint ? 'Tagged — you\'re marked in the video' : 'Tag Yourself (recommended)'}</Text>
+              <Text style={styles.tagRowTitle}>
+                {extractingFrame ? 'Loading frame…' : subjectHint ? 'Tagged — you\'re marked in the video' : 'Tag Yourself (recommended)'}
+              </Text>
               <Text style={styles.tagRowSub}>
                 {subjectHint ? 'Tap to change' : 'Tap yourself on a frame so the AI tracks the right person'}
               </Text>
@@ -236,17 +291,25 @@ export default function Upload() {
             <Text style={styles.tagModalHint}>Tap on yourself in the frame below.</Text>
             {tagFrame && (
               <View
+                ref={frameRef}
                 style={{ width: '100%', aspectRatio: tagFrame.width / tagFrame.height, borderRadius: radii.lg, overflow: 'hidden' }}
-                onLayout={(e) => setFrameBoxSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
               >
                 <Pressable
                   style={StyleSheet.absoluteFill}
                   onPress={(e) => {
-                    if (!frameBoxSize.width || !frameBoxSize.height) return;
-                    const { locationX, locationY } = e.nativeEvent;
-                    setSubjectHint({
-                      x: Math.min(1, Math.max(0, locationX / frameBoxSize.width)),
-                      y: Math.min(1, Math.max(0, locationY / frameBoxSize.height)),
+                    // `locationX/Y` isn't reliable here — on web, Pressable's
+                    // onPress fires from a raw browser MouseEvent (react-
+                    // native-web deliberately doesn't route it through the
+                    // responder system that provides locationX/Y), so it's
+                    // undefined there and the tap silently produced NaN.
+                    // pageX/Y + measure() works identically on both platforms.
+                    const { pageX, pageY } = e.nativeEvent;
+                    frameRef.current?.measure((_x, _y, width, height, frameX, frameY) => {
+                      if (!width || !height) return;
+                      setSubjectHint({
+                        x: Math.min(1, Math.max(0, (pageX - frameX) / width)),
+                        y: Math.min(1, Math.max(0, (pageY - frameY) / height)),
+                      });
                     });
                   }}
                 >

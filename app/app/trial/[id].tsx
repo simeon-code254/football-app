@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +11,8 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import type { ApplicantStatus } from '../../src/repositories/trialsRepository';
+import { showAlert } from '../../src/lib/alert';
+import { QueryState } from '../../src/components/QueryState';
 
 const MY_STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: '#FFF8E1', text: colors.goldDark, label: 'Applied — Pending' },
@@ -44,7 +46,7 @@ export default function TrialDetail() {
   const [selected, setSelected] = useState<string[]>([]);
   const [applying, setApplying] = useState(false);
 
-  const { data: trial, isLoading: loadingTrial } = useQuery({
+  const { data: trial, isLoading: loadingTrial, error: trialError, refetch: refetchTrial } = useQuery({
     queryKey: ['trial', id],
     enabled: !!id,
     queryFn: () => trialsRepository.getTrialById(id),
@@ -62,10 +64,12 @@ export default function TrialDetail() {
     queryFn: () => trialsRepository.listApplicants(id),
   });
 
-  if (loadingTrial || !trial) {
+  if (loadingTrial || trialError || !trial) {
     return (
       <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        {loadingTrial ? <ActivityIndicator color={colors.primary} /> : <Text style={styles.notFound}>Trial not found.</Text>}
+        <QueryState isLoading={loadingTrial} error={trialError} onRetry={refetchTrial}>
+          <Text style={styles.notFound}>Trial not found.</Text>
+        </QueryState>
       </SafeAreaView>
     );
   }
@@ -77,7 +81,7 @@ export default function TrialDetail() {
       await trialsRepository.applyToTrial(userId, trial.id);
       await refetchMyApplication();
     } catch (err) {
-      Alert.alert('Could not apply', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not apply', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       setApplying(false);
     }
@@ -88,7 +92,7 @@ export default function TrialDetail() {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
         <View style={styles.header}>
-          <IconButton icon="chevron-left" onPress={() => router.back()} />
+          <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
           <Text style={styles.headerTitle}>Trial Details</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -127,7 +131,7 @@ export default function TrialDetail() {
       await trialsRepository.updateApplicationStatus(applicationId, status);
       await refetchApplicants();
     } catch (err) {
-      Alert.alert('Could not update status', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Could not update status', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
@@ -145,7 +149,7 @@ export default function TrialDetail() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Trial Management</Text>
         <View style={{ width: 36 }} />
       </View>

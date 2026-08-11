@@ -39,7 +39,7 @@ export default function RoleSelect() {
         <Image source={{ uri: images.onboardSlide3 }} style={styles.heroImage} resizeMode="cover" />
         <LinearGradient colors={['rgba(10,22,40,0.1)', 'rgba(10,22,40,0.7)']} style={StyleSheet.absoluteFill} />
         <View style={styles.heroTop}>
-          <IconButton icon="chevron-left" light onPress={() => router.back()} />
+          <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
         </View>
       </View>
 

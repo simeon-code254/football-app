@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { colors, fontFamily, fontSize, radii } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
 import * as profileRepository from '../src/repositories/profileRepository';
+import { QueryState } from '../src/components/QueryState';
 
 // Compare Players (spec §23) — reachable from the Players list's Compare
 // mode. Side-by-side attribute table; rows are the union of whatever
@@ -15,7 +16,7 @@ export default function ComparePlayers() {
   const { ids } = useLocalSearchParams<{ ids?: string }>();
   const playerIds = (ids ?? '').split(',').filter(Boolean);
 
-  const { data: players, isLoading } = useQuery({
+  const { data: players, isLoading, error, refetch } = useQuery({
     queryKey: ['comparePlayers', playerIds],
     enabled: playerIds.length >= 2,
     queryFn: async () => {
@@ -52,10 +53,12 @@ export default function ComparePlayers() {
     );
   }
 
-  if (isLoading || !players) {
+  if (isLoading || error || !players) {
     return (
       <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator color={colors.primary} />
+        <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+          <Text style={styles.notFound}>Couldn't load these players.</Text>
+        </QueryState>
       </SafeAreaView>
     );
   }
@@ -63,7 +66,7 @@ export default function ComparePlayers() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Compare</Text>
         <View style={{ width: 36 }} />
       </View>

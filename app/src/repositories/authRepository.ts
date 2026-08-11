@@ -41,6 +41,20 @@ export async function signOut() {
   if (error) throw error;
 }
 
+// Calls the delete-account Edge Function (supabase/functions/delete-account)
+// rather than any direct table operation -- deleting the auth user (which
+// cascades through profiles/players/scouts/videos/trials/messages/etc via
+// existing FKs, plus explicit Storage cleanup) needs the service_role key,
+// which the client must never hold. The function derives "who" from the
+// caller's own session token automatically (supabase.functions.invoke
+// forwards the current session's Authorization header) — no user id is
+// ever passed explicitly.
+export async function deleteAccount(): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+}
+
 export async function resendVerificationEmail(email: string) {
   const { error } = await supabase.auth.resend({ type: 'signup', email });
   if (error) throw error;

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { Checkbox } from '../src/components/Checkbox';
 import * as authRepository from '../src/repositories/authRepository';
+import { showAlert } from '../src/lib/alert';
 
 // Matches Matobev v4.dc.html's SIGNUP FORM block, including the scout-only
 // Organization/Club field — redesigned with a role-colored header (the flat
@@ -62,10 +63,10 @@ export default function Signup() {
         setRetryAt(nextRetryAt);
         if (cooldownRef.current) clearTimeout(cooldownRef.current);
         cooldownRef.current = setTimeout(() => setRetryAt(null), 60_000);
-        Alert.alert('Too many sign up attempts', 'Please wait a minute before trying again.');
+        showAlert('Too many sign up attempts', 'Please wait a minute before trying again.');
         return;
       }
-      Alert.alert('Sign up failed', err instanceof Error ? err.message : 'Please try again.');
+      showAlert('Sign up failed', err instanceof Error ? err.message : 'Please try again.');
     } finally {
       submitLock.current = false;
       setSubmitting(false);
@@ -74,9 +75,10 @@ export default function Signup() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.header}>
         <View style={styles.headerTop}>
-          <IconButton icon="chevron-left" light onPress={() => router.back()} />
+          <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
         </View>
         <View style={styles.roleBadge}>
           <Feather name={isScout ? 'search' : 'user'} size={22} color={colors.white} />
@@ -147,6 +149,7 @@ export default function Signup() {
           </Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

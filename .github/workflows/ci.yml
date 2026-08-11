@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  app:
+    name: Typecheck + web bundle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # Bundles the web build as a smoke test — same command used for local
+      # verification throughout this project (docs/HANDOFF.md §7). No
+      # Supabase credentials needed: this only proves the app bundles
+      # cleanly, it doesn't run against a live backend.
+      - name: Bundle web export
+        run: npx expo export -p web

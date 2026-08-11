@@ -78,7 +78,7 @@ export function ScoutPlayerCard({ id, name, avatar, overall, position, country, 
 }
 
 const styles = StyleSheet.create({
-  card: { width: 240, backgroundColor: colors.surface, borderRadius: radii.xl, overflow: 'hidden' },
+  card: { width: 240, backgroundColor: colors.surface, borderRadius: radii.xl, overflow: 'hidden', alignSelf: 'flex-start' },
   imageWrap: { height: 140, backgroundColor: colors.surfaceMuted },
   image: { width: '100%', height: '100%' },
   ovrBadge: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, alignItems: 'center' },

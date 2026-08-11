@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -51,8 +51,9 @@ export default function ForgotPassword() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} />
+        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
       </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.content}>
         <Text style={styles.title}>Reset Password</Text>
         <Text style={styles.sub}>Enter the email address linked to your account and we'll send you a reset link.</Text>
@@ -73,6 +74,7 @@ export default function ForgotPassword() {
           style={{ marginTop: 20 }}
         />
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

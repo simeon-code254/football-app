@@ -1,16 +1,26 @@
-import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, ActivityIndicator } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
 import { images } from '../../src/constants/images';
+import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
+import type { PlayerFilters } from '../../src/repositories/profileRepository';
+import * as scoutingRepository from '../../src/repositories/scoutingRepository';
+import { QueryState } from '../../src/components/QueryState';
 
 const MAX_COMPARE = 3;
+const SEARCH_DEBOUNCE_MS = 350;
+const SORT_OPTIONS: { key: NonNullable<PlayerFilters['sortBy']>; label: string }[] = [
+  { key: 'rating', label: 'Rating' },
+  { key: 'name', label: 'Name' },
+  { key: 'age', label: 'Age' },
+];
 
 type Filters = {
   positions: string[];
@@ -27,26 +37,53 @@ const EMPTY_FILTERS: Filters = { positions: [], minAge: '', maxAge: '', minOvera
 // bottom sheet instead of 20 filters crammed on-screen, and applied filters
 // surfaced as removable chips.
 export default function DiscoverPlayers() {
+  const userId = useSessionStore((s) => s.session?.user.id);
+  const { saved } = useLocalSearchParams<{ saved?: string }>();
+  const [savedOnly, setSavedOnly] = useState(saved === '1');
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [sortBy, setSortBy] = useState<NonNullable<PlayerFilters['sortBy']>>('rating');
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [draftFilters, setDraftFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // Firing a network request on every keystroke induces list flicker as
+  // fast typers outrun each other's responses -- wait for a pause instead.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [query]);
+
   const { data: countries } = useQuery({ queryKey: ['countries'], queryFn: profileRepository.getCountries });
 
-  const { data: results, isLoading } = useQuery({
-    queryKey: ['discoverPlayers', query, filters],
+  // "Saved Players" on Home used to route here with no way to actually
+  // filter to just the scout's saved list -- that view genuinely didn't
+  // exist anywhere in the app (listSavedPlayers was only ever used to
+  // compute a count on the profile screen). Reuses this same
+  // filter/sort/compare-ready list instead of building a whole new screen.
+  const { data: savedRows } = useQuery({
+    queryKey: ['savedPlayerIds', userId],
+    enabled: !!userId && savedOnly,
+    queryFn: () => scoutingRepository.listSavedPlayers(userId!),
+  });
+  const savedIds = savedRows?.map((r) => r.player_id) ?? [];
+
+  const { data: results, isLoading, isRefetching, error, refetch } = useQuery({
+    queryKey: ['discoverPlayers', debouncedQuery, filters, sortBy, savedOnly, savedIds],
+    enabled: !savedOnly || savedRows != null,
     queryFn: () =>
       profileRepository.listPlayerPublicViews({
-        search: query || undefined,
+        ids: savedOnly ? savedIds : undefined,
+        search: debouncedQuery || undefined,
         positions: filters.positions.length ? filters.positions : undefined,
         countryCodes: filters.countries.length ? filters.countries : undefined,
         preferredFoot: filters.foot.length ? filters.foot : undefined,
         ageMin: filters.minAge ? Number(filters.minAge) : undefined,
         ageMax: filters.maxAge ? Number(filters.maxAge) : undefined,
         minOverall: filters.minOverall ? Number(filters.minOverall) : undefined,
+        sortBy,
       }),
   });
 
@@ -63,6 +100,7 @@ export default function DiscoverPlayers() {
   const countryName = (code: string) => countries?.find((c) => c.code === code)?.name ?? code;
 
   const chips: { key: string; label: string; clear: () => void }[] = [
+    ...(savedOnly ? [{ key: 'saved', label: 'Saved only', clear: () => setSavedOnly(false) }] : []),
     ...filters.positions.map((p) => ({ key: `pos-${p}`, label: p, clear: () => setFilters((f) => ({ ...f, positions: f.positions.filter((x) => x !== p) })) })),
     ...filters.countries.map((c) => ({ key: `country-${c}`, label: countryName(c), clear: () => setFilters((f) => ({ ...f, countries: f.countries.filter((x) => x !== c) })) })),
     ...(filters.minOverall ? [{ key: 'minovr', label: `OVR ${filters.minOverall}+`, clear: () => setFilters((f) => ({ ...f, minOverall: '' })) }] : []),
@@ -81,7 +119,7 @@ export default function DiscoverPlayers() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Discover Players</Text>
+        <Text style={styles.title}>{savedOnly ? 'Saved Players' : 'Discover Players'}</Text>
         <Pressable style={[styles.compareToggle, compareMode && styles.compareToggleActive]} onPress={toggleCompareMode}>
           <Feather name="bar-chart-2" size={14} color={compareMode ? colors.white : colors.primary} />
           <Text style={[styles.compareToggleText, compareMode && styles.compareToggleTextActive]}>
@@ -106,6 +144,18 @@ export default function DiscoverPlayers() {
         </Pressable>
       </View>
 
+      <View style={styles.sortRow}>
+        <Text style={styles.sortLabel}>Sort by</Text>
+        {SORT_OPTIONS.map((opt) => {
+          const active = sortBy === opt.key;
+          return (
+            <Pressable key={opt.key} onPress={() => setSortBy(opt.key)} style={[styles.sortChip, active && styles.sortChipActive]}>
+              <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {chips.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
           {chips.map((c) => (
@@ -114,7 +164,7 @@ export default function DiscoverPlayers() {
               <Feather name="x" size={12} color={colors.primary} />
             </Pressable>
           ))}
-          <Pressable onPress={() => setFilters(EMPTY_FILTERS)}>
+          <Pressable onPress={() => { setFilters(EMPTY_FILTERS); setSavedOnly(false); }}>
             <Text style={styles.clearAll}>Clear all</Text>
           </Pressable>
         </ScrollView>
@@ -125,16 +175,19 @@ export default function DiscoverPlayers() {
         keyExtractor={(p) => p.id ?? ''}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         ListEmptyComponent={
-          isLoading ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
-          ) : (
+          <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
             <View style={styles.empty}>
-              <Feather name="users" size={28} color={colors.textPlaceholder} />
-              <Text style={styles.emptyTitle}>No players match these filters</Text>
-              <Text style={styles.emptySub}>Try widening your search or clearing a filter.</Text>
+              <Feather name={savedOnly ? 'heart' : 'users'} size={28} color={colors.textPlaceholder} />
+              <Text style={styles.emptyTitle}>
+                {savedOnly ? "You haven't saved any players yet" : 'No players match these filters'}
+              </Text>
+              <Text style={styles.emptySub}>
+                {savedOnly ? 'Save a player from their profile to find them here.' : 'Try widening your search or clearing a filter.'}
+              </Text>
             </View>
-          )
+          </QueryState>
         }
         renderItem={({ item }) => {
           const id = item.id ?? '';
@@ -295,6 +348,12 @@ const styles = StyleSheet.create({
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: 14 },
   searchInput: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
   filterBtn: { width: 44, height: 44, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, marginBottom: 10 },
+  sortLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted, marginRight: 2 },
+  sortChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: colors.surface },
+  sortChipActive: { backgroundColor: colors.primaryDark },
+  sortChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textBody },
+  sortChipTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
   chipsRow: { paddingHorizontal: 20, gap: 8, alignItems: 'center', marginBottom: 10 },
   filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EBF2FF', borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 6 },
   filterChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.primary },

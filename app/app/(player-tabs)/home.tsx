@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
+import { QueryState } from '../../src/components/QueryState';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -27,7 +28,7 @@ function getGreeting() {
 // trace, filled out with the Trials feature from the product brief.
 export default function Home() {
   const userId = useSessionStore((s) => s.session?.user.id);
-  const { data } = useQuery({
+  const { data, isLoading, isRefetching, error, refetch } = useQuery({
     queryKey: ['playerHome', userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -61,7 +62,11 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
+      >
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
@@ -166,6 +171,7 @@ export default function Home() {
           ))}
         </View>
       </ScrollView>
+      </QueryState>
     </SafeAreaView>
   );
 }

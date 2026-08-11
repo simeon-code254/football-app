@@ -74,10 +74,13 @@ export type PlayerFilters = {
   preferredFoot?: string[];
   minOverall?: number;
   search?: string;
+  sortBy?: 'rating' | 'name' | 'age';
+  ids?: string[];
 };
 
 export async function listPlayerPublicViews(filters: PlayerFilters = {}): Promise<PlayerPublicView[]> {
   let query = supabase.from('player_public_view').select('*');
+  if (filters.ids) query = query.in('id', filters.ids);
   if (filters.position) query = query.eq('primary_position', filters.position);
   if (filters.positions?.length) query = query.in('primary_position', filters.positions);
   if (filters.ageMin != null) query = query.gte('age', filters.ageMin);
@@ -87,7 +90,10 @@ export async function listPlayerPublicViews(filters: PlayerFilters = {}): Promis
   if (filters.preferredFoot?.length) query = query.in('preferred_foot', filters.preferredFoot);
   if (filters.minOverall != null) query = query.gte('overall_rating', filters.minOverall);
   if (filters.search) query = query.ilike('full_name', `%${filters.search}%`);
-  const { data, error } = await query.order('overall_rating', { ascending: false, nullsFirst: false });
+  if (filters.sortBy === 'name') query = query.order('full_name', { ascending: true, nullsFirst: false });
+  else if (filters.sortBy === 'age') query = query.order('age', { ascending: true, nullsFirst: false });
+  else query = query.order('overall_rating', { ascending: false, nullsFirst: false });
+  const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
 }
@@ -146,9 +152,18 @@ export async function getViewsGivenCount(viewerId: string): Promise<number> {
 
 export async function logProfileView(viewerId: string, viewedProfileId: string) {
   if (viewerId === viewedProfileId) return;
+  // A same-day repeat view is an expected no-op (see migration
+  // 20260808220000's unique index on viewer_id+viewed_profile_id+viewed_day).
+  // Upsert+ignoreDuplicates asks PostgREST to swallow that conflict server-
+  // side (204/201, no error) instead of a plain insert(), which threw a
+  // 409 back that we then had to catch -- functionally identical outcome,
+  // just without a scary-looking failed request in the network log.
   const { error } = await supabase
     .from('profile_views')
-    .insert({ viewer_id: viewerId, viewed_profile_id: viewedProfileId });
+    .upsert(
+      { viewer_id: viewerId, viewed_profile_id: viewedProfileId },
+      { onConflict: 'viewer_id,viewed_profile_id,viewed_day', ignoreDuplicates: true }
+    );
   if (error) throw error;
 }
 
