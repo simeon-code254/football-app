@@ -71,6 +71,7 @@ def select_subject(
     frame_width: int,
     frame_height: int,
     hint: SubjectHint | None = None,
+    team_clusters: dict[int, int] | None = None,
 ) -> SubjectResult:
     """If `hint` (a timestamped tap point from the upload flow) is given and
     lands inside a detected person's box near that timestamp, that track is
@@ -82,6 +83,15 @@ def select_subject(
     and re-enter frame across cuts, splitting their track ID — this can
     make a consistently-present bystander outscore the true subject. This
     is exactly why the caller must cap confidence using dominance_margin.
+
+    `team_clusters` (optional, from teams.cluster_teams) is used only to
+    make dominance_margin more honest, never to pick the winner: a runner-up
+    track that's a confidently different jersey color from the top pick is
+    almost certainly a genuinely different person, not a fragment of the
+    same subject's track, so it's down-weighted before computing the margin
+    — the top pick was never really competing with it. Runner-ups in the
+    SAME color cluster are left alone; same-kit ambiguity is real ambiguity,
+    not something a color signal can resolve.
     """
     if hint is not None:
         matched_id = _match_hint(per_frame, frame_width, frame_height, hint)
@@ -124,6 +134,16 @@ def select_subject(
 
     scored.sort(key=lambda x: x[1], reverse=True)
     top_id, top_score = scored[0]
+
+    if team_clusters and top_id in team_clusters:
+        top_cluster = team_clusters[top_id]
+        adjusted = [
+            (tid, s * 0.6) if team_clusters.get(tid) not in (None, top_cluster) else (tid, s)
+            for tid, s in scored[1:]
+        ]
+        adjusted.sort(key=lambda x: x[1], reverse=True)
+        scored = [scored[0]] + adjusted
+
     if len(scored) > 1 and top_score > 0:
         second_score = scored[1][1]
         dominance_margin = (top_score - second_score) / top_score

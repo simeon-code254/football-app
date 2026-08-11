@@ -1,9 +1,11 @@
 import asyncio
 import logging
+import secrets
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 
+from src.config import AI_SERVICE_INTERNAL_TOKEN
 from src.jobs import poll_loop, process_job, reap_stale_processing, realtime_listener
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -31,7 +33,17 @@ async def health():
     return {"status": "ok"}
 
 
-@app.post("/process/{job_id}")
+async def require_internal_token(authorization: str | None = Header(default=None)) -> None:
+    """POST /process is otherwise unauthenticated — without this, anyone who
+    finds the URL could trigger the CV pipeline (compute-cost risk). Uses a
+    constant-time comparison so response timing can't leak the token.
+    """
+    provided = (authorization or "").removeprefix("Bearer ").strip()
+    if not secrets.compare_digest(provided, AI_SERVICE_INTERNAL_TOKEN):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization bearer token")
+
+
+@app.post("/process/{job_id}", dependencies=[Depends(require_internal_token)])
 async def process(job_id: str):
     """Manual trigger for local testing — bypasses waiting on realtime/poll."""
     try:

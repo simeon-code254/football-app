@@ -7,7 +7,9 @@ from src.pipeline.attributes import compute_movement_stats, resolve_confidence, 
 from src.pipeline.calibrate import pixels_per_meter
 from src.pipeline.detect_track import track_frames
 from src.pipeline.extract import extract_frames
+from src.pipeline.jersey import check_jersey_signal
 from src.pipeline.subject import SubjectHint, select_subject
+from src.pipeline.teams import cluster_teams
 
 
 @dataclass
@@ -23,6 +25,7 @@ def run_pipeline(
     player_height_cm: int | None,
     is_goalkeeper: bool,
     subject_hint: SubjectHint | None = None,
+    jersey_number: int | None = None,
 ) -> PipelineResult:
     t0 = time.monotonic()
 
@@ -47,7 +50,10 @@ def run_pipeline(
     t_track = time.monotonic()
 
     frame_h, frame_w = frames[0].shape[:2]
-    subject = select_subject(per_frame, frame_width=frame_w, frame_height=frame_h, hint=subject_hint)
+    team_clusters = cluster_teams(frames, per_frame)
+    subject = select_subject(
+        per_frame, frame_width=frame_w, frame_height=frame_h, hint=subject_hint, team_clusters=team_clusters
+    )
 
     if subject.track_id is None:
         return PipelineResult(
@@ -98,6 +104,9 @@ def run_pipeline(
 
     t_score = time.monotonic()
 
+    jersey_signal_conflict = check_jersey_signal(frames, per_frame, subject.track_id, jersey_number)
+    t_jersey = time.monotonic()
+
     return PipelineResult(
         ok=True,
         skipped_reason=None,
@@ -110,6 +119,8 @@ def run_pipeline(
             "subject_hint_matched": subject.hint_matched,
             "subject_candidate_count": subject.candidate_count,
             "subject_dominance_margin": round(subject.dominance_margin, 3),
+            "team_clusters_found": len(set(team_clusters.values())) if team_clusters else 0,
+            "jersey_signal_conflict": jersey_signal_conflict,
             "calibration_source": "player.height_cm" if player_height_cm else "default_170cm",
             "pixels_per_meter": round(px_per_m, 2),
             "peak_speed_kmh": round(movement.peak_speed_kmh, 2),
@@ -119,12 +130,13 @@ def run_pipeline(
             "direction_change_count": movement.direction_change_count,
             "valid_interval_count": movement.valid_interval_count,
             "model_version": f"yolov8n+ultralytics-{ultralytics_version}",
-            "tracker": "bytetrack",
+            "tracker": "botsort+reid",
             "timings_s": {
                 "extract": round(t_extract - t0, 2),
                 "detect_track": round(t_track - t_extract, 2),
                 "scoring": round(t_score - t_track, 2),
-                "total": round(t_score - t0, 2),
+                "jersey_ocr": round(t_jersey - t_score, 2),
+                "total": round(t_jersey - t0, 2),
             },
         },
     )

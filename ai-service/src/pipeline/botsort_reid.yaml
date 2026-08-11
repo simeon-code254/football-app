@@ -1,0 +1,25 @@
+# BoT-SORT tracker config for Matobev's subject-tracking pipeline — a copy of
+# ultralytics' packaged botsort.yaml with with_reid enabled. Appearance
+# matching (model: auto) reuses YOLO's own detector features, so this adds no
+# new model/dependency and negligible extra compute. Fixes the specific
+# failure mode raised during review: a subject briefly occluded or leaving
+# and re-entering frame gets reunited under the same track_id via appearance
+# similarity instead of silently starting a new one (plain ByteTrack has no
+# appearance model at all, motion/IoU only). Still bounded by track_buffer —
+# this is short-term recovery, not long-term re-identification across a hard
+# scene cut in a highlight reel.
+
+tracker_type: botsort
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.25
+track_buffer: 30
+match_thresh: 0.8
+fuse_score: True
+
+gmc_method: sparseOptFlow
+
+proximity_thresh: 0.5
+appearance_thresh: 0.8
+with_reid: True
+model: auto

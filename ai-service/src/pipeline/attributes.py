@@ -5,6 +5,11 @@ from src.config import FPS_SAMPLE_RATE
 from src.pipeline.detect_track import PERSON_CLASS, Detection
 
 MAX_PLAUSIBLE_KMH = 40.0
+# 18 km/h matches Catapult's own commonly-used sprint-threshold default in
+# GPS sports-science tooling; published high-speed-running literature more
+# broadly puts the range at ~19.8-25.2 km/h high-speed / >25.2 km/h strict
+# sprinting. Kept at 18 rather than raised, since amateur/grassroots footage
+# (this app's actual usage) skews slower than pro-level GPS datasets.
 SPRINT_THRESHOLD_KMH = 18.0
 DIRECTION_CHANGE_DEGREES = 45.0
 PACE_FLOOR_KMH = 15.0

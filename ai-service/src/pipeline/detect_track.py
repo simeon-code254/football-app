@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from ultralytics import YOLO
 
@@ -6,6 +7,13 @@ from src.config import MODEL_PATH
 
 PERSON_CLASS = 0
 SPORTS_BALL_CLASS = 32
+
+# BoT-SORT with appearance re-ID (model: auto — reuses YOLO's own detector
+# features, no extra model/training) instead of plain ByteTrack, so a
+# subject briefly occluded or leaving/re-entering frame is more likely to
+# keep the same track_id. See botsort_reid.yaml for the full rationale and
+# its still-real limits (short-term recovery, not long-term re-ID).
+TRACKER_CONFIG = str(Path(__file__).parent / "botsort_reid.yaml")
 
 _model: YOLO | None = None
 
@@ -28,9 +36,10 @@ class Detection:
 
 
 def track_frames(frames: list) -> list[list[Detection]]:
-    """Runs YOLOv8 + ByteTrack over already-sampled frames, in order, with
-    persist=True so track IDs stay consistent frame-to-frame. Returns one
-    Detection list per frame (same length/order as `frames`).
+    """Runs YOLOv8 + BoT-SORT (with appearance re-ID) over already-sampled
+    frames, in order, with persist=True so track IDs stay consistent
+    frame-to-frame. Returns one Detection list per frame (same length/order
+    as `frames`).
     """
     model = get_model()
     per_frame: list[list[Detection]] = []
@@ -38,7 +47,7 @@ def track_frames(frames: list) -> list[list[Detection]]:
     for frame in frames:
         result = model.track(
             frame,
-            tracker="bytetrack.yaml",
+            tracker=TRACKER_CONFIG,
             persist=True,
             classes=[PERSON_CLASS, SPORTS_BALL_CLASS],
             conf=0.35,

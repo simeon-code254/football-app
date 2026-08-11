@@ -75,7 +75,7 @@ async def process_job(job_id: str) -> None:
             await client.table("video_analysis_jobs")
             .select(
                 "*, videos(storage_path, subject_hint_x, subject_hint_y, subject_hint_time_ms), "
-                "players(is_goalkeeper, height_cm)"
+                "players(is_goalkeeper, height_cm, jersey_number)"
             )
             .eq("id", job_id)
             .single()
@@ -99,7 +99,12 @@ async def process_job(job_id: str) -> None:
         )
 
         result = await asyncio.to_thread(
-            run_pipeline, video_bytes, player.get("height_cm"), bool(player.get("is_goalkeeper")), subject_hint
+            run_pipeline,
+            video_bytes,
+            player.get("height_cm"),
+            bool(player.get("is_goalkeeper")),
+            subject_hint,
+            player.get("jersey_number"),
         )
 
         if not result.ok:
