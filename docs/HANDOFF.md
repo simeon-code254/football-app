@@ -1,3 +1,4 @@
+
 # Matobev — Session Handoff
 
 **Purpose of this document**: a complete record of what's been built this session, so work can resume cleanly after a context reset without re-deriving decisions or re-discovering what already exists. Read this before doing anything else.
@@ -76,7 +77,7 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 
 ## 3. Backend — everything built
 
-**28 migrations**, all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
+**40 migrations** (28 from earlier phases + 4 security-hardening ones from Phase 6 + 6 from Phase 7, see §6c/§6d), all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
 
 1. Extensions/enums (`position_code`)
 2. `countries` (Africa-only, 54 seeded rows)
@@ -197,6 +198,71 @@ Full design rationale in `C:\Users\Admin\.claude\plans\now-fancy-balloon.md` ("P
 
 **Small companion UI change also shipped this pass**: both `app/app/(player-tabs)/profile.tsx` and `app/app/player/[id].tsx` now show a "Provisional (X/Y attributes assessed)" label next to the overall rating whenever some but not all attributes are scored — otherwise a Phase-A-only player (2 of 10 attributes) would show a normal-looking overall rating that reads as complete.
 
+## 6b. Multi-signal subject tracking (Phase 5) — production-direction hardening
+
+Full design rationale in `now-fancy-balloon.md` ("Phase 5"), written after a research pass into how real production/academic sports-CV systems (SkillCorner, Second Spectrum, Veo, SoccerNet, the open-source `roboflow/sports` toolkit) actually solve detection/tracking/re-identification/calibration. Positioning decision confirmed with the user: Matobev stays deliberately narrower than those systems — tracking *one* player (the uploader), not a full match — which is what keeps every addition below cheap, pretrained, and CPU-only.
+
+**What changed**, all in `ai-service/src/pipeline/`:
+- **Tracker**: ByteTrack → BoT-SORT with appearance re-ID (`with_reid: True`, `model: auto` — reuses YOLO's own detector features, zero new models/training). Config in `botsort_reid.yaml`. Fixes short-term occlusion/cut recovery; still not long-term re-ID (open research problem).
+- **Team-color clustering** (`teams.py`, new): training-free K-means (k=2) on jersey color, wired into `subject.py`'s heuristic to down-weight differently-colored runner-up candidates when computing `dominance_margin` — never used to positively assert identity.
+- **Jersey-number OCR** (`jersey.py`, new, EasyOCR): a light, non-authoritative signal checked against `players.jersey_number`. Logs a `jersey_signal_conflict` in `result_summary` for audit; never overrides the selected track. `jersey_number` added to the `players` select in `jobs.py`.
+- **Calibration deliberately left unchanged** — the user was explicit that pitch-line/homography calibration would fail exactly the users this app targets (grassroots African pitches frequently have no visible markings), so height-based calibration (`calibrate.py`) stays the only method, on purpose, not as a deferred TODO.
+- `requirements.txt` gained `scikit-learn==1.9.0` and `easyocr==1.7.2`.
+
+**Verified directly** (see `ai-service/README.md`'s "What was verified directly during development" for full detail): full pipeline re-run end-to-end against existing real-photo/synthetic test clips with no regressions; jersey OCR mechanism confirmed correct on a controlled synthetic digit crop, and the conflict-detection path confirmed to flag a genuine conflict without altering subject selection; team clustering confirmed to run and produce cluster assignments. **Honestly flagged, not hidden**: a synthetic test built specifically to isolate BoT-SORT+ReID's advantage over plain ByteTrack did not show a measurable difference — the existing `track_buffer` window already bridges gaps of that size via motion prediction alone in a 2-source-person synthetic clip. The upgrade is kept because it's a well-documented, zero-cost improvement per the library's own docs, not because this session independently proved a measurable lift with real crowded footage (which nobody in this session could film).
+
+## 6c. Production-readiness hardening (Phase 6) — security, stability, UX, infra config
+
+Triggered by the user's explicit ask to make the app "production ready, ux, security." Done via three parallel research audits (security/RLS, UX/frontend robustness, ops/deployment-readiness) rather than guessing, then a fix pass against the real findings. Full rationale in `now-fancy-balloon.md` ("Phase 6"). Explicitly **out of scope**, flagged not forgotten: deploying `ai-service` anywhere (still local-dev-only, unchanged from Phase 4/5), actual app-store submission (needs the user's own developer accounts), a full WCAG audit, offline-mode banners.
+
+**Security — 4 new migrations** (`20260808140000`–`20260808170000`):
+- `players_protected_columns` — a client can no longer self-write `players.overall_rating` (mirrors the existing `scouts.verification_status` self-change-lock trigger pattern exactly), and `profile_completed` can only become `true` when the wizard's actual required fields (`full_name`, `date_of_birth`, `nationality_code`, `primary_position`) are genuinely set — closes a real gap where a raw API call could fake a rating or skip onboarding.
+- `messages_update_read_policy` — `messages` had **no UPDATE policy at all**, so `markMessagesRead()` was silently a no-op for every user; added (participant, excluding the sender).
+- `profiles_restrict_public_select` — `profiles_select_players_public` granted full-row read (including `phone`) to *any* authenticated user, not just verified scouts; narrowed to `is_verified_scout()`. `player_public_view` (already phone-free) continues to work for general browsing — verified live this doesn't break Discover, since Postgres views run with the view owner's privileges by default, not the caller's (the migration's own old comment claiming the opposite was wrong).
+- `videos_storage_path_owned` — a `CHECK` constraint requiring `storage_path` to start with the uploader's own id, closing a low-severity path-collision gap in the `videos_read_ready` storage policy.
+- `ai-service`: `POST /process/{job_id}` was fully unauthenticated (compute-cost risk, not a data leak); added a shared-secret bearer-token check (`AI_SERVICE_INTERNAL_TOKEN`, new env var, constant-time comparison).
+- All four migrations **live-verified with real spoofed writes** via fresh throwaway test accounts (created through the Admin API — see the incident note below) — confirmed each fix actually blocks what it should and doesn't break what it shouldn't.
+
+**Stability/UX**:
+- `src/components/ErrorBoundary.tsx` (new) — no Error Boundary existed anywhere before; a render-time throw white-screened the whole app with no recovery. Wraps `<Stack>` in `_layout.tsx`.
+- `src/components/QueryState.tsx` (new) — `useQuery`'s `error` was never read anywhere in the app; a failed fetch rendered identically to "no data yet," with several screens (`(player-tabs)/home.tsx`, `(scout-tabs)/home.tsx`, `notifications.tsx`, both `messages.tsx`) not even checking `isLoading`. One reusable loading/error/empty component, rolled out across **all 15 screens** that use `useQuery`.
+- Real self-service account deletion: `supabase/functions/delete-account` (new Edge Function, deployed) verifies the caller's own JWT, then uses service_role internally to clean up Storage (`avatars`/`videos`/`verification-documents`) and call `auth.admin.deleteUser` (cascades through everything via existing FKs). Wired to `settings.tsx`'s Delete Account row behind a real destructive-confirm dialog. **Two real bugs found and fixed while verifying this live**: (1) the function had no CORS headers, so the browser blocked every call before it ever reached the function — added an OPTIONS preflight handler + `Access-Control-Allow-*` on every response; (2) `auth.getUser()` called with no argument reads the client's own in-memory session state, not a manually-attached `Authorization` header (even via `global.headers`) — fixed by extracting the JWT and passing it explicitly as `getUser(jwt)`. Confirmed working end-to-end twice through the real browser UI (login → Settings → Delete Account → confirm → account, profile, and player rows all verified gone from the DB via SQL → redirected to `/welcome`).
+- `IconButton` (the shared back/header-action button used on ~17 screens) now requires an `accessibilityLabel` prop — previously optional and unset almost everywhere, so most of the app's back buttons had no screen-reader label at all.
+- `verify-email.tsx` had no back button at all; added, matching the pattern used elsewhere.
+
+**Infra config (scaffolding only, no deployment)**:
+- `.github/workflows/ci.yml` (new) — runs `tsc --noEmit` + `expo export -p web` on push/PR, the same manual loop documented in §7 below, now automated.
+- `app/eas.json` (new) + `app.json` gained `ios.bundleIdentifier`/`buildNumber` and `android.package`/`versionCode` (all previously absent — not store-submittable as-is before this). `extra.eas.projectId` deliberately left unset — needs a real `eas init` run against the user's own Expo account.
+
+**Incident during this pass, caught and fixed**: an earlier raw SQL `insert into auth.users` (for a throwaway test account, before switching to the proper Admin API) briefly broke the project's Auth service **entirely** — every login started failing with `"Database error querying schema"`. Root-caused to the malformed row (missing a matching `auth.identities` row, among other GoTrue-internal expectations a hand-written insert doesn't satisfy), deleted it, confirmed Auth healthy again before continuing. **Lesson applied for the rest of this pass and worth keeping**: always create test accounts via the Auth Admin API (`POST /auth/v1/admin/users` with the service_role key), never by hand-inserting into `auth.users` directly.
+
+## 6d. "Fix all issues" pass (Phase 7) — a second, deeper audit + fixes
+
+Requested after Phase 6, with an explicit ask for a *thorough* re-audit across UI, UX/"easy access", and security — run as three more research passes (this time each one told what Phase 6 already fixed, so they'd surface only new gaps). Findings below, and everything found was fixed and live-verified with real spoofed accounts, not just read from the audit reports.
+
+**Security — 6 new migrations (`20260808180000`–`20260808230000`)**:
+- `players` had the *same* over-broad-read bug already fixed once on `profiles` — `players_select_public` granted full-row select (DOB, height, weight, bio, jersey number, every social handle) to any signed-in user, verified live to be real. Narrowed to verified-scouts-only, same pattern as before.
+- Storage buckets (`avatars`/`videos`/`verification-documents`) had **no file size or mime-type limits at all** — added (10MB/100MB/20MB, matching what the upload screen's own copy already claimed).
+- No policy ever let a player read a *scout's* profile — `messages.tsx` joins scout name/avatar for the player's conversation view, which was silently rendering blank. Added, scoped narrowly to actual conversation participants only (verified both the negative case — blocked with no shared conversation — and the positive case — readable once one exists).
+- A scout could set a trial application to `withdrawn`, a status meant to be player-exclusive by the schema's own design. Restricted (verified: shortlist still works, withdraw attempt now correctly 403s).
+- `profile_views` had no dedupe — the same viewer could spam-insert unlimited rows against the same profile, directly inflating "3 scouts viewed your profile" / "Profile Views (30d)". Added a one-row-per-viewer-per-profile-per-day unique constraint (generated `viewed_day` column); `profileRepository.logProfileView()` now treats the resulting unique-violation as an expected no-op, not an error.
+- `ai-service/requirements.txt`'s unpinned deps (`fastapi`, `uvicorn`, `opencv-python`, `python-dotenv`) pinned to their actually-installed versions.
+
+**UX/"easy access"**:
+- Notifications didn't fire for two things the UI already implied they should: a trial invitation (`inviteToTrial()` does a raw INSERT, the existing trigger only fired on status UPDATE) and AI analysis completing/failing. Both wired now (`20260808230000_notification_triggers_invite_and_analysis.sql`), live-verified — including the goalkeeper/skipped-analysis case getting its own honest "processed, not scored" message rather than a fake success.
+- Notifications were previously mark-as-read-only — tapping one now deep-links to the real destination by type (`app/notifications.tsx`'s `routeForNotification()`), verified live end-to-end (tapped a trial-invitation notification, landed on the correct real trial detail screen).
+- **Pull-to-refresh** added across every list/feed screen that had none: both dashboards, reels, discover, scout players, both messages screens, notifications.
+- **Search debounce** (350ms) added to Discover and scout Players — was firing a full query on every keystroke.
+- **Sort** (Rating/Name/Age) added to both Discover and scout Players — filtering existed, sorting didn't. `profileRepository.listPlayerPublicViews()` gained a `sortBy` param.
+- **"Saved Players"** on the scout dashboard routed to the generic search screen — there was no actual saved-players view anywhere in the app (`listSavedPlayers` was only ever used to compute a count). `(scout-tabs)/players.tsx` now supports `?saved=1`, reusing its existing filter/sort/compare UI against the scout's real saved list, with its own specific empty state. `listPlayerPublicViews()` gained an `ids` filter to support this.
+- Messaging: per-bubble timestamps, a Sent/Read indicator on your own messages (the read-tracking already existed from Phase 6's `messages` UPDATE policy, just never surfaced), auto-scroll to the newest message, and a real failure alert when sending fails (was completely silent before — the draft just reappeared with no explanation).
+- Photo-library permission denial was a dead end (no path back once `canAskAgain` is `false`); added an "Open Settings" option via `expo-linking`, in both `upload.tsx` and `profile-complete.tsx`.
+- Scout verification status was a single static "Pending" label regardless of whether you were actually pending *or rejected* — a rejected scout had no way to know or see why. Now distinguishes the two, shows the real `verification_notes` rejection reason, and `scout-verification.tsx` itself now detects "already submitted, awaiting review" instead of always showing a blank form.
+
+**UI**: `KeyboardAvoidingView` added to every remaining text-input form that lacked it (login, signup, forgot-password, profile-complete, scout-edit-profile). Reel comment avatars now use the same `?? images.avatarMale` fallback pattern as every other avatar in the app. One hardcoded color (`#9CA3AF`) in profile-complete.tsx replaced with the existing `colors.textDisabled` token it was duplicating.
+
+**Verified live** (real spoofed accounts via the Admin API, cleaned up after — see the Phase 6 incident note above for why never raw-SQL): all 6 new RLS/constraint fixes, both new notification triggers (invite + AI complete + AI failed), tappable-notification deep-linking, and the Saved Players flow, all through the real running app in a browser, not just direct API calls.
+
 ## 7. Verification commands (for whoever resumes)
 
 ```bash
@@ -211,4 +277,7 @@ cd app && npx tsc --noEmit && npx expo export -p web && rm -rf dist
 
 # Run the AI service locally (after filling in ai-service/.env)
 cd ai-service && .venv\Scripts\Activate.ps1 && uvicorn main:app --reload
+
+# Redeploy the delete-account Edge Function after any change to it
+cd matobev && SUPABASE_ACCESS_TOKEN=<pat> supabase functions deploy delete-account --project-ref qefovzbhnmdhbqldtptc
 ```
