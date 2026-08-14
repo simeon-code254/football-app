@@ -53,15 +53,29 @@ export async function isPlayerSaved(scoutId: string, playerId: string): Promise<
   return data;
 }
 
-export async function listSavedPlayers(scoutId: string, folderId?: string) {
-  let query = supabase
+// For stat tiles ("Saved Players") that only ever needed a number.
+export async function getSavedPlayersCount(scoutId: string): Promise<number> {
+  const { count, error } = await supabase
     .from('saved_players')
-    .select('*, players(*, profiles(full_name, avatar_url))')
+    .select('id', { count: 'exact', head: true })
     .eq('scout_id', scoutId);
-  if (folderId) query = query.eq('folder_id', folderId);
-  const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return count ?? 0;
+}
+
+// Just the player IDs a scout has saved, no join -- used to filter Discover
+// into a "Saved Players" view. Far cheaper than listSavedPlayers() when the
+// row data itself (folder, saved-at, player summary) isn't needed, only
+// which players to filter for.
+export async function listSavedPlayerIds(scoutId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('saved_players')
+    .select('player_id')
+    .eq('scout_id', scoutId)
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.player_id);
 }
 
 export async function getNote(scoutId: string, playerId: string): Promise<string> {

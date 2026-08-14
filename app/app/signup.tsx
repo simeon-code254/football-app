@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
@@ -17,6 +17,8 @@ import { showAlert } from '../src/lib/alert';
 // white-on-white version read as visually flat) and password visibility
 // toggles, which a static HTML mockup can't express.
 export default function Signup() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const { role } = useLocalSearchParams<{ role?: 'player' | 'scout' }>();
   const isScout = role === 'scout';
   const submitLock = useRef(false);
@@ -30,12 +32,21 @@ export default function Signup() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [retryAt, setRetryAt] = useState<number | null>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touch = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailError = touched.email && email.trim() && !isEmailValid ? 'Enter a valid email address.' : undefined;
+  const passwordError = touched.password && password.length > 0 && password.length < 8 ? 'Password must be at least 8 characters.' : undefined;
+  const confirmError =
+    touched.confirmPassword && confirmPassword.length > 0 && confirmPassword !== password ? 'Passwords do not match.' : undefined;
 
   const canSubmit =
     acceptedTerms &&
     acceptedPrivacy &&
     fullName.trim() &&
     email.trim() &&
+    isEmailValid &&
     password.length >= 8 &&
     password === confirmPassword &&
     (!isScout || organization.trim()) &&
@@ -44,7 +55,11 @@ export default function Signup() {
   const retryLabel = retryAt ? `Try again in ${Math.max(1, Math.ceil((retryAt - Date.now()) / 1000))}s` : null;
 
   const submit = async () => {
-    if (!canSubmit || submitting || submitLock.current) return;
+    if (!canSubmit) {
+      setTouched({ fullName: true, email: true, password: true, confirmPassword: true, organization: true });
+      return;
+    }
+    if (submitting || submitLock.current) return;
     submitLock.current = true;
     setSubmitting(true);
     try {
@@ -114,8 +129,19 @@ export default function Signup() {
             autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
+            onBlur={() => touch('email')}
+            error={emailError}
           />
-          <AppTextField label="Password" icon="lock" placeholder="Min 8 characters" isPassword value={password} onChangeText={setPassword} />
+          <AppTextField
+            label="Password"
+            icon="lock"
+            placeholder="Min 8 characters"
+            isPassword
+            value={password}
+            onChangeText={setPassword}
+            onBlur={() => touch('password')}
+            error={passwordError}
+          />
           <AppTextField
             label="Confirm Password"
             icon="lock"
@@ -123,6 +149,8 @@ export default function Signup() {
             isPassword
             value={confirmPassword}
             onChangeText={setConfirmPassword}
+            onBlur={() => touch('confirmPassword')}
+            error={confirmError}
           />
         </View>
 
@@ -154,7 +182,8 @@ export default function Signup() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.primaryDark },
   header: { paddingBottom: 28, paddingHorizontal: 20 },
   headerTop: { flexDirection: 'row', paddingTop: 4, marginBottom: 8 },
@@ -190,4 +219,5 @@ const styles = StyleSheet.create({
   loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 14 },
   loginText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
   loginLink: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.primary },
-});
+  });
+}

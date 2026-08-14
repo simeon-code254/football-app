@@ -27,6 +27,17 @@ export async function signUp({ email, password, role, fullName, organization }: 
     },
   });
   if (error) throw error;
+  // Supabase deliberately doesn't return an error for signUp() against an
+  // already-registered email (email-enumeration protection) -- it silently
+  // no-ops instead (resending the confirmation email if unconfirmed, or
+  // nothing at all if already confirmed) and returns a normal-looking 200
+  // with no new identity attached to the user. An empty identities array is
+  // the documented signal that this "succeeded" without actually creating
+  // a new account -- previously unchecked, so the app just proceeded to
+  // Verify Email as if signup had genuinely worked.
+  if (data.user && data.user.identities?.length === 0) {
+    throw new Error('An account with this email already exists. Try logging in instead.');
+  }
   return data;
 }
 
@@ -62,6 +73,19 @@ export async function resendVerificationEmail(email: string) {
 
 export async function sendPasswordReset(email: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) throw error;
+}
+
+export async function changePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+// scope: 'global' revokes every refresh token for this user, not just the
+// current device's -- a real "sign out everywhere" action, distinct from
+// the plain signOut() above which only ends the current session.
+export async function signOutAllDevices() {
+  const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (error) throw error;
 }
 

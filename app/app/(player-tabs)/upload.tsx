@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Platform, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -7,7 +8,7 @@ import * as VideoThumbnails from 'expo-video-thumbnails';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -15,7 +16,7 @@ import * as videosRepository from '../../src/repositories/videosRepository';
 import { showAlert } from '../../src/lib/alert';
 
 type UploadMode = 'reel' | 'ai';
-type PickedVideo = { uri: string; thumbnailUri?: string; durationMs?: number | null };
+type PickedVideo = { uri: string; fileName?: string | null; thumbnailUri?: string; durationMs?: number | null };
 type TagFrame = { uri: string; width: number; height: number };
 type SubjectHint = { x: number; y: number }; // normalized 0-1, relative to TagFrame
 
@@ -70,7 +71,14 @@ function VideoPreviewPlayer({ uri }: { uri: string }) {
     p.muted = true;
     p.play();
   });
-  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />;
+  // contentFit="cover" inside a fixed 9:16 box was cropping any clip that
+  // wasn't already exactly that shape -- a landscape highlight (very
+  // plausible for match footage filmed on a tripod/sideline, not just
+  // vertical selfie-style clips) got zoomed in on its top slice only. This
+  // is a preview-display choice alone -- it never touched the uploaded
+  // file itself, which is untouched full-resolution source. "contain"
+  // letterboxes instead of cropping, so the full frame is always visible.
+  return <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} />;
 }
 
 // Matches the mockup's UPLOAD tab: Highlight Reel / AI Analysis mode toggle,
@@ -78,6 +86,8 @@ function VideoPreviewPlayer({ uri }: { uri: string }) {
 // `uploadMode` maps directly to the `videos.upload_intent` field in the
 // platform's data model — 'reel' -> 'highlight_only', 'ai' -> 'ai_analysis'.
 export default function Upload() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const [mode, setMode] = useState<UploadMode>('reel');
   const [video, setVideo] = useState<PickedVideo | null>(null);
@@ -136,7 +146,7 @@ export default function Upload() {
     const asset = result.assets[0];
     setTagFrame(null);
     setSubjectHint(null);
-    setVideo({ uri: asset.uri, durationMs: asset.duration });
+    setVideo({ uri: asset.uri, fileName: asset.fileName, durationMs: asset.duration });
   };
 
   const openTagModal = async () => {
@@ -221,23 +231,38 @@ export default function Upload() {
 
         <View style={styles.toggleRow}>
           <Pressable style={[styles.toggleBtn, mode === 'reel' && styles.toggleBtnActive]} onPress={() => setMode('reel')}>
+            <Feather name="film" size={14} color={mode === 'reel' ? colors.primary : colors.textMuted} />
             <Text style={[styles.toggleText, mode === 'reel' && styles.toggleTextActive]}>Highlight Reel</Text>
           </Pressable>
           <Pressable style={[styles.toggleBtn, mode === 'ai' && styles.toggleBtnActive]} onPress={() => setMode('ai')}>
+            <Feather name="cpu" size={14} color={mode === 'ai' ? colors.primary : colors.textMuted} />
             <Text style={[styles.toggleText, mode === 'ai' && styles.toggleTextActive]}>AI Analysis</Text>
           </Pressable>
         </View>
 
         {video ? (
-          <View style={styles.videoPreview}>
-            <VideoPreviewPlayer uri={video.uri} />
-            <Pressable style={styles.videoRemoveBtn} onPress={resetVideo}>
-              <Feather name="x" size={14} color={colors.white} />
-            </Pressable>
-          </View>
+          <>
+            {!!video.fileName && (
+              // Surfaces exactly which file was picked -- when testing via a
+              // desktop file dialog it's easy to select the wrong local file
+              // by mistake and assume the app is showing/uploading the wrong
+              // video, when really a different file was picked.
+              <Text style={styles.pickedFileName} numberOfLines={1}>
+                Selected: {video.fileName}
+              </Text>
+            )}
+            <View style={styles.videoPreview}>
+              <VideoPreviewPlayer uri={video.uri} />
+              <Pressable style={styles.videoRemoveBtn} onPress={resetVideo}>
+                <Feather name="x" size={14} color={colors.white} />
+              </Pressable>
+            </View>
+          </>
         ) : (
           <Pressable style={styles.dropZone} onPress={pickVideo}>
-            <Feather name="upload-cloud" size={28} color="#9CA3AF" />
+            <View style={styles.dropIconWrap}>
+              <Feather name="upload-cloud" size={26} color={colors.primary} />
+            </View>
             <Text style={styles.dropTitle}>Upload Video</Text>
             <Text style={styles.dropSub}>MP4, MOV up to 100MB</Text>
           </Pressable>
@@ -245,7 +270,7 @@ export default function Upload() {
 
         {mode === 'ai' && video && (
           <Pressable style={styles.tagRow} onPress={openTagModal} disabled={extractingFrame}>
-            <View style={styles.tagIconWrap}>
+            <View style={[styles.tagIconWrap, subjectHint && { backgroundColor: colors.successTint }]}>
               {extractingFrame ? (
                 <ActivityIndicator size="small" color={colors.primary} />
               ) : (
@@ -264,26 +289,31 @@ export default function Upload() {
           </Pressable>
         )}
 
-        <View style={styles.fields}>
-          <AppTextField label="Title" placeholder="e.g. Hat-trick vs Academy FC" value={title} onChangeText={setTitle} />
-          <AppTextField
-            label="Description"
-            placeholder="Tell scouts what to look for"
-            multiline
-            style={{ minHeight: 60 }}
-            value={description}
-            onChangeText={setDescription}
-          />
-          <View style={styles.row}>
-            <AppTextField label="Match" placeholder="League match" value={matchName} onChangeText={setMatchName} />
-            <AppTextField label="Opponent" placeholder="Academy FC" value={opponent} onChangeText={setOpponent} />
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>DETAILS</Text>
+          <View style={styles.fields}>
+            <AppTextField label="Title" placeholder="e.g. Hat-trick vs Academy FC" value={title} onChangeText={setTitle} />
+            <AppTextField
+              label="Description"
+              placeholder="Tell scouts what to look for"
+              multiline
+              style={{ minHeight: 60 }}
+              value={description}
+              onChangeText={setDescription}
+            />
+            <View style={styles.row}>
+              <AppTextField label="Match" placeholder="League match" value={matchName} onChangeText={setMatchName} />
+              <AppTextField label="Opponent" placeholder="Academy FC" value={opponent} onChangeText={setOpponent} />
+            </View>
+            <AppTextField label="Tags" placeholder="#freekick #goals" autoCapitalize="none" value={tags} onChangeText={setTags} />
           </View>
-          <AppTextField label="Tags" placeholder="#freekick #goals" autoCapitalize="none" value={tags} onChangeText={setTags} />
         </View>
 
         {mode === 'ai' && (
           <View style={styles.aiHint}>
-            <Feather name="cpu" size={16} color={colors.primary} />
+            <View style={styles.aiHintIconWrap}>
+              <Feather name="cpu" size={14} color={colors.primary} />
+            </View>
             <Text style={styles.aiHintText}>
               This video will be analyzed by our AI pipeline. Ratings for your position appear once processing completes.
               For best accuracy, film yourself only, in one continuous shot with no cuts, camera held roughly level.
@@ -336,7 +366,7 @@ export default function Upload() {
                     });
                   }}
                 >
-                  <Image source={{ uri: tagFrame.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  <Image source={{ uri: tagFrame.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
                   {subjectHint && (
                     <View
                       pointerEvents="none"
@@ -374,13 +404,14 @@ export default function Upload() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary },
   sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 20 },
   toggleRow: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, padding: 4, marginBottom: 20 },
-  toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
+  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: radii.pill },
   toggleBtnActive: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   toggleText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   toggleTextActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
@@ -392,12 +423,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 36,
+    paddingVertical: 40,
     gap: 4,
     marginBottom: 20,
   },
-  dropTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8 },
+  dropIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  dropTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   dropSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
+  pickedFileName: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginBottom: 8 },
   videoPreview: {
     width: '70%',
     alignSelf: 'center',
@@ -406,15 +439,23 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 20,
     backgroundColor: '#000',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   videoRemoveBtn: { position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   tagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 12, marginBottom: 20 },
   tagIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   tagRowTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
   tagRowSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
-  fields: { gap: 14, marginBottom: 16 },
+  section: { marginBottom: 20, gap: 12 },
+  sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 1 },
+  fields: { gap: 14 },
   row: { flexDirection: 'row', gap: 10 },
-  aiHint: { flexDirection: 'row', gap: 10, backgroundColor: '#EBF2FF', borderRadius: radii.md, padding: 12, marginBottom: 20, alignItems: 'flex-start' },
+  aiHint: { flexDirection: 'row', gap: 10, backgroundColor: colors.infoTint, borderRadius: radii.lg, padding: spacing.lg, marginBottom: 20, alignItems: 'flex-start' },
+  aiHintIconWrap: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   aiHintText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.primaryDark, lineHeight: 18 },
   submitBtn: { marginTop: 4 },
   tagModalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
@@ -435,4 +476,5 @@ const styles = StyleSheet.create({
   tagModalActions: { flexDirection: 'row', gap: 10, padding: 20, alignItems: 'center' },
   tagSkipBtn: { paddingVertical: 14, paddingHorizontal: 12 },
   tagSkipText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textMuted },
-});
+  });
+}

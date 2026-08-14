@@ -1,4 +1,5 @@
-import { Image, StyleProp, ImageStyle } from 'react-native';
+import { StyleProp } from 'react-native';
+import { Image, ImageStyle } from 'expo-image';
 
 type Props = {
   /** 'color' = full gradient mark (light backgrounds). 'white' = flat white
@@ -18,5 +19,5 @@ const SOURCES = {
 // instead of a generic icon anywhere the app needs to show its own identity
 // (splash, auth headers, nav branding).
 export function Logo({ variant = 'color', size = 48, style }: Props) {
-  return <Image source={SOURCES[variant]} style={[{ width: size, height: size }, style]} resizeMode="contain" />;
+  return <Image source={SOURCES[variant]} style={[{ width: size, height: size }, style]} contentFit="contain" />;
 }

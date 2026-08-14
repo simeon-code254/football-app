@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { Stack, useSegments, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   useFonts,
@@ -13,7 +14,7 @@ import {
   Poppins_800ExtraBold,
   Poppins_900Black,
 } from '@expo-google-fonts/poppins';
-import { colors } from '../src/theme';
+import { useThemeColors, useIsDark } from '../src/theme';
 import { queryClient } from '../src/lib/queryClient';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
@@ -39,6 +40,8 @@ export default function RootLayout() {
   const profile = useSessionStore((s) => s.profile);
   const hydrate = useSessionStore((s) => s.hydrate);
   const segments = useSegments();
+  const colors = useThemeColors();
+  const isDark = useIsDark();
 
   useEffect(() => {
     authRepository.getSession().then(hydrate);
@@ -95,6 +98,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <ErrorBoundary>
           <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
             <Stack.Screen name="index" />
@@ -120,9 +124,14 @@ export default function RootLayout() {
             <Stack.Screen name="scout-edit-profile" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="messages" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="account-settings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="security-settings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="privacy-settings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="help-settings" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="theme-settings" options={{ animation: 'slide_from_right' }} />
           </Stack>
+          <GlobalAlert />
         </ErrorBoundary>
-        <GlobalAlert />
       </View>
     </QueryClientProvider>
   );

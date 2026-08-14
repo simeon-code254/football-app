@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -18,16 +19,17 @@ import { ReportModal } from '../../src/components/ReportModal';
 
 const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
 
-const CONFIDENCE_COLOR: Record<string, string> = {
-  High: colors.success,
-  Medium: colors.goldDark,
-  Low: colors.error,
-};
-
 // Player Details, scoped for a scout viewing a player (spec §18-22): cover +
 // profile header, Overview/AI Analysis/Videos tabs, confidence-annotated
 // attributes (§20), Save-to-folder (§21), and private Scout Notes (§22).
 export default function PlayerDetail() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+  const CONFIDENCE_COLOR: Record<string, string> = {
+    High: colors.success,
+    Medium: colors.goldDark,
+    Low: colors.error,
+  };
   const { id } = useLocalSearchParams<{ id: string }>();
   const role = useSessionStore((s) => s.role);
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
@@ -47,8 +49,10 @@ export default function PlayerDetail() {
     enabled: !!id,
     queryFn: async () => {
       const publicView = await profileRepository.getPlayerPublicView(id);
-      const attributes = await profileRepository.getPlayerAttributes(id, publicView.primary_position === 'GK');
-      const videos = await videosRepository.getMyVideos(id);
+      const [attributes, videos] = await Promise.all([
+        profileRepository.getPlayerAttributes(id, publicView.primary_position === 'GK'),
+        videosRepository.getMyVideos(id),
+      ]);
       return { publicView, attributes, videos };
     },
   });
@@ -63,18 +67,20 @@ export default function PlayerDetail() {
     queryKey: ['playerDetailScoutData', id, viewerId],
     enabled: role === 'scout' && !!viewerId && !!id,
     queryFn: async () => {
-      const [folders, savedRow, noteText, trials, matchScore] = await Promise.all([
+      const [folders, savedRow, noteText, openTrialsPage, matchScore] = await Promise.all([
         scoutingRepository.listFolders(viewerId!),
         scoutingRepository.isPlayerSaved(viewerId!, id),
         scoutingRepository.getNote(viewerId!, id),
-        trialsRepository.listMyTrials(viewerId!),
+        // Only the scout's currently-open trials are ever offerable here --
+        // bounded fetch instead of pulling every trial they've ever created.
+        trialsRepository.listMyTrials(viewerId!, { status: 'open', pageSize: 50 }),
         scoutingRepository.getMatchScore(viewerId!, id),
       ]);
       return {
         folders,
         savedFolderId: savedRow?.folder_id ?? null,
         note: noteText,
-        openTrials: trials.filter((t) => t.status === 'open'),
+        openTrials: openTrialsPage.items,
         matchScore,
       };
     },
@@ -84,10 +90,9 @@ export default function PlayerDetail() {
     queryKey: ['playerDetailThumbs', data?.videos.map((v) => v.id)],
     enabled: tab === 'Videos' && !!data?.videos.length,
     queryFn: async () => {
-      const urls = await Promise.all(
-        data!.videos.map((v) => videosRepository.getVideoUrl(v.thumbnail_path || v.storage_path))
-      );
-      return Object.fromEntries(data!.videos.map((v, i) => [v.id, urls[i]]));
+      const paths = data!.videos.map((v) => v.thumbnail_path || v.storage_path);
+      const urlByPath = await videosRepository.getVideoUrls(paths);
+      return Object.fromEntries(data!.videos.map((v) => [v.id, urlByPath[v.thumbnail_path || v.storage_path] ?? '']));
     },
   });
 
@@ -196,7 +201,7 @@ export default function PlayerDetail() {
           {role === 'scout' && (
             <View style={styles.actionsRow}>
               <Pressable style={styles.saveActionBtn} onPress={() => setSaveOpen(true)}>
-                <Feather name="heart" size={15} color={savedFolderName ? '#EF4444' : colors.textPrimary} />
+                <Feather name="heart" size={15} color={savedFolderName ? colors.error : colors.textPrimary} />
                 <Text style={styles.saveActionText}>{savedFolderName ? `Saved · ${savedFolderName}` : 'Save'}</Text>
               </Pressable>
               <Pressable
@@ -206,7 +211,12 @@ export default function PlayerDetail() {
                 <Feather name="message-circle" size={15} color={colors.white} />
                 <Text style={styles.messageActionText}>Message</Text>
               </Pressable>
-              <Pressable style={styles.notesActionBtn} onPress={openNotes}>
+              <Pressable
+                style={styles.notesActionBtn}
+                onPress={openNotes}
+                accessibilityRole="button"
+                accessibilityLabel="Add scout notes"
+              >
                 <Feather name="edit-3" size={16} color={colors.textPrimary} />
               </Pressable>
             </View>
@@ -297,7 +307,7 @@ export default function PlayerDetail() {
               {!data.videos.length && <Text style={styles.disclaimerText}>No videos uploaded yet.</Text>}
               {data.videos.map((v) => (
                 <View key={v.id} style={styles.videoThumb}>
-                  {thumbUrls?.[v.id] && <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} />}
+                  {thumbUrls?.[v.id] && <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} contentFit="contain" />}
                   <View style={styles.videoPlay}>
                     <Feather name="play" size={12} color={colors.white} />
                   </View>
@@ -310,6 +320,7 @@ export default function PlayerDetail() {
 
       {/* Save to folder (spec §21) */}
       <Modal visible={saveOpen} transparent animationType="fade" onRequestClose={() => setSaveOpen(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setSaveOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Save Player</Text>
@@ -333,10 +344,12 @@ export default function PlayerDetail() {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Scout Notes (spec §22) — private to the scout */}
       <Modal visible={notesOpen} transparent animationType="fade" onRequestClose={() => setNotesOpen(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setNotesOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Scout Notes</Text>
@@ -356,6 +369,7 @@ export default function PlayerDetail() {
             </Pressable>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Invite to Trial — scout-initiated, distinct from a player browsing
@@ -390,7 +404,8 @@ export default function PlayerDetail() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   notFound: { textAlign: 'center', marginTop: 40, fontFamily: fontFamily.regular, color: colors.textMuted },
   cover: { height: 160 },
@@ -403,9 +418,9 @@ const styles = StyleSheet.create({
   meta: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textBody, marginTop: 2 },
   metaSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 1 },
   pillRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  ovrPill: { backgroundColor: '#F0F5FF', borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6 },
+  ovrPill: { backgroundColor: colors.infoTint, borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6 },
   ovrPillText: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.primary },
-  matchPill: { backgroundColor: '#F0FDF4', borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6 },
+  matchPill: { backgroundColor: colors.successTint, borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 6 },
   matchPillText: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.success },
   actionsRow: { flexDirection: 'row', gap: 10, marginTop: 16, alignItems: 'center' },
   saveActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 10 },
@@ -430,7 +445,7 @@ const styles = StyleSheet.create({
   detailCell: { width: '47%', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 12 },
   detailLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted },
   detailValue: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary, marginTop: 3 },
-  disclaimer: { flexDirection: 'row', gap: 8, backgroundColor: '#EBF2FF', borderRadius: radii.md, padding: 10, alignItems: 'flex-start' },
+  disclaimer: { flexDirection: 'row', gap: 8, backgroundColor: colors.infoTint, borderRadius: radii.md, padding: 10, alignItems: 'flex-start' },
   disclaimerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.primaryDark, lineHeight: 16 },
   overallCard: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 16, alignItems: 'center' },
   provisionalNote: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, marginTop: 6 },
@@ -462,4 +477,5 @@ const styles = StyleSheet.create({
   notesInput: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 80, textAlignVertical: 'top' },
   saveNoteBtn: { backgroundColor: colors.primary, borderRadius: radii.lg, height: 48, alignItems: 'center', justifyContent: 'center' },
   saveNoteText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.white },
-});
+  });
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors, radii } from '../theme';
+import { radii, useThemeColors } from '../theme';
 
 type Props = {
   icon: React.ComponentProps<typeof Feather>['name'];
@@ -18,8 +18,10 @@ type Props = {
 
 // Matches the mockup's recurring 36x36 rounded-square icon button (back
 // chevron, header actions). `light` gives a translucent-white variant for
-// use over photos/gradients instead of the default #F4F6F9-on-white one.
+// use over photos/gradients instead of the default surfaceMuted-on-surface one.
 export function IconButton({ icon, accessibilityLabel, onPress, size = 36, style, light }: Props) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <Pressable
       onPress={onPress}
@@ -29,20 +31,22 @@ export function IconButton({ icon, accessibilityLabel, onPress, size = 36, style
         styles.button,
         light
           ? { backgroundColor: pressed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)' }
-          : { backgroundColor: pressed ? '#EAECF0' : colors.surfaceMuted },
+          : { backgroundColor: pressed ? colors.border : colors.surfaceMuted },
         { width: size, height: size },
         style,
       ]}
     >
-      <Feather name={icon} size={18} color={light ? colors.white : '#333333'} />
+      <Feather name={icon} size={18} color={light ? colors.white : colors.textPrimary} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    borderRadius: radii.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    button: {
+      borderRadius: radii.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+}

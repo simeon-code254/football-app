@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, spacing } from '../src/theme';
+import { fontFamily, fontSize, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
@@ -13,6 +13,8 @@ import * as authRepository from '../src/repositories/authRepository';
 // Doesn't block writes at the RLS layer (a much larger, separate change),
 // just stops the app from being usable through this UI.
 export default function Suspended() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const profile = useSessionStore((s) => s.profile);
   const clearSession = useSessionStore((s) => s.clear);
 
@@ -39,14 +41,15 @@ export default function Suspended() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   iconWrap: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.dangerTint,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -61,4 +64,5 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   button: { marginTop: 32, width: '100%' },
-});
+  });
+}

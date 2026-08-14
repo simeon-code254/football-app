@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,17 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Image,
   ViewToken,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { Image } from 'expo-image';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
@@ -48,13 +49,17 @@ function formatCount(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
-async function buildFeed(userId: string): Promise<ReelState[]> {
-  const videos = await videosRepository.getFeed();
-  const urls = await Promise.all(videos.map((v) => videosRepository.getVideoUrl(v.storage_path)));
+const REELS_PAGE_SIZE = 10;
+
+type ReelsPage = { items: ReelState[]; nextCursor?: string };
+
+async function fetchReelsPage(userId: string, cursor?: string): Promise<ReelsPage> {
+  const videos = await videosRepository.getFeed(cursor, REELS_PAGE_SIZE);
+  const urlByPath = await videosRepository.getVideoUrls(videos.map((v) => v.storage_path));
   const engagement = await videosRepository.getMyEngagement(userId, videos.map((v) => v.id));
-  return videos.map((v, i) => ({
+  const items = videos.map((v) => ({
     id: v.id,
-    videoUrl: urls[i],
+    videoUrl: urlByPath[v.storage_path] ?? '',
     storagePath: v.storage_path,
     creatorId: v.player_id,
     creatorName: v.players?.profiles?.full_name || 'Player',
@@ -71,6 +76,10 @@ async function buildFeed(userId: string): Promise<ReelState[]> {
     liked: engagement.liked.has(v.id),
     saved: engagement.saved.has(v.id),
   }));
+  // Undefined once a page comes back short -- the natural "no more pages" signal
+  // for a cursor paged on created_at, same convention as every other list here.
+  const nextCursor = videos.length === REELS_PAGE_SIZE ? videos[videos.length - 1].created_at : undefined;
+  return { items, nextCursor };
 }
 
 function ReelItem({
@@ -92,6 +101,8 @@ function ReelItem({
   onOpenComments: () => void;
   onReport?: () => void;
 }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const player = useVideoPlayer(item.videoUrl, (p) => {
     p.loop = true;
   });
@@ -111,7 +122,12 @@ function ReelItem({
   return (
     <View style={{ height, width: '100%' }}>
       <Pressable style={StyleSheet.absoluteFill} onPress={() => setPaused((p) => !p)}>
-        <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="cover" nativeControls={false} />
+        {/* "cover" cropped any clip that wasn't exactly screen-aspect-ratio
+            (the common case for real match footage filmed landscape or on a
+            tripod) -- exactly the same bug already fixed on the upload
+            preview. "contain" letterboxes instead, so the full frame a
+            player uploaded is always what a viewer actually sees here too. */}
+        <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} />
       </Pressable>
       {paused && (
         <View style={[StyleSheet.absoluteFill, styles.pauseOverlay]} pointerEvents="none">
@@ -132,19 +148,41 @@ function ReelItem({
       )}
 
       <View style={styles.actionRail}>
-        <Pressable style={styles.actionItem} onPress={onLike}>
-          <Feather name="heart" size={26} color={item.liked ? '#EF4444' : colors.white} />
+        <Pressable
+          style={styles.actionItem}
+          onPress={onLike}
+          accessibilityRole="button"
+          accessibilityLabel={item.liked ? 'Unlike' : 'Like'}
+          accessibilityState={{ selected: item.liked }}
+        >
+          <Feather name="heart" size={26} color={item.liked ? colors.error : colors.white} />
           <Text style={styles.actionCount}>{formatCount(item.likeCount)}</Text>
         </Pressable>
-        <Pressable style={styles.actionItem} onPress={onOpenComments}>
+        <Pressable
+          style={styles.actionItem}
+          onPress={onOpenComments}
+          accessibilityRole="button"
+          accessibilityLabel="View comments"
+        >
           <Feather name="message-circle" size={26} color={colors.white} />
           <Text style={styles.actionCount}>{formatCount(item.commentCount)}</Text>
         </Pressable>
-        <Pressable style={styles.actionItem} onPress={onShare}>
+        <Pressable
+          style={styles.actionItem}
+          onPress={onShare}
+          accessibilityRole="button"
+          accessibilityLabel="Share this video"
+        >
           <Feather name="send" size={26} color={colors.white} />
           <Text style={styles.actionCount}>{formatCount(item.shareCount)}</Text>
         </Pressable>
-        <Pressable style={styles.actionItem} onPress={onSave}>
+        <Pressable
+          style={styles.actionItem}
+          onPress={onSave}
+          accessibilityRole="button"
+          accessibilityLabel={item.saved ? 'Unsave' : 'Save'}
+          accessibilityState={{ selected: item.saved }}
+        >
           <Feather name="bookmark" size={26} color={item.saved ? colors.gold : colors.white} />
           <Text style={styles.actionCount}>{formatCount(item.saveCount)}</Text>
         </Pressable>
@@ -176,12 +214,26 @@ export default function Reels() {
   // playing reel's audio/video kept running in the background on every
   // other tab, since nothing ever told its player to stop.
   const isFocused = useIsFocused();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
-  const { data: initialReels, isLoading, isRefetching, error, refetch } = useQuery({
+  const {
+    data: reelPages,
+    isLoading,
+    isRefetching,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['reelsFeed', userId],
     enabled: !!userId,
-    queryFn: () => buildFeed(userId!),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchReelsPage(userId!, pageParam),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
+  const initialReels = useMemo(() => reelPages?.pages.flatMap((p) => p.items), [reelPages]);
 
   const [reels, setReels] = useState<ReelState[]>([]);
   useEffect(() => {
@@ -195,11 +247,24 @@ export default function Reels() {
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   const viewedRef = useRef<Set<string>>(new Set());
 
-  const { data: comments } = useQuery({
+  const COMMENTS_PAGE_SIZE = 30;
+  const {
+    data: commentPages,
+    refetch: refetchComments,
+    fetchNextPage: fetchMoreComments,
+    hasNextPage: hasMoreComments,
+    isFetchingNextPage: isFetchingComments,
+  } = useInfiniteQuery({
     queryKey: ['videoComments', commentsFor],
     enabled: !!commentsFor,
-    queryFn: () => videosRepository.listComments(commentsFor!),
+    initialPageParam: 0,
+    // A popular clip can draw far more comments than fit in this sheet --
+    // paged load-more, newest first, instead of downloading the entire
+    // comment history every time it opens.
+    queryFn: ({ pageParam }) => videosRepository.listComments(commentsFor!, { page: pageParam, pageSize: COMMENTS_PAGE_SIZE }),
+    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined),
   });
+  const comments = commentPages?.pages.flatMap((p) => p.items) ?? [];
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const top = viewableItems.find((v) => v.isViewable);
@@ -257,6 +322,7 @@ export default function Reels() {
       setReels((list) =>
         list.map((r) => (r.id === commentsFor ? { ...r, commentCount: r.commentCount + 1 } : r))
       );
+      refetchComments();
     } catch {
       // best-effort — the comment sheet re-opening will re-fetch the true state
     }
@@ -300,6 +366,15 @@ export default function Reels() {
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.white]} tintColor={colors.white} />}
+          onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={{ height: 60, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator color={colors.white} />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={{ height: viewportHeight, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: colors.white, fontFamily: fontFamily.medium }}>No highlights yet.</Text>
@@ -317,9 +392,12 @@ export default function Reels() {
           <View style={styles.commentsSheet}>
             <Text style={styles.commentsTitle}>Comments</Text>
             <FlatList
-              data={comments ?? []}
+              data={comments}
               keyExtractor={(c) => c.id}
               style={{ maxHeight: 320 }}
+              onEndReached={() => hasMoreComments && !isFetchingComments && fetchMoreComments()}
+              onEndReachedThreshold={0.4}
+              ListFooterComponent={isFetchingComments ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 12 }} /> : null}
               ListEmptyComponent={<Text style={styles.noComments}>No comments yet — be the first.</Text>}
               renderItem={({ item }: { item: CommentWithAuthor }) => (
                 <View style={styles.commentRow}>
@@ -359,7 +437,8 @@ export default function Reels() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   pauseOverlay: { alignItems: 'center', justifyContent: 'center' },
   badge: {
@@ -393,4 +472,5 @@ const styles = StyleSheet.create({
   commentComposeRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.divider },
   commentInput: { flex: 1, backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
   commentSendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-});
+  });
+}

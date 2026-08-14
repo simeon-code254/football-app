@@ -3,7 +3,13 @@ from dataclasses import dataclass
 
 from ultralytics import __version__ as ultralytics_version
 
-from src.pipeline.attributes import compute_movement_stats, resolve_confidence, score_pace, score_physical
+from src.pipeline.attributes import (
+    compute_movement_stats,
+    generate_recommendations,
+    resolve_confidence,
+    score_pace,
+    score_physical,
+)
 from src.pipeline.calibrate import pixels_per_meter
 from src.pipeline.detect_track import track_frames
 from src.pipeline.extract import extract_frames
@@ -101,6 +107,7 @@ def run_pipeline(
     pace = score_pace(movement.peak_speed_kmh)
     physical = score_physical(movement, duration_s)
     confidence = resolve_confidence(subject.dominance_margin, movement.valid_interval_count, duration_s)
+    recommendations = generate_recommendations(movement, duration_s)
 
     t_score = time.monotonic()
 
@@ -129,6 +136,7 @@ def run_pipeline(
             "sprint_count": movement.sprint_count,
             "direction_change_count": movement.direction_change_count,
             "valid_interval_count": movement.valid_interval_count,
+            "recommendations": recommendations,
             "model_version": f"yolov8n+ultralytics-{ultralytics_version}",
             "tracker": "botsort+reid",
             "timings_s": {

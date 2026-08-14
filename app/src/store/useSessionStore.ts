@@ -42,6 +42,15 @@ export const useSessionStore = create<SessionState>((set) => ({
     }
     try {
       const profile = await profileRepository.getMyProfile(session.user.id);
+      // Admin (and any other non-player/non-scout role) has no matching
+      // players/scouts row and no UI in this app -- previously this fell
+      // through to the player branch by default ("not scout = player") and
+      // 406'd fetching a players row that was never created for them. This
+      // app is player/scout only; admins use the separate web dashboard.
+      if (profile.role !== 'player' && profile.role !== 'scout') {
+        set(SIGNED_OUT);
+        return;
+      }
       const role = profile.role as Role;
       if (role === 'scout') {
         const scout = await profileRepository.getMyScout(session.user.id);

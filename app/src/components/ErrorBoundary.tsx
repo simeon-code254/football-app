@@ -2,18 +2,20 @@ import { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, spacing } from '../theme';
+import { fontFamily, fontSize, spacing, useThemeColors, type ThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 
-type Props = { children: ReactNode };
+type Props = { children: ReactNode; colors: ThemeColors };
 type State = { error: Error | null };
 
 // React only supports catching render-time errors via a class component's
-// getDerivedStateFromError/componentDidCatch -- there's no hook equivalent.
-// Without this, any screen that throws during render white-screens the
-// whole app with no recovery. Mounted once around <Stack> in
-// app/app/_layout.tsx.
-export class ErrorBoundary extends Component<Props, State> {
+// getDerivedStateFromError/componentDidCatch -- there's no hook equivalent,
+// so the theme hook can't be called directly inside this class. The
+// exported ErrorBoundary below is a thin functional wrapper that calls
+// useThemeColors() and passes the result down as a prop instead, so this
+// still re-renders correctly when the theme toggles. Mounted once around
+// <Stack> in app/app/_layout.tsx.
+class ErrorBoundaryClass extends Component<Props, State> {
   state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {
@@ -27,7 +29,9 @@ export class ErrorBoundary extends Component<Props, State> {
   reset = () => this.setState({ error: null });
 
   render() {
+    const { colors } = this.props;
     if (this.state.error) {
+      const styles = makeStyles(colors);
       return (
         <SafeAreaView style={styles.root}>
           <View style={styles.content}>
@@ -47,25 +51,32 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xxl },
-  iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FEF2F2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, textAlign: 'center' },
-  message: {
-    fontFamily: fontFamily.regular,
-    fontSize: fontSize.bodySm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
-});
+export function ErrorBoundary({ children }: { children: ReactNode }) {
+  const colors = useThemeColors();
+  return <ErrorBoundaryClass colors={colors}>{children}</ErrorBoundaryClass>;
+}
+
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.surface },
+    content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xxl },
+    iconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.dangerTint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    title: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, textAlign: 'center' },
+    message: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.bodySm,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 8,
+      lineHeight: 20,
+    },
+  });
+}

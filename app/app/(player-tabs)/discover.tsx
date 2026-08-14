@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { images } from '../../src/constants/images';
 import * as profileRepository from '../../src/repositories/profileRepository';
@@ -32,6 +32,8 @@ const SEARCH_DEBOUNCE_MS = 350;
 // Matches the mockup's DISCOVER tab: position-chip filters, search bar,
 // "Trending Players" list with rating badges.
 export default function Discover() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -69,6 +71,19 @@ export default function Discover() {
   // accounting (a "full" page server-side could come back mostly empty
   // after filtering, while hasMore still reflects the unfiltered count).
   const filtered = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: (typeof filtered)[number] }) => (
+      <PlayerCard
+        name={item.full_name || 'Unnamed player'}
+        positionLine={[item.primary_position, item.nationality_name].filter(Boolean).join(' · ')}
+        rating={item.overall_rating ?? 0}
+        avatar={item.avatar_url ?? images.avatarMale}
+        onPress={() => router.push({ pathname: '/player/[id]', params: { id: item.id ?? '' } })}
+      />
+    ),
+    []
+  );
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -119,27 +134,22 @@ export default function Discover() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
         onEndReachedThreshold={0.4}
+        initialNumToRender={10}
+        windowSize={7}
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
           <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
             <Text style={styles.emptyText}>No players found.</Text>
           </QueryState>
         }
-        renderItem={({ item }) => (
-          <PlayerCard
-            name={item.full_name || 'Unnamed player'}
-            positionLine={[item.primary_position, item.nationality_name].filter(Boolean).join(' · ')}
-            rating={item.overall_rating ?? 0}
-            avatar={item.avatar_url ?? images.avatarMale}
-            onPress={() => router.push({ pathname: '/player/[id]', params: { id: item.id ?? '' } })}
-          />
-        )}
+        renderItem={renderItem}
       />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surfaceMuted },
   header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary },
@@ -169,4 +179,5 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 10 },
   emptyText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center', marginTop: 20 },
-});
+  });
+}

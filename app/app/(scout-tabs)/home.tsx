@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { ScoutPlayerCard } from '../../src/components/ScoutPlayerCard';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -15,6 +16,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { NewsPopup } from '../../src/components/NewsPopup';
 
 const TOP_FILTERS = ['All', 'My Region', 'My Positions', 'Under 18', 'Under 21'] as const;
 
@@ -32,6 +34,8 @@ function getGreeting() {
 // never a fabricated one), Recently Uploaded, Top Performers leaderboard,
 // Active Trials.
 export default function ScoutDashboard() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [topFilter, setTopFilter] = useState<(typeof TOP_FILTERS)[number]>('All');
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
   const userId = useSessionStore((s) => s.session?.user.id);
@@ -58,13 +62,18 @@ export default function ScoutDashboard() {
     queryKey: ['scoutOverview', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const [views, saved, conversations, trials] = await Promise.all([
+      const [views, saved, contacted, trialsCount, openTrialsPage] = await Promise.all([
         profileRepository.getViewsGivenCount(userId!),
-        scoutingRepository.listSavedPlayers(userId!),
-        messagesRepository.listConversations(userId!),
-        trialsRepository.listMyTrials(userId!),
+        scoutingRepository.getSavedPlayersCount(userId!),
+        messagesRepository.getConversationsCount(userId!),
+        trialsRepository.getMyTrialsCount(userId!),
+        // A scout won't realistically run more than a handful of trials
+        // open at once, even if their all-time trial count grows large --
+        // bounded fetch instead of pulling every trial ever created just to
+        // filter for 'open' ones client-side.
+        trialsRepository.listMyTrials(userId!, { status: 'open', pageSize: 50 }),
       ]);
-      return { views, saved: saved.length, contacted: conversations.length, trials: trials.length, openTrials: trials.filter((t) => t.status === 'open') };
+      return { views, saved, contacted, trials: trialsCount, openTrials: openTrialsPage.items };
     },
   });
 
@@ -129,8 +138,8 @@ export default function ScoutDashboard() {
       // for the video FILE itself, handed to an <Image> that can't decode
       // it -- rendered as nothing. Only real thumbnails get a URL here.
       const withThumb = recentUploads!.filter((v) => v.thumbnail_path);
-      const urls = await Promise.all(withThumb.map((v) => videosRepository.getVideoUrl(v.thumbnail_path!)));
-      return Object.fromEntries(withThumb.map((v, i) => [v.id, urls[i]]));
+      const urlByPath = await videosRepository.getVideoUrls(withThumb.map((v) => v.thumbnail_path!));
+      return Object.fromEntries(withThumb.map((v) => [v.id, urlByPath[v.thumbnail_path!] ?? '']));
     },
   });
 
@@ -163,6 +172,7 @@ export default function ScoutDashboard() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      <NewsPopup />
       <QueryState isLoading={profileLoading} error={profileError} onRetry={refetchProfile}>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -187,11 +197,21 @@ export default function ScoutDashboard() {
             </View>
           </View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable style={styles.bellBtn} onPress={() => router.push('/news')}>
-              <Feather name="file-text" size={18} color="#333" />
+            <Pressable
+              style={styles.bellBtn}
+              onPress={() => router.push('/news')}
+              accessibilityRole="button"
+              accessibilityLabel="News"
+            >
+              <Feather name="file-text" size={18} color={colors.textPrimary} />
             </Pressable>
-            <Pressable style={styles.bellBtn} onPress={() => router.push('/notifications')}>
-              <Feather name="bell" size={18} color="#333" />
+            <Pressable
+              style={styles.bellBtn}
+              onPress={() => router.push('/notifications')}
+              accessibilityRole="button"
+              accessibilityLabel={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            >
+              <Feather name="bell" size={18} color={colors.textPrimary} />
               {!!unreadCount && (
                 <View style={styles.bellDot}>
                   <Text style={styles.bellDotText}>{unreadCount}</Text>
@@ -295,7 +315,7 @@ export default function ScoutDashboard() {
               {recentUploads.map((v) => (
                 <Pressable key={v.id} style={styles.uploadCard} onPress={() => router.push({ pathname: '/player/[id]', params: { id: v.player_id } })}>
                   {uploadThumbs?.[v.id] ? (
-                    <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} />
+                    <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} contentFit="contain" />
                   ) : (
                     <View style={[styles.uploadThumb, styles.uploadThumbPlaceholder]}>
                       <Feather name="film" size={20} color={colors.textPlaceholder} />
@@ -378,6 +398,8 @@ export default function ScoutDashboard() {
 }
 
 function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll: () => void }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.sectionHeaderRow}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -399,6 +421,8 @@ function QuickAction({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <Pressable style={[styles.quickAction, disabled && { opacity: 0.5 }]} onPress={disabled ? undefined : onPress}>
       <View style={styles.quickIcon}>
@@ -409,7 +433,8 @@ function QuickAction({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surfaceMuted },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -419,17 +444,17 @@ const styles = StyleSheet.create({
   verifiedText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.success },
   pendingText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, marginTop: 2 },
   bellBtn: { width: 38, height: 38, borderRadius: radii.sm, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-  bellDot: { position: 'absolute', top: -4, right: -4, backgroundColor: '#FF4444', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: colors.surface },
+  bellDot: { position: 'absolute', top: -4, right: -4, backgroundColor: colors.notificationDot, borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: colors.surface },
   bellDotText: { fontFamily: fontFamily.bold, fontSize: 9, color: colors.white },
-  verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFF8E1', marginHorizontal: 20, borderRadius: radii.md, padding: 12, marginBottom: 14 },
-  verifyBannerRejected: { backgroundColor: '#FEF2F2' },
+  verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.warningTint, marginHorizontal: 20, borderRadius: radii.md, padding: 12, marginBottom: 14 },
+  verifyBannerRejected: { backgroundColor: colors.dangerTint },
   verifyBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: '#7A5C00' },
   verifyBannerCta: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.goldDark },
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, height: 46, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: 14, marginBottom: 16 },
   searchPlaceholder: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPlaceholder },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 10, marginBottom: 8 },
   quickAction: { width: '47.5%', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 12 },
-  quickIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#EBF2FF', alignItems: 'center', justifyContent: 'center' },
+  quickIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
   quickLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary, flexShrink: 1 },
   section: { paddingHorizontal: 20, marginTop: 20 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -463,6 +488,7 @@ const styles = StyleSheet.create({
   trialCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.lg, padding: 14, marginBottom: 10, gap: 12 },
   trialTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   trialMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
-  manageBtn: { backgroundColor: '#EBF2FF', borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 9 },
+  manageBtn: { backgroundColor: colors.infoTint, borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 9 },
   manageBtnText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.primary },
-});
+  });
+}

@@ -18,14 +18,27 @@ type NewTrialInput = {
   description?: string;
 };
 
-export async function listOpenTrials(): Promise<TrialRow[]> {
+export type TrialPage = { items: TrialRow[]; hasMore: boolean };
+
+// The platform-wide open-trials browse list grows as every scout ever
+// creates a trial -- previously unbounded, fetched in full on every visit.
+export async function listOpenTrials(
+  pagination: { page?: number; pageSize?: number } = {}
+): Promise<TrialPage> {
+  const pageSize = pagination.pageSize ?? 20;
+  const from = (pagination.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
   const { data, error } = await supabase
     .from('trials')
     .select('*')
     .eq('status', 'open')
-    .order('trial_date', { ascending: true });
+    .order('trial_date', { ascending: true })
+    .range(from, to);
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
 }
 
 export async function getTrialById(id: string): Promise<TrialRow> {
@@ -34,14 +47,32 @@ export async function getTrialById(id: string): Promise<TrialRow> {
   return data;
 }
 
-export async function listMyTrials(scoutId: string): Promise<TrialRow[]> {
-  const { data, error } = await supabase
-    .from('trials')
-    .select('*')
-    .eq('scout_id', scoutId)
-    .order('created_at', { ascending: false });
+export async function listMyTrials(
+  scoutId: string,
+  opts: { status?: string; page?: number; pageSize?: number } = {}
+): Promise<TrialPage> {
+  const pageSize = opts.pageSize ?? 20;
+  const from = (opts.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
+  let query = supabase.from('trials').select('*').eq('scout_id', scoutId);
+  if (opts.status) query = query.eq('status', opts.status);
+  query = query.order('created_at', { ascending: false }).range(from, to);
+  const { data, error } = await query;
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
+}
+
+// For stat tiles ("Trials Run") that only ever needed a number.
+export async function getMyTrialsCount(scoutId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('trials')
+    .select('id', { count: 'exact', head: true })
+    .eq('scout_id', scoutId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function getApplicantCounts(trialIds: string[]): Promise<Record<string, number>> {
@@ -99,14 +130,54 @@ export async function inviteToTrial(scoutId: string, trialId: string, playerId: 
   if (error) throw error;
 }
 
-export async function listApplicants(trialId: string) {
-  const { data, error } = await supabase
+export type ApplicantRow = TrialApplicationRow & {
+  players: {
+    date_of_birth: string | null;
+    primary_position: string | null;
+    overall_rating: number | null;
+    profiles: { full_name: string | null; avatar_url: string | null } | null;
+    countries: { name: string | null } | null;
+  } | null;
+};
+export type ApplicantPage = { items: ApplicantRow[]; hasMore: boolean };
+
+// A popular open-call trial can draw far more applicants than fit on one
+// screen -- previously the whole applicant list loaded unbounded, then got
+// filtered into status tabs client-side, which silently breaks page
+// accounting once a fetch is capped (a tab could show 3 of 50 real matches
+// just because the rest hadn't loaded yet). Filtering by status server-side
+// instead, same fix already applied to Discover's position filter.
+export async function listApplicants(
+  trialId: string,
+  opts: { status?: ApplicantStatus; page?: number; pageSize?: number } = {}
+): Promise<ApplicantPage> {
+  const pageSize = opts.pageSize ?? 20;
+  const from = (opts.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
+  let query = supabase
     .from('trial_applications')
-    .select('*, players(*, profiles(full_name, avatar_url), countries(name))')
-    .eq('trial_id', trialId)
-    .order('applied_at', { ascending: false });
+    .select('*, players(date_of_birth, primary_position, overall_rating, profiles(full_name, avatar_url), countries(name))')
+    .eq('trial_id', trialId);
+  if (opts.status) query = query.eq('status', opts.status);
+  query = query.order('applied_at', { ascending: false }).range(from, to);
+  const { data, error } = await query;
   if (error) throw error;
-  return data ?? [];
+  const rows = (data ?? []) as unknown as ApplicantRow[];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
+}
+
+// Backs the status-tab badges (All/Pending/Shortlisted/...) with real counts
+// across every applicant, not just whichever page happens to be loaded --
+// a single skinny (status-only, no joins) fetch, far cheaper than pulling
+// every applicant's full joined player/profile data just to count them.
+export async function getApplicantStatusCounts(trialId: string): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from('trial_applications').select('status').eq('trial_id', trialId);
+  if (error) throw error;
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) counts[row.status] = (counts[row.status] ?? 0) + 1;
+  return counts;
 }
 
 export async function updateApplicationStatus(applicationId: string, status: ApplicantStatus) {
@@ -114,14 +185,42 @@ export async function updateApplicationStatus(applicationId: string, status: App
   if (error) throw error;
 }
 
-export async function getMyApplications(playerId: string) {
+export type MyApplicationRow = TrialApplicationRow & { trials: TrialRow | null };
+export type MyApplicationPage = { items: MyApplicationRow[]; hasMore: boolean };
+
+// A player's full trial-application history only grows over the life of
+// their account.
+export async function getMyApplications(
+  playerId: string,
+  pagination: { page?: number; pageSize?: number } = {}
+): Promise<MyApplicationPage> {
+  const pageSize = pagination.pageSize ?? 20;
+  const from = (pagination.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
   const { data, error } = await supabase
     .from('trial_applications')
     .select('*, trials(*)')
     .eq('player_id', playerId)
-    .order('applied_at', { ascending: false });
+    .order('applied_at', { ascending: false })
+    .range(from, to);
   if (error) throw error;
-  return data ?? [];
+  const rows = (data ?? []) as unknown as MyApplicationRow[];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
+}
+
+// For the "Trial Invitations" stat tile that only ever needed a number --
+// deriving it from a page of getMyApplications() would have undercounted
+// once that call became paginated.
+export async function getMyInvitationsCount(playerId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('trial_applications')
+    .select('id', { count: 'exact', head: true })
+    .eq('player_id', playerId)
+    .eq('source', 'invited');
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function getMyApplicationForTrial(

@@ -1,16 +1,31 @@
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize } from '../../src/theme';
+import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
 
 // Matches Matobev v4.dc.html's MAIN APP tab bar: Home | Reels | Upload |
 // Discover | Profile.
 export default function TabsLayout() {
+  const colors = useThemeColors();
+  const styles = {
+    tabBar: {
+      backgroundColor: colors.surface,
+      borderTopColor: colors.border,
+      height: 60,
+      paddingBottom: 8,
+      paddingTop: 6,
+    },
+    tabLabel: {
+      fontFamily: fontFamily.medium,
+      fontSize: fontSize.xs,
+    },
+  } as const;
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarInactiveTintColor: colors.textDisabled,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
       }}
@@ -38,17 +53,3 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
-
-const styles = {
-  tabBar: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    height: 60,
-    paddingBottom: 8,
-    paddingTop: 6,
-  },
-  tabLabel: {
-    fontFamily: fontFamily.medium,
-    fontSize: fontSize.xs,
-  },
-} as const;

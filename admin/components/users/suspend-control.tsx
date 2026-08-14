@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { suspendProfile, reactivateProfile } from '@/app/actions/moderation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 type Props = {
   profileId: string;
@@ -18,23 +19,29 @@ export function SuspendControl({ profileId, isActive, suspendedReason, suspended
   const [reason, setReason] = useState('');
   const [suspending, startSuspend] = useTransition();
   const [reactivating, startReactivate] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const router = useRouter();
   const busy = suspending || reactivating;
 
   const onSuspend = () => {
-    if (!reason.trim()) {
-      toast.error('Add a suspension reason first.');
-      return;
-    }
     startSuspend(async () => {
       try {
         await suspendProfile(profileId, reason.trim());
         toast.success('Account suspended.');
+        setConfirmOpen(false);
         router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Could not suspend account.');
       }
     });
+  };
+
+  const requestSuspend = () => {
+    if (!reason.trim()) {
+      toast.error('Add a suspension reason first.');
+      return;
+    }
+    setConfirmOpen(true);
   };
 
   const onReactivate = () => {
@@ -93,10 +100,22 @@ export function SuspendControl({ profileId, isActive, suspendedReason, suspended
           className="min-h-16 w-full rounded-md border bg-transparent p-2 text-sm disabled:opacity-50"
           placeholder="Why is this account being suspended?"
         />
-        <Button onClick={onSuspend} disabled={busy} variant="destructive" className="w-full">
+        <Button onClick={requestSuspend} disabled={busy} variant="destructive" className="w-full">
           {suspending ? 'Suspending…' : 'Suspend'}
         </Button>
       </CardContent>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Suspend this account?"
+        description="They'll be hidden from Discover/browse immediately and can be reactivated later."
+        confirmLabel="Suspend"
+        pendingLabel="Suspending…"
+        destructive
+        pending={suspending}
+        onConfirm={onSuspend}
+      />
     </Card>
   );
 }

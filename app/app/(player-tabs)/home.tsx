@@ -1,16 +1,18 @@
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { NewsPopup } from '../../src/components/NewsPopup';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -27,6 +29,8 @@ function getGreeting() {
 // reconstruction in the established visual language rather than a pixel
 // trace, filled out with the Trials feature from the product brief.
 export default function Home() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const { data, isLoading, isRefetching, error, refetch } = useQuery({
     queryKey: ['playerHome', userId],
@@ -41,7 +45,13 @@ export default function Home() {
     },
   });
 
-  const { data: trials } = useQuery({ queryKey: ['openTrialsPreview'], queryFn: trialsRepository.listOpenTrials });
+  const { data: trialsPage } = useQuery({
+    queryKey: ['openTrialsPreview'],
+    // Only ever asks for the 8 rows this preview actually shows -- previously
+    // fetched every open trial on the platform just to display 8.
+    queryFn: () => trialsRepository.listOpenTrials({ pageSize: 8 }),
+  });
+  const trials = trialsPage?.items;
 
   const { data: unreadCount } = useQuery({
     queryKey: ['playerUnreadNotifications', userId],
@@ -49,11 +59,15 @@ export default function Home() {
     queryFn: () => notificationsRepository.getUnreadCount(userId!),
   });
 
-  const { data: recentNotifications } = useQuery({
+  const { data: recentNotificationsPage } = useQuery({
     queryKey: ['playerRecentNotifications', userId],
     enabled: !!userId,
-    queryFn: () => notificationsRepository.listNotifications(userId!),
+    // Only ever asks for the 3 rows this preview actually shows -- previously
+    // fetched a user's entire notification history just to display 3, which
+    // only gets slower and more wasteful as that history grows over time.
+    queryFn: () => notificationsRepository.listNotifications(userId!, { pageSize: 3 }),
   });
+  const recentNotifications = recentNotificationsPage?.items;
 
   const ACTIVITY_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
     trial_status_change: 'clipboard',
@@ -62,6 +76,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      <NewsPopup />
       <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -74,10 +89,10 @@ export default function Home() {
           </View>
           <View style={styles.headerActions}>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/news')}>
-              <Feather name="file-text" size={18} color="#333" />
+              <Feather name="file-text" size={18} color={colors.textPrimary} />
             </Pressable>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/notifications')}>
-              <Feather name="bell" size={18} color="#333" />
+              <Feather name="bell" size={18} color={colors.textPrimary} />
               {!!unreadCount && <View style={styles.dot} />}
             </Pressable>
             <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
@@ -112,19 +127,19 @@ export default function Home() {
 
         <View style={styles.quickActions}>
           <Pressable style={styles.actionCard} onPress={() => router.push('/(player-tabs)/upload')}>
-            <View style={[styles.actionIcon, { backgroundColor: '#EBF2FF' }]}>
+            <View style={[styles.actionIcon, { backgroundColor: colors.infoTint }]}>
               <Feather name="upload" size={20} color={colors.primary} />
             </View>
             <Text style={styles.actionLabel}>Upload Highlight</Text>
           </Pressable>
           <Pressable style={styles.actionCard} onPress={() => router.push('/trials')}>
-            <View style={[styles.actionIcon, { backgroundColor: '#FFF8E1' }]}>
+            <View style={[styles.actionIcon, { backgroundColor: colors.warningTint }]}>
               <Feather name="award" size={20} color={colors.goldDark} />
             </View>
             <Text style={styles.actionLabel}>Browse Trials</Text>
           </Pressable>
           <Pressable style={styles.actionCard} onPress={() => router.push('/messages')}>
-            <View style={[styles.actionIcon, { backgroundColor: '#F0FDF4' }]}>
+            <View style={[styles.actionIcon, { backgroundColor: colors.successTint }]}>
               <Feather name="message-circle" size={20} color={colors.success} />
             </View>
             <Text style={styles.actionLabel}>Messages</Text>
@@ -179,7 +194,8 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surfaceMuted },
   header: {
     flexDirection: 'row',
@@ -204,7 +220,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
   },
-  dot: { position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF4444', borderWidth: 1.5, borderColor: colors.surface },
+  dot: { position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.notificationDot, borderWidth: 1.5, borderColor: colors.surface },
   avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.primary },
   ratingCard: { marginHorizontal: 20, borderRadius: radii.xl, padding: 20, marginTop: 4 },
   ratingCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -225,12 +241,13 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary },
   sectionLink: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.primary },
   trialCard: { width: 180, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 14 },
-  trialDateBadge: { alignSelf: 'flex-start', backgroundColor: '#EBF2FF', borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 10 },
+  trialDateBadge: { alignSelf: 'flex-start', backgroundColor: colors.infoTint, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 10 },
   trialDateText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.primary },
   trialClub: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
   trialLocation: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   trialSpots: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.success, marginTop: 8 },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.md, padding: 12, marginBottom: 8 },
-  activityIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#EBF2FF', alignItems: 'center', justifyContent: 'center' },
+  activityIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
   activityText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
-});
+  });
+}

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { assertAdmin } from '@/lib/admin-guard';
+import { uploadCoverImage } from '@/lib/coverImage';
 
 export async function createAdminTrial(formData: FormData) {
   await assertAdmin();
@@ -23,6 +24,9 @@ export async function createAdminTrial(formData: FormData) {
   }
 
   const supabase = await createClient();
+  const coverImage = formData.get('cover_image');
+  const coverImagePath = coverImage instanceof File && coverImage.size > 0 ? await uploadCoverImage(supabase, 'trials', coverImage) : null;
+
   const { error } = await supabase.from('trials').insert({
     scout_id: null,
     title,
@@ -34,6 +38,7 @@ export async function createAdminTrial(formData: FormData) {
     age_min: ageMin,
     age_max: ageMax,
     positions: positions as never,
+    cover_image_path: coverImagePath,
   });
   if (error) throw error;
 

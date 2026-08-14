@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { removeVideo, restoreVideo } from '@/app/actions/moderation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 type Props = {
   videoId: string;
@@ -18,23 +19,29 @@ export function RemoveControl({ videoId, isRemoved, removedReason, removedAt }: 
   const [reason, setReason] = useState('');
   const [removing, startRemove] = useTransition();
   const [restoring, startRestore] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const router = useRouter();
   const busy = removing || restoring;
 
   const onRemove = () => {
-    if (!reason.trim()) {
-      toast.error('Add a removal reason first.');
-      return;
-    }
     startRemove(async () => {
       try {
         await removeVideo(videoId, reason.trim());
         toast.success('Video removed.');
+        setConfirmOpen(false);
         router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Could not remove video.');
       }
     });
+  };
+
+  const requestRemove = () => {
+    if (!reason.trim()) {
+      toast.error('Add a removal reason first.');
+      return;
+    }
+    setConfirmOpen(true);
   };
 
   const onRestore = () => {
@@ -93,10 +100,22 @@ export function RemoveControl({ videoId, isRemoved, removedReason, removedAt }: 
           className="min-h-16 w-full rounded-md border bg-transparent p-2 text-sm disabled:opacity-50"
           placeholder="Why is this video being removed?"
         />
-        <Button onClick={onRemove} disabled={busy} variant="destructive" className="w-full">
+        <Button onClick={requestRemove} disabled={busy} variant="destructive" className="w-full">
           {removing ? 'Removing…' : 'Remove'}
         </Button>
       </CardContent>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Remove this video?"
+        description="It will be hidden from everyone except the uploader and admins."
+        confirmLabel="Remove"
+        pendingLabel="Removing…"
+        destructive
+        pending={removing}
+        onConfirm={onRemove}
+      />
     </Card>
   );
 }

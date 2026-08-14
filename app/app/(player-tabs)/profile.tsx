@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { IconButton } from '../../src/components/IconButton';
@@ -34,6 +36,8 @@ function formatCompact(n: number): string {
 // only implements the About panel's content — Videos/AI Ratings/Stats are
 // built out here with real content matching the app's data model.
 export default function Profile() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [tab, setTab] = useState<(typeof TABS)[number]>('About');
   const userId = useSessionStore((s) => s.session?.user.id);
 
@@ -41,12 +45,12 @@ export default function Profile() {
     queryKey: ['playerProfileScreen', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const [profile, player, publicView, videos, applications, profileViews30d] = await Promise.all([
+      const [profile, player, publicView, videos, trialInvitations, profileViews30d] = await Promise.all([
         profileRepository.getMyProfile(userId!),
         profileRepository.getMyPlayer(userId!),
         profileRepository.getPlayerPublicView(userId!),
         videosRepository.getMyVideos(userId!),
-        trialsRepository.getMyApplications(userId!),
+        trialsRepository.getMyInvitationsCount(userId!),
         profileRepository.getProfileViewCount(userId!, 30),
       ]);
       const attributes = await profileRepository.getPlayerAttributes(userId!, !!player.is_goalkeeper);
@@ -58,7 +62,7 @@ export default function Profile() {
         videos,
         videoCount: videos.length,
         videoViews30d: videos.reduce((sum, v) => sum + v.view_count, 0),
-        trialInvitations: applications.filter((a) => a.source === 'invited').length,
+        trialInvitations,
         profileViews30d,
       };
     },
@@ -84,8 +88,8 @@ export default function Profile() {
       // indistinguishable from a loading thumbnail. Only real thumbnails
       // get a signed URL; videos without one get an honest placeholder.
       const withThumb = data!.videos.filter((v) => v.thumbnail_path);
-      const urls = await Promise.all(withThumb.map((v) => videosRepository.getVideoUrl(v.thumbnail_path!)));
-      return Object.fromEntries(withThumb.map((v, i) => [v.id, urls[i]]));
+      const urlByPath = await videosRepository.getVideoUrls(withThumb.map((v) => v.thumbnail_path!));
+      return Object.fromEntries(withThumb.map((v) => [v.id, urlByPath[v.thumbnail_path!] ?? '']));
     },
   });
 
@@ -100,6 +104,7 @@ export default function Profile() {
       <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
       <View style={styles.coverWrap}>
         <Image source={{ uri: COVER }} style={styles.cover} />
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} style={StyleSheet.absoluteFill} />
         <View style={styles.coverMask} />
         <View style={styles.editBtnWrap}>
           <IconButton icon="settings" light accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
@@ -117,9 +122,9 @@ export default function Profile() {
         </Text>
       </View>
 
-      <View style={styles.statTiles}>
-        {statTiles.map((t) => (
-          <View key={t.label} style={styles.statTile}>
+      <View style={styles.statCard}>
+        {statTiles.map((t, i) => (
+          <View key={t.label} style={[styles.statTile, i < statTiles.length - 1 && styles.statTileDivider]}>
             <Text style={styles.statTileValue}>{t.value}</Text>
             <Text style={styles.statTileLabel}>{t.label}</Text>
           </View>
@@ -127,7 +132,7 @@ export default function Profile() {
       </View>
       {isProvisionalRating && (
         <Text style={styles.provisionalNote}>
-          Provisional ({presentAttrCount}/{totalAttrCount} attributes assessed)
+          Provisional — {presentAttrCount}/{totalAttrCount} attributes assessed
         </Text>
       )}
 
@@ -146,22 +151,27 @@ export default function Profile() {
 
       <View style={styles.panel}>
         {tab === 'About' && (
-          <View style={{ gap: 16 }}>
-            <Text style={styles.bio}>{data?.player.bio || 'No bio yet — add one from Edit Profile.'}</Text>
-            <View style={styles.detailsGrid}>
-              {[
-                ['Position', data?.player.primary_position ?? '—'],
-                ['Foot', data?.player.preferred_foot ?? '—'],
-                ['Height', data?.player.height_cm ? `${data.player.height_cm} cm` : '—'],
-                ['Weight', data?.player.weight_kg ? `${data.player.weight_kg} kg` : '—'],
-                ['Club', data?.player.club || '—'],
-                ['Experience', data?.player.years_playing ? `${data.player.years_playing} years` : '—'],
-              ].map(([label, value]) => (
-                <View key={label} style={styles.detailCell}>
-                  <Text style={styles.detailLabel}>{label}</Text>
-                  <Text style={styles.detailValue}>{value}</Text>
-                </View>
-              ))}
+          <View style={{ gap: 18 }}>
+            <View style={styles.bioCard}>
+              <Text style={styles.bio}>{data?.player.bio || 'No bio yet — add one from Edit Profile.'}</Text>
+            </View>
+            <View>
+              <Text style={styles.sectionLabel}>PLAYER INFO</Text>
+              <View style={styles.detailsGrid}>
+                {[
+                  ['Position', data?.player.primary_position ?? '—'],
+                  ['Foot', data?.player.preferred_foot ?? '—'],
+                  ['Height', data?.player.height_cm ? `${data.player.height_cm} cm` : '—'],
+                  ['Weight', data?.player.weight_kg ? `${data.player.weight_kg} kg` : '—'],
+                  ['Club', data?.player.club || '—'],
+                  ['Experience', data?.player.years_playing ? `${data.player.years_playing} years` : '—'],
+                ].map(([label, value]) => (
+                  <View key={label} style={styles.detailCell}>
+                    <Text style={styles.detailLabel}>{label}</Text>
+                    <Text style={styles.detailValue}>{value}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
         )}
@@ -190,6 +200,7 @@ export default function Profile() {
                   <Image
                     source={{ uri: thumbUrls[v.id] }}
                     style={[StyleSheet.absoluteFill, v.is_removed && styles.videoThumbDimmed]}
+                    contentFit="contain"
                   />
                 ) : (
                   <View style={[StyleSheet.absoluteFill, styles.videoThumbPlaceholder]}>
@@ -244,7 +255,8 @@ export default function Profile() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   coverWrap: { height: 140 },
   cover: { width: '100%', height: '100%' },
@@ -260,11 +272,19 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
   },
   headerBlock: { alignItems: 'center', marginTop: -44 },
-  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
+  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
   name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 10 },
   meta: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginTop: 2 },
-  statTiles: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 20, gap: 10 },
-  statTile: { flex: 1, alignItems: 'center', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, paddingVertical: 12 },
+  statCard: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 20,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.lg,
+    paddingVertical: 14,
+  },
+  statTile: { flex: 1, alignItems: 'center' },
+  statTileDivider: { borderRightWidth: 1, borderRightColor: colors.divider },
   statTileValue: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary },
   statTileLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
   tabRow: { flexDirection: 'row', marginTop: 24, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingHorizontal: 20 },
@@ -273,16 +293,18 @@ const styles = StyleSheet.create({
   tabLabelActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
   tabIndicator: { height: 2, backgroundColor: colors.primary, borderRadius: 1, marginTop: 8 },
   panel: { padding: 20 },
+  sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 1, marginBottom: 12 },
+  bioCard: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: spacing.lg, borderLeftWidth: 3, borderLeftColor: colors.primary },
   bio: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody, lineHeight: 21 },
   detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   detailCell: { width: '47%', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 12 },
   detailLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted },
   detailValue: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary, marginTop: 3 },
-  videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   videoThumb: {
-    width: '31.5%',
+    width: '31%',
     aspectRatio: 9 / 14,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
@@ -306,8 +328,9 @@ const styles = StyleSheet.create({
   videoPlay: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   videoPlayGlyph: { color: colors.white, fontSize: 11 },
   videoCloseBtn: { position: 'absolute', top: 50, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  provisionalNote: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, textAlign: 'center', marginTop: 4 },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 14 },
-  statRowLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
+  provisionalNote: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, textAlign: 'center', marginTop: 8 },
+  statRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceMuted, borderRadius: radii.md, padding: 14 },
+  statRowLabel: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
   statRowValue: { fontFamily: fontFamily.bold, fontSize: fontSize.bodySm, color: colors.textPrimary },
-});
+  });
+}

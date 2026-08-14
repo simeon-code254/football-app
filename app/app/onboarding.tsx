@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, spacing } from '../src/theme';
+import { fontFamily, fontSize, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { SecondaryButton } from '../src/components/SecondaryButton';
 import { images } from '../src/constants/images';
@@ -30,6 +31,8 @@ const SLIDES = [
 // bottom mask, title/sub, pagination dots, Skip+Next -> Login+CreateAccount
 // on the final slide.
 export default function Onboarding() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [slide, setSlide] = useState(0);
   const isLast = slide === SLIDES.length - 1;
   const current = SLIDES[slide];
@@ -37,7 +40,7 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <View style={styles.hero}>
-        <Image source={{ uri: current.image }} style={styles.heroImage} resizeMode="cover" />
+        <Image source={{ uri: current.image }} style={styles.heroImage} contentFit="cover" />
         <View style={styles.heroMask} />
       </View>
 
@@ -82,7 +85,8 @@ export default function Onboarding() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   // NOTE: siblings in a flex:1 column are relative WEIGHTS, not percentages —
   // `flex: 0.58` next to `flex: 1` gave the hero only 0.58/1.58 (~37%) of the
@@ -143,4 +147,5 @@ const styles = StyleSheet.create({
   },
   authRow: { width: '100%', flexDirection: 'row', gap: spacing.sm },
   authBtn: { flex: 1 },
-});
+  });
+}

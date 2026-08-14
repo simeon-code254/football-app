@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
-  initial?: { title: string; body: string; is_published: boolean };
+  initial?: { title: string; body: string; is_published: boolean; cover_image_url?: string | null };
   postId?: string;
 };
 
@@ -51,6 +51,17 @@ export function NewsForm({ action, initial, postId }: Props) {
               maxLength={5000}
               className="min-h-40 w-full rounded-md border bg-transparent p-2 text-sm"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cover_image">Cover image (optional)</Label>
+            {initial?.cover_image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={initial.cover_image_url} alt="" className="h-32 w-full rounded-md border bg-muted object-contain" />
+            )}
+            <Input id="cover_image" name="cover_image" type="file" accept="image/*" />
+            {initial?.cover_image_url && (
+              <p className="text-xs text-muted-foreground">Choosing a new file replaces the current cover image.</p>
+            )}
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="is_published" defaultChecked={initial?.is_published ?? true} />

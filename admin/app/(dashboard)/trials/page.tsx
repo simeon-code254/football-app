@@ -32,7 +32,7 @@ export default async function TrialsPage({
   const supabase = await createClient();
   let query = supabase
     .from('trials')
-    .select('id, title, club, location, trial_date, status, scouts(profiles!id(full_name))', { count: 'exact' });
+    .select('id, title, club, location, trial_date, status, scouts(profiles!scouts_id_fkey(full_name))', { count: 'exact' });
 
   if (status !== 'all') query = query.eq('status', status);
 

@@ -66,6 +66,11 @@ export function TrialForm({ action }: { action: (formData: FormData) => Promise<
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="cover_image">Cover image (optional)</Label>
+            <Input id="cover_image" name="cover_image" type="file" accept="image/*" />
+          </div>
+
           <Button type="submit" className="w-full">
             Create trial
           </Button>

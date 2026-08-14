@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, spacing } from '../theme';
+import { fontFamily, fontSize, spacing, useThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 
 function messageFor(error: unknown): string {
@@ -36,6 +36,9 @@ type Props = {
 // empty-state copy can keep using `isEmpty`/`emptyMessage` here instead of
 // duplicating it, or omit both and handle empty lists themselves.
 export function QueryState({ isLoading, error, onRetry, isEmpty, emptyIcon, emptyMessage, children }: Props) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+
   // Postgrest/Auth errors carry a `hint`/`details`/`code` that `.message`
   // alone doesn't show -- logging only the message (as the UI necessarily
   // does) hides that, so the full object always goes to console too. Also
@@ -76,15 +79,17 @@ export function QueryState({ isLoading, error, onRetry, isEmpty, emptyIcon, empt
   return <>{children}</>;
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, minHeight: 200 },
-  title: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary, textAlign: 'center' },
-  message: {
-    fontFamily: fontFamily.regular,
-    fontSize: fontSize.bodySm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 20,
-  },
-});
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl, minHeight: 200 },
+    title: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary, textAlign: 'center' },
+    message: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.bodySm,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 4,
+      lineHeight: 20,
+    },
+  });
+}

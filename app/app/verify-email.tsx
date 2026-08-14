@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize } from '../src/theme';
+import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { IconButton } from '../src/components/IconButton';
@@ -19,7 +19,9 @@ const RESEND_COOLDOWN_S = 30;
 // scout) and land straight on their dashboard, starting unverified — real
 // scout verification is an admin review step, not a self-serve form.
 export default function VerifyEmail() {
-  const { email, role } = useLocalSearchParams<{ email?: string; role?: 'player' | 'scout' }>();
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+  const { email } = useLocalSearchParams<{ email?: string; role?: 'player' | 'scout' }>();
   const hydrate = useSessionStore((s) => s.hydrate);
   const [cooldown, setCooldown] = useState(0);
   const [justSent, setJustSent] = useState(false);
@@ -52,8 +54,19 @@ export default function VerifyEmail() {
   };
 
   const proceedAfterAuth = async (session: NonNullable<Awaited<ReturnType<typeof authRepository.getSession>>>) => {
+    // Reads the role fresh off the real profile row rather than trusting
+    // the signup flow's route param -- also the only way to catch a
+    // non-player/non-scout account here, since getMyPlayer() 406s for one
+    // otherwise (a genuinely rare path for verify-email specifically, but
+    // the same fix as login.tsx/useSessionStore for consistency).
+    const profile = await profileRepository.getMyProfile(session.user.id);
+    if (profile.role !== 'player' && profile.role !== 'scout') {
+      await authRepository.signOut();
+      showAlert('This account isn\'t supported here', 'Admin accounts use the Matobev web dashboard, not this app.');
+      return;
+    }
     await hydrate(session);
-    if (role === 'scout') {
+    if (profile.role === 'scout') {
       router.replace('/(scout-tabs)/home');
       return;
     }
@@ -166,7 +179,8 @@ export default function VerifyEmail() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { paddingHorizontal: 20, paddingTop: 4 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
@@ -174,7 +188,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EBF2FF',
+    backgroundColor: colors.infoTint,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
@@ -197,4 +211,5 @@ const styles = StyleSheet.create({
   resendText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
   resendLink: { color: colors.primary, fontFamily: fontFamily.semiBold },
   resendLinkDisabled: { color: colors.textPlaceholder },
-});
+  });
+}

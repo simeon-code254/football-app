@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { colors, fontFamily, fontSize, spacing } from '../src/theme';
+import { fontFamily, fontSize, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { SecondaryButton } from '../src/components/SecondaryButton';
 import { localImages } from '../src/constants/images';
@@ -10,10 +11,12 @@ import { Logo } from '../src/components/Logo';
 
 // Matches Matobev v4.dc.html's WELCOME block.
 export default function Welcome() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <View style={styles.hero}>
-        <Image source={localImages.welcomeHero} style={styles.heroImage} resizeMode="cover" />
+        <Image source={localImages.welcomeHero} style={styles.heroImage} contentFit="cover" />
         <LinearGradient
           colors={['rgba(26,109,255,0.1)', 'rgba(255,255,255,0.7)', '#ffffff']}
           locations={[0, 0.85, 1]}
@@ -39,7 +42,8 @@ export default function Welcome() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   // Same relative-weight fix as onboarding.tsx: 9:11 = 45:55, matching the
   // mockup's intended split instead of the ~31:69 the old 0.45-vs-1 gave.
@@ -88,4 +92,5 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   actions: { width: '100%', gap: spacing.sm, marginTop: 'auto' },
-});
+  });
+}

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Image, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
@@ -83,6 +84,8 @@ function parseDob(text: string): string | undefined {
 // the whole wizard, since profile-complete.tsx was previously the only way
 // to touch these fields, ever, even after the initial signup.
 export default function ProfileComplete() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isEdit = mode === 'edit';
   const session = useSessionStore((s) => s.session);
@@ -96,6 +99,8 @@ export default function ProfileComplete() {
   const [countryCodeByName, setCountryCodeByName] = useState<Record<string, string>>({});
   const [loadingEdit, setLoadingEdit] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const touch = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
@@ -176,6 +181,10 @@ export default function ProfileComplete() {
   const step1Valid = isEdit || (form.fullName.trim().length > 0 && !!parseDob(form.dob) && form.nationality.trim().length > 0);
   const step2Valid = isEdit || !!form.primaryPosition;
 
+  const fullNameError = !isEdit && touched.fullName && !form.fullName.trim() ? 'Full name is required.' : undefined;
+  const dobError = !isEdit && touched.dob && (!form.dob.trim() || !parseDob(form.dob)) ? 'Enter a valid date (DD / MM / YYYY).' : undefined;
+  const nationalityError = !isEdit && touched.nationality && !form.nationality.trim() ? 'Nationality is required.' : undefined;
+
   const save = async () => {
     if (!userId) return;
     setSaving(true);
@@ -219,6 +228,7 @@ export default function ProfileComplete() {
 
   const next = () => {
     if (step === 1 && !step1Valid) {
+      setTouched((t) => ({ ...t, fullName: true, dob: true, nationality: true }));
       showAlert('Missing details', 'Full name, date of birth, and nationality are required.');
       return;
     }
@@ -274,8 +284,22 @@ export default function ProfileComplete() {
                 </>
               )}
             </Pressable>
-            <AppTextField label="Full Name" placeholder="Marcus Johnson" value={form.fullName} onChangeText={(v) => set('fullName', v)} />
-            <AppTextField label="Date of Birth" placeholder="DD / MM / YYYY" value={form.dob} onChangeText={(v) => set('dob', v)} />
+            <AppTextField
+              label="Full Name"
+              placeholder="Marcus Johnson"
+              value={form.fullName}
+              onChangeText={(v) => set('fullName', v)}
+              onBlur={() => touch('fullName')}
+              error={fullNameError}
+            />
+            <AppTextField
+              label="Date of Birth"
+              placeholder="DD / MM / YYYY"
+              value={form.dob}
+              onChangeText={(v) => set('dob', v)}
+              onBlur={() => touch('dob')}
+              error={dobError}
+            />
             <SelectField label="Gender" value={form.gender} options={[...GENDERS]} onChange={(v) => set('gender', v)} />
             <TypeaheadField
               label="Nationality"
@@ -283,6 +307,8 @@ export default function ProfileComplete() {
               onChange={(v) => set('nationality', v)}
               options={AFRICAN_COUNTRIES}
               placeholder="e.g. Nigeria"
+              onBlur={() => touch('nationality')}
+              error={nationalityError}
             />
             <AppTextField label="Phone Number" placeholder="+234 800 000 0000" keyboardType="phone-pad" value={form.phone} onChangeText={(v) => set('phone', v)} />
           </View>
@@ -367,7 +393,8 @@ export default function ProfileComplete() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -407,7 +434,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  footPillSelected: { borderColor: colors.primary, backgroundColor: '#F0F5FF' },
+  footPillSelected: { borderColor: colors.primary, backgroundColor: colors.infoTint },
   footPillText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textBody },
   footPillTextSelected: { fontFamily: fontFamily.semiBold, color: colors.primary },
   bioBox: { borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 14, minHeight: 140 },
@@ -416,4 +443,5 @@ const styles = StyleSheet.create({
   socialHint: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
   navRow: { flexDirection: 'row', gap: 10, marginTop: spacing.xl, paddingTop: spacing.xl },
   backBtn: { borderRadius: radii.lg },
-});
+  });
+}

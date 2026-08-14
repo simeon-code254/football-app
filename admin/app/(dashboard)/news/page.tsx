@@ -51,7 +51,7 @@ export default async function NewsPage({ searchParams }: { searchParams: { page?
         <div>
           <h1 className="text-2xl font-semibold">News</h1>
           <p className="text-sm text-muted-foreground">
-            Published posts are readable by any signed-in user -- there&apos;s no mobile screen showing them yet.
+            Published posts appear in the mobile app&apos;s News screen for any signed-in user.
           </p>
         </div>
         <LinkButton href="/news/new">New post</LinkButton>

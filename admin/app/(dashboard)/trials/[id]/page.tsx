@@ -9,7 +9,7 @@ export default async function TrialDetailPage({ params }: { params: { id: string
 
   const { data: trial } = await supabase
     .from('trials')
-    .select('*, scouts(*, profiles!id(full_name, avatar_url))')
+    .select('*, scouts(*, profiles!scouts_id_fkey(full_name, avatar_url))')
     .eq('id', params.id)
     .single();
 

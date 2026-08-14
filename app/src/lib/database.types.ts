@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admins: {
@@ -177,6 +202,7 @@ export type Database = {
         Row: {
           author_id: string | null
           body: string
+          cover_image_path: string | null
           created_at: string
           id: string
           is_published: boolean
@@ -187,6 +213,7 @@ export type Database = {
         Insert: {
           author_id?: string | null
           body: string
+          cover_image_path?: string | null
           created_at?: string
           id?: string
           is_published?: boolean
@@ -197,6 +224,7 @@ export type Database = {
         Update: {
           author_id?: string | null
           body?: string
+          cover_image_path?: string | null
           created_at?: string
           id?: string
           is_published?: boolean
@@ -926,6 +954,7 @@ export type Database = {
           age_min: number | null
           application_deadline: string
           club: string
+          cover_image_path: string | null
           created_at: string
           description: string | null
           id: string
@@ -942,6 +971,7 @@ export type Database = {
           age_min?: number | null
           application_deadline: string
           club: string
+          cover_image_path?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -958,6 +988,7 @@ export type Database = {
           age_min?: number | null
           application_deadline?: string
           club?: string
+          cover_image_path?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1287,6 +1318,15 @@ export type Database = {
       }
     }
     Functions: {
+      conversation_previews: {
+        Args: { p_conversation_ids: string[] }
+        Returns: {
+          conversation_id: string
+          last_message: string
+          last_message_at: string
+          unread_count: number
+        }[]
+      }
       increment_video_share: {
         Args: { p_video_id: string }
         Returns: undefined
@@ -1438,6 +1478,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       position_code: [

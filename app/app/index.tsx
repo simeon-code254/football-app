@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ImageBackground, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { colors, fontFamily, fontSize } from '../src/theme';
+import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { localImages } from '../src/constants/images';
 import { Logo } from '../src/components/Logo';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -12,6 +12,8 @@ const SPLASH_DURATION_MS = 3000;
 // Matches Matobev v4.dc.html's SPLASH block: full-bleed photo, dark gradient
 // wash, gold badge + football icon, wordmark, tagline, filling progress bar.
 export default function SplashScreen() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const progress = useRef(new Animated.Value(0)).current;
   const status = useSessionStore((s) => s.status);
   const role = useSessionStore((s) => s.role);
@@ -73,7 +75,8 @@ export default function SplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: '#0A1628' },
   bg: { flex: 1, width: '100%', height: '100%' },
   content: {
@@ -107,4 +110,5 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   progressFill: { height: '100%', borderRadius: 1 },
-});
+  });
+}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { updateNewsPost } from '@/app/actions/news';
 import { NewsForm } from '@/components/news/news-form';
+import { coverImagePublicUrl } from '@/lib/coverImage';
 
 export default async function EditNewsPostPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
@@ -18,7 +19,16 @@ export default async function EditNewsPostPage({ params }: { params: { id: strin
           Published {new Date(post.published_at).toLocaleDateString()}.
         </p>
       </div>
-      <NewsForm action={action} initial={{ title: post.title, body: post.body, is_published: post.is_published }} postId={post.id} />
+      <NewsForm
+        action={action}
+        initial={{
+          title: post.title,
+          body: post.body,
+          is_published: post.is_published,
+          cover_image_url: coverImagePublicUrl(supabase, post.cover_image_path),
+        }}
+        postId={post.id}
+      />
     </div>
   );
 }

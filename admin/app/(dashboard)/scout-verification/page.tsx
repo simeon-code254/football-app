@@ -28,7 +28,7 @@ export default async function ScoutVerificationPage({
   const supabase = await createClient();
   const { data, count } = await supabase
     .from('scouts')
-    .select('id, organization, verification_status, created_at, profiles!id(full_name, avatar_url)', {
+    .select('id, organization, verification_status, created_at, profiles!scouts_id_fkey(full_name, avatar_url)', {
       count: 'exact',
     })
     .eq('verification_status', status)

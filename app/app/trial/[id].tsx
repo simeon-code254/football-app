@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -13,14 +14,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import type { ApplicantStatus } from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
 import { QueryState } from '../../src/components/QueryState';
-
-const MY_STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  pending: { bg: '#FFF8E1', text: colors.goldDark, label: 'Applied — Pending' },
-  shortlisted: { bg: '#EBF2FF', text: colors.primary, label: 'Shortlisted' },
-  accepted: { bg: '#F0FDF4', text: colors.success, label: 'Accepted' },
-  rejected: { bg: '#FEF2F2', text: colors.error, label: 'Rejected' },
-  withdrawn: { bg: colors.surfaceMuted, text: colors.textMuted, label: 'Withdrawn' },
-};
+import { getPublicStorageUrl } from '../../src/lib/publicUrl';
 
 const STATUS_TABS: { key: 'all' | ApplicantStatus; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -39,6 +33,15 @@ function ageFromDob(dob: string | null): number | null {
 // Trial Management + Applicant review (spec §14/§15): trial detail header,
 // status tabs, per-applicant Shortlist/Accept/Reject, and bulk selection.
 export default function TrialDetail() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+  const MY_STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+    pending: { bg: colors.warningTint, text: colors.goldDark, label: 'Applied — Pending' },
+    shortlisted: { bg: colors.infoTint, text: colors.primary, label: 'Shortlisted' },
+    accepted: { bg: colors.successTint, text: colors.success, label: 'Accepted' },
+    rejected: { bg: colors.dangerTint, text: colors.error, label: 'Rejected' },
+    withdrawn: { bg: colors.surfaceMuted, text: colors.textMuted, label: 'Withdrawn' },
+  };
   const { id } = useLocalSearchParams<{ id: string }>();
   const role = useSessionStore((s) => s.role);
   const userId = useSessionStore((s) => s.session?.user.id);
@@ -58,11 +61,33 @@ export default function TrialDetail() {
     queryFn: () => trialsRepository.getMyApplicationForTrial(userId!, id),
   });
 
-  const { data: applicants, refetch: refetchApplicants } = useQuery({
-    queryKey: ['trialApplicants', id],
+  const APPLICANT_PAGE_SIZE = 20;
+  const {
+    data: applicantPages,
+    refetch: refetchApplicants,
+    fetchNextPage: fetchMoreApplicants,
+    hasNextPage: hasMoreApplicants,
+    isFetchingNextPage: isFetchingApplicants,
+  } = useInfiniteQuery({
+    queryKey: ['trialApplicants', id, tab],
     enabled: role === 'scout' && !!id,
-    queryFn: () => trialsRepository.listApplicants(id),
+    initialPageParam: 0,
+    // Status filtering happens server-side now -- filtering an already-
+    // paginated fetch client-side (the old approach) silently breaks once a
+    // popular trial has more applicants than fit on one page: a tab could
+    // show 3 of 50 real matches just because the rest hadn't loaded yet.
+    queryFn: ({ pageParam }) =>
+      trialsRepository.listApplicants(id, { status: tab === 'all' ? undefined : tab, page: pageParam, pageSize: APPLICANT_PAGE_SIZE }),
+    getNextPageParam: (lastPage, allPages) => (lastPage.hasMore ? allPages.length : undefined),
   });
+  const applicants = applicantPages?.pages.flatMap((p) => p.items) ?? [];
+
+  const { data: statusCounts, refetch: refetchStatusCounts } = useQuery({
+    queryKey: ['trialApplicantStatusCounts', id],
+    enabled: role === 'scout' && !!id,
+    queryFn: () => trialsRepository.getApplicantStatusCounts(id),
+  });
+  const totalApplicantCount = Object.values(statusCounts ?? {}).reduce((sum, n) => sum + n, 0);
 
   if (loadingTrial || trialError || !trial) {
     return (
@@ -73,6 +98,8 @@ export default function TrialDetail() {
       </SafeAreaView>
     );
   }
+
+  const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
 
   const apply = async () => {
     if (!userId) return;
@@ -97,6 +124,7 @@ export default function TrialDetail() {
           <View style={{ width: 36 }} />
         </View>
         <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+          {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.trialCover} contentFit="contain" />}
           <View style={styles.infoCard}>
             <Text style={styles.trialTitle}>{trial.title}</Text>
             <Text style={styles.trialClub}>{trial.club}</Text>
@@ -129,14 +157,12 @@ export default function TrialDetail() {
   const setStatus = async (applicationId: string, status: ApplicantStatus) => {
     try {
       await trialsRepository.updateApplicationStatus(applicationId, status);
-      await refetchApplicants();
+      await Promise.all([refetchApplicants(), refetchStatusCounts()]);
     } catch (err) {
       showAlert('Could not update status', err instanceof Error ? err.message : 'Please try again.');
     }
   };
 
-  const list = applicants ?? [];
-  const filtered = tab === 'all' ? list : list.filter((a) => a.status === tab);
   const toggleSelect = (applicationId: string) =>
     setSelected((s) => (s.includes(applicationId) ? s.filter((x) => x !== applicationId) : [...s, applicationId]));
 
@@ -144,7 +170,50 @@ export default function TrialDetail() {
     await Promise.all(selected.map((appId) => trialsRepository.updateApplicationStatus(appId, 'shortlisted')));
     setSelected([]);
     refetchApplicants();
+    refetchStatusCounts();
   };
+
+  const renderApplicant = useCallback(
+    ({ item: a }: { item: (typeof applicants)[number] }) => {
+      const player = a.players;
+      const isSelected = selected.includes(a.id);
+      const age = ageFromDob(player?.date_of_birth ?? null);
+      return (
+        <View style={styles.applicantCard}>
+          <Pressable onPress={() => toggleSelect(a.id)} style={styles.checkbox}>
+            <View style={[styles.checkboxBox, isSelected && styles.checkboxBoxActive]}>
+              {isSelected && <Feather name="check" size={12} color={colors.white} />}
+            </View>
+          </Pressable>
+          <Image source={{ uri: player?.profiles?.avatar_url || images.avatarMale }} style={styles.applicantAvatar} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.applicantName}>{player?.profiles?.full_name || 'Unnamed player'}</Text>
+            <Text style={styles.applicantMeta}>
+              {age ?? '—'} · {player?.primary_position ?? '—'} · {player?.countries?.name ?? '—'}
+            </Text>
+            <Text style={styles.applicantOvr}>{player?.overall_rating ?? '—'} OVR</Text>
+          </View>
+          <View style={styles.applicantActions}>
+            <Pressable style={styles.viewProfileBtn} onPress={() => router.push({ pathname: '/player/[id]', params: { id: a.player_id } })}>
+              <Text style={styles.viewProfileText}>View Profile</Text>
+            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+              <Pressable style={styles.smallActionBtn} onPress={() => setStatus(a.id, 'shortlisted')}>
+                <Text style={styles.smallActionText}>Shortlist</Text>
+              </Pressable>
+              <Pressable style={[styles.smallActionBtn, { backgroundColor: colors.successTint }]} onPress={() => setStatus(a.id, 'accepted')}>
+                <Text style={[styles.smallActionText, { color: colors.success }]}>Accept</Text>
+              </Pressable>
+              <Pressable style={[styles.smallActionBtn, { backgroundColor: colors.dangerTint }]} onPress={() => setStatus(a.id, 'rejected')}>
+                <Text style={[styles.smallActionText, { color: colors.error }]}>Reject</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      );
+    },
+    [selected, colors, styles]
+  );
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -154,94 +223,67 @@ export default function TrialDetail() {
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.infoCard}>
-          <Text style={styles.trialTitle}>{trial.title}</Text>
-          <Text style={styles.trialClub}>{trial.club}</Text>
-          <View style={styles.infoGrid}>
-            <InfoCell label="Location" value={trial.location} />
-            <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
-            <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
-            <InfoCell label="Deadline" value={trial.application_deadline} />
-          </View>
-          {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
-        </View>
-
-        <View style={styles.tabsRow}>
-          {STATUS_TABS.map((t) => {
-            const active = tab === t.key;
-            const count = t.key === 'all' ? list.length : list.filter((a) => a.status === t.key).length;
-            return (
-              <Pressable key={t.key} style={[styles.tabChip, active && styles.tabChipActive]} onPress={() => setTab(t.key)}>
-                <Text style={[styles.tabChipText, active && styles.tabChipTextActive]}>
-                  {t.label} {count > 0 ? `(${count})` : ''}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {selected.length > 0 && (
-          <View style={styles.bulkBar}>
-            <Text style={styles.bulkText}>{selected.length} selected</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Pressable style={styles.bulkBtn} onPress={bulkShortlist}>
-                <Text style={styles.bulkBtnText}>Shortlist</Text>
-              </Pressable>
+      <FlatList
+        data={applicants}
+        keyExtractor={(a) => a.id}
+        showsVerticalScrollIndicator={false}
+        onEndReached={() => hasMoreApplicants && !isFetchingApplicants && fetchMoreApplicants()}
+        onEndReachedThreshold={0.4}
+        initialNumToRender={10}
+        windowSize={7}
+        ListFooterComponent={isFetchingApplicants ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
+        ListHeaderComponent={
+          <>
+            {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.trialCover} contentFit="contain" />}
+          <View style={styles.infoCard}>
+              <Text style={styles.trialTitle}>{trial.title}</Text>
+              <Text style={styles.trialClub}>{trial.club}</Text>
+              <View style={styles.infoGrid}>
+                <InfoCell label="Location" value={trial.location} />
+                <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
+                <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
+                <InfoCell label="Deadline" value={trial.application_deadline} />
+              </View>
+              {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
             </View>
-          </View>
-        )}
 
-        <View style={styles.applicantList}>
-          {filtered.length === 0 ? (
-            <Text style={styles.emptyText}>No applicants in this stage yet.</Text>
-          ) : (
-            filtered.map((a) => {
-              const player = a.players;
-              const isSelected = selected.includes(a.id);
-              const age = ageFromDob(player?.date_of_birth ?? null);
-              return (
-                <View key={a.id} style={styles.applicantCard}>
-                  <Pressable onPress={() => toggleSelect(a.id)} style={styles.checkbox}>
-                    <View style={[styles.checkboxBox, isSelected && styles.checkboxBoxActive]}>
-                      {isSelected && <Feather name="check" size={12} color={colors.white} />}
-                    </View>
-                  </Pressable>
-                  <Image source={{ uri: player?.profiles?.avatar_url || images.avatarMale }} style={styles.applicantAvatar} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.applicantName}>{player?.profiles?.full_name || 'Unnamed player'}</Text>
-                    <Text style={styles.applicantMeta}>
-                      {age ?? '—'} · {player?.primary_position ?? '—'} · {player?.countries?.name ?? '—'}
+            <View style={styles.tabsRow}>
+              {STATUS_TABS.map((t) => {
+                const active = tab === t.key;
+                const count = t.key === 'all' ? totalApplicantCount : statusCounts?.[t.key] ?? 0;
+                return (
+                  <Pressable key={t.key} style={[styles.tabChip, active && styles.tabChipActive]} onPress={() => setTab(t.key)}>
+                    <Text style={[styles.tabChipText, active && styles.tabChipTextActive]}>
+                      {t.label} {count > 0 ? `(${count})` : ''}
                     </Text>
-                    <Text style={styles.applicantOvr}>{player?.overall_rating ?? '—'} OVR</Text>
-                  </View>
-                  <View style={styles.applicantActions}>
-                    <Pressable style={styles.viewProfileBtn} onPress={() => router.push({ pathname: '/player/[id]', params: { id: a.player_id } })}>
-                      <Text style={styles.viewProfileText}>View Profile</Text>
-                    </Pressable>
-                    <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
-                      <Pressable style={styles.smallActionBtn} onPress={() => setStatus(a.id, 'shortlisted')}>
-                        <Text style={styles.smallActionText}>Shortlist</Text>
-                      </Pressable>
-                      <Pressable style={[styles.smallActionBtn, { backgroundColor: '#F0FDF4' }]} onPress={() => setStatus(a.id, 'accepted')}>
-                        <Text style={[styles.smallActionText, { color: colors.success }]}>Accept</Text>
-                      </Pressable>
-                      <Pressable style={[styles.smallActionBtn, { backgroundColor: '#FEF2F2' }]} onPress={() => setStatus(a.id, 'rejected')}>
-                        <Text style={[styles.smallActionText, { color: colors.error }]}>Reject</Text>
-                      </Pressable>
-                    </View>
-                  </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {selected.length > 0 && (
+              <View style={styles.bulkBar}>
+                <Text style={styles.bulkText}>{selected.length} selected</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Pressable style={styles.bulkBtn} onPress={bulkShortlist}>
+                    <Text style={styles.bulkBtnText}>Shortlist</Text>
+                  </Pressable>
                 </View>
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
+              </View>
+            )}
+          </>
+        }
+        contentContainerStyle={styles.applicantList}
+        ListEmptyComponent={<Text style={styles.emptyText}>No applicants in this stage yet.</Text>}
+        renderItem={renderApplicant}
+      />
     </SafeAreaView>
   );
 }
 
 function InfoCell({ label, value }: { label: string; value: string }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.infoCell}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -250,11 +292,13 @@ function InfoCell({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   notFound: { textAlign: 'center', marginTop: 40, fontFamily: fontFamily.regular, color: colors.textMuted },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
+  trialCover: { marginHorizontal: 20, height: 160, borderRadius: radii.lg, marginBottom: 16, backgroundColor: colors.surfaceMuted },
   infoCard: { marginHorizontal: 20, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 16, marginBottom: 16 },
   trialTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary },
   trialClub: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted, marginTop: 2, marginBottom: 12 },
@@ -268,7 +312,7 @@ const styles = StyleSheet.create({
   tabChipActive: { backgroundColor: colors.primary },
   tabChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
   tabChipTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
-  bulkBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, backgroundColor: '#EBF2FF', borderRadius: radii.md, padding: 10, marginBottom: 12 },
+  bulkBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, backgroundColor: colors.infoTint, borderRadius: radii.md, padding: 10, marginBottom: 12 },
   bulkText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.primary },
   bulkBtn: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 6 },
   bulkBtnGhost: { backgroundColor: colors.surface },
@@ -290,4 +334,5 @@ const styles = StyleSheet.create({
   smallActionText: { fontFamily: fontFamily.semiBold, fontSize: 10, color: colors.textPrimary },
   myStatusBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: radii.md, padding: 14 },
   myStatusText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm },
-});
+  });
+}

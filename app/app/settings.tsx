@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
@@ -11,25 +11,19 @@ import { showAlert } from '../src/lib/alert';
 
 type SettingsRow = { title: string; icon: React.ComponentProps<typeof Feather>['name']; onPress: () => void };
 
-// Real destination for the one sub-section that already has a working
-// screen; the rest are genuinely not built yet — a graceful "coming soon"
-// alert beats a dead tap with no feedback, and beats pretending a feature
-// exists when it doesn't.
-const notYetAvailable = (title: string) =>
-  showAlert(title, "This section isn't available yet — we're still building it out.");
-
 export default function Settings() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const clearSession = useSessionStore((s) => s.clear);
   const [deleting, setDeleting] = useState(false);
 
   const rows: SettingsRow[] = [
-    { title: 'Account', icon: 'user', onPress: () => notYetAvailable('Account') },
-    { title: 'Security', icon: 'shield', onPress: () => notYetAvailable('Security') },
+    { title: 'Account', icon: 'user', onPress: () => router.push('/account-settings') },
+    { title: 'Security', icon: 'shield', onPress: () => router.push('/security-settings') },
     { title: 'Notifications', icon: 'bell', onPress: () => router.push('/notifications') },
-    { title: 'Privacy', icon: 'eye-off', onPress: () => notYetAvailable('Privacy') },
-    { title: 'Language', icon: 'globe', onPress: () => notYetAvailable('Language') },
-    { title: 'Theme', icon: 'moon', onPress: () => notYetAvailable('Theme') },
-    { title: 'Help', icon: 'help-circle', onPress: () => notYetAvailable('Help') },
+    { title: 'Privacy', icon: 'eye-off', onPress: () => router.push('/privacy-settings') },
+    { title: 'Theme', icon: 'moon', onPress: () => router.push('/theme-settings') },
+    { title: 'Help', icon: 'help-circle', onPress: () => router.push('/help-settings') },
   ];
 
   const logout = async () => {
@@ -95,13 +89,15 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
-  headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
-  content: { padding: 20, paddingTop: 8 },
-  list: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
-  rowText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
-  dangerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 14, marginTop: 10 },
-});
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.surface },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
+    headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
+    content: { padding: 20, paddingTop: 8 },
+    list: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
+    rowText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+    dangerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 14, marginTop: 10 },
+  });
+}

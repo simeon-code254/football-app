@@ -11,7 +11,7 @@ export default async function ScoutVerificationDetailPage({ params }: { params: 
 
   const { data: scout } = await supabase
     .from('scouts')
-    .select('*, profiles!id(full_name, avatar_url, phone)')
+    .select('*, profiles!scouts_id_fkey(full_name, avatar_url, phone)')
     .eq('id', params.scoutId)
     .single();
 

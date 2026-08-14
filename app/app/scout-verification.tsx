@@ -5,13 +5,14 @@ import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as verificationRepository from '../src/repositories/verificationRepository';
 import * as profileRepository from '../src/repositories/profileRepository';
 import { showAlert } from '../src/lib/alert';
+import { QueryState } from '../src/components/QueryState';
 
 type DocType = 'id_document' | 'proof_of_organization' | 'certification';
 
@@ -45,6 +46,8 @@ type PickedFile = { name: string; uri: string; mimeType?: string | null };
 // Storage upload + row insert lands when this screen gets wired to real
 // Supabase, same as the rest of the app right now.
 export default function ScoutVerification() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const queryClient = useQueryClient();
   const [files, setFiles] = useState<Partial<Record<DocType, PickedFile>>>({});
@@ -56,12 +59,22 @@ export default function ScoutVerification() {
   // was local-only state, so there was no way to tell "already submitted,
   // under review" from "never submitted", and a rejected scout had no
   // visible reason at all.
-  const { data: scout } = useQuery({
+  const {
+    data: scout,
+    isLoading: loadingScout,
+    error: scoutError,
+    refetch: refetchScout,
+  } = useQuery({
     queryKey: ['scoutVerificationStatus', userId],
     enabled: !!userId,
     queryFn: () => profileRepository.getMyScout(userId!),
   });
-  const { data: existingDocs } = useQuery({
+  const {
+    data: existingDocs,
+    isLoading: loadingDocs,
+    error: docsError,
+    refetch: refetchDocs,
+  } = useQuery({
     queryKey: ['scoutVerificationDocs', userId],
     enabled: !!userId,
     queryFn: () => verificationRepository.listMyDocuments(userId!),
@@ -84,12 +97,19 @@ export default function ScoutVerification() {
   const remove = (type: DocType) => setFiles((f) => { const next = { ...f }; delete next[type]; return next; });
 
   const submit = async () => {
-    if (!requiredMet || !userId) return;
+    if (!requiredMet) {
+      showAlert('Missing documents', 'Upload your ID document and proof of organization before submitting.');
+      return;
+    }
+    if (!userId) {
+      showAlert('Not signed in', 'Your session isn\'t ready yet — please try again in a moment.');
+      return;
+    }
     setSubmitting(true);
     try {
       const entries = Object.entries(files) as [DocType, PickedFile][];
       for (const [type, file] of entries) {
-        await verificationRepository.uploadVerificationDocument(userId, type, file.uri, file.name);
+        await verificationRepository.uploadVerificationDocument(userId, type, file.uri, file.name, file.mimeType);
       }
       queryClient.invalidateQueries({ queryKey: ['scoutVerificationDocs', userId] });
       setSubmitted(true);
@@ -99,6 +119,32 @@ export default function ScoutVerification() {
       setSubmitting(false);
     }
   };
+
+  // Previously neither query's isLoading/error was ever checked -- a failed
+  // fetch (network drop, RLS denial) silently rendered the blank upload form
+  // instead of the real state, so a rejected or already-under-review scout
+  // had no way to tell why nothing looked right.
+  if (loadingScout || loadingDocs || scoutError || docsError) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
+          <Text style={styles.headerTitle}>Verification Documents</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <QueryState
+          isLoading={loadingScout || loadingDocs}
+          error={scoutError || docsError}
+          onRetry={() => {
+            refetchScout();
+            refetchDocs();
+          }}
+        >
+          <View />
+        </QueryState>
+      </SafeAreaView>
+    );
+  }
 
   if (submitted || alreadyUnderReview) {
     return (
@@ -169,10 +215,12 @@ export default function ScoutVerification() {
           );
         })}
 
+        {!requiredMet && (
+          <Text style={styles.missingHint}>Upload your ID document and proof of organization to submit.</Text>
+        )}
         <PrimaryButton
           label={submitting ? 'Submitting…' : 'Submit for Review'}
           onPress={submit}
-          disabled={!requiredMet}
           loading={submitting}
           style={{ marginTop: 12 }}
         />
@@ -181,13 +229,14 @@ export default function ScoutVerification() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   content: { padding: 20, paddingTop: 8, gap: 18 },
   intro: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, lineHeight: 20 },
-  rejectedBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FEF2F2', borderRadius: radii.md, padding: 12 },
+  rejectedBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: colors.dangerTint, borderRadius: radii.md, padding: 12 },
   rejectedBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.error, lineHeight: 18 },
   slot: { gap: 6 },
   slotHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -203,11 +252,13 @@ const styles = StyleSheet.create({
   uploadText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.primary },
   filePill: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#EBF2FF', borderRadius: radii.md, paddingHorizontal: 12, paddingVertical: 12,
+    backgroundColor: colors.infoTint, borderRadius: radii.md, paddingHorizontal: 12, paddingVertical: 12,
   },
   fileName: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textPrimary },
+  missingHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: -8 },
   successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  successBadge: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  successBadge: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.successTint, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   successTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginBottom: 8 },
   successSub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
-});
+  });
+}

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollView, RefreshControl, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
 import { images } from '../../src/constants/images';
@@ -37,6 +37,8 @@ const EMPTY_FILTERS: Filters = { positions: [], minAge: '', maxAge: '', minOvera
 // bottom sheet instead of 20 filters crammed on-screen, and applied filters
 // surfaced as removable chips.
 export default function DiscoverPlayers() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const { saved } = useLocalSearchParams<{ saved?: string }>();
   const [savedOnly, setSavedOnly] = useState(saved === '1');
@@ -63,12 +65,13 @@ export default function DiscoverPlayers() {
   // exist anywhere in the app (listSavedPlayers was only ever used to
   // compute a count on the profile screen). Reuses this same
   // filter/sort/compare-ready list instead of building a whole new screen.
-  const { data: savedRows } = useQuery({
+  // Only IDs are needed here, not the full player+profile join.
+  const { data: savedIdRows } = useQuery({
     queryKey: ['savedPlayerIds', userId],
     enabled: !!userId && savedOnly,
-    queryFn: () => scoutingRepository.listSavedPlayers(userId!),
+    queryFn: () => scoutingRepository.listSavedPlayerIds(userId!),
   });
-  const savedIds = savedRows?.map((r) => r.player_id) ?? [];
+  const savedIds = savedIdRows ?? [];
 
   const PAGE_SIZE = 20;
   const {
@@ -82,7 +85,7 @@ export default function DiscoverPlayers() {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ['discoverPlayers', debouncedQuery, filters, sortBy, savedOnly, savedIds],
-    enabled: !savedOnly || savedRows != null,
+    enabled: !savedOnly || savedIdRows != null,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       profileRepository.listPlayerPublicViews(
@@ -131,6 +134,35 @@ export default function DiscoverPlayers() {
   };
 
   const toggle = (list: string[], value: string) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: (typeof results)[number] }) => {
+      const id = item.id ?? '';
+      const selected = selectedIds.includes(id);
+      return (
+        <Pressable
+          onPress={() =>
+            compareMode ? toggleSelected(id) : router.push({ pathname: '/player/[id]', params: { id } })
+          }
+        >
+          <View style={compareMode && selected ? styles.cardSelected : undefined}>
+            <PlayerCard
+              name={item.full_name || 'Unnamed player'}
+              positionLine={`${item.primary_position ?? '—'} · ${item.nationality_name ?? '—'}`}
+              rating={item.overall_rating ?? 0}
+              avatar={item.avatar_url ?? images.avatarMale}
+            />
+          </View>
+          {compareMode && (
+            <View style={[styles.checkCircle, selected && styles.checkCircleActive]}>
+              {selected && <Feather name="check" size={12} color={colors.white} />}
+            </View>
+          )}
+        </Pressable>
+      );
+    },
+    [compareMode, selectedIds, styles, colors]
+  );
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -194,6 +226,8 @@ export default function DiscoverPlayers() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
         onEndReachedThreshold={0.4}
+        initialNumToRender={10}
+        windowSize={7}
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
           <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
@@ -208,31 +242,7 @@ export default function DiscoverPlayers() {
             </View>
           </QueryState>
         }
-        renderItem={({ item }) => {
-          const id = item.id ?? '';
-          const selected = selectedIds.includes(id);
-          return (
-            <Pressable
-              onPress={() =>
-                compareMode ? toggleSelected(id) : router.push({ pathname: '/player/[id]', params: { id } })
-              }
-            >
-              <View style={compareMode && selected ? styles.cardSelected : undefined}>
-                <PlayerCard
-                  name={item.full_name || 'Unnamed player'}
-                  positionLine={`${item.primary_position ?? '—'} · ${item.nationality_name ?? '—'}`}
-                  rating={item.overall_rating ?? 0}
-                  avatar={item.avatar_url ?? images.avatarMale}
-                />
-              </View>
-              {compareMode && (
-                <View style={[styles.checkCircle, selected && styles.checkCircleActive]}>
-                  {selected && <Feather name="check" size={12} color={colors.white} />}
-                </View>
-              )}
-            </Pressable>
-          );
-        }}
+        renderItem={renderItem}
       />
 
       {compareMode && selectedIds.length >= 2 && (
@@ -246,6 +256,7 @@ export default function DiscoverPlayers() {
       )}
 
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Filters</Text>
@@ -345,12 +356,14 @@ export default function DiscoverPlayers() {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surfaceMuted },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary },
@@ -374,7 +387,7 @@ const styles = StyleSheet.create({
   sortChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textBody },
   sortChipTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
   chipsRow: { paddingHorizontal: 20, gap: 8, alignItems: 'center', marginBottom: 10 },
-  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EBF2FF', borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 6 },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.infoTint, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 6 },
   filterChipText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.primary },
   clearAll: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginLeft: 4 },
   listContent: { paddingHorizontal: 20, paddingBottom: 24 },
@@ -398,4 +411,5 @@ const styles = StyleSheet.create({
   resetText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
   applyBtn: { flex: 2, height: 50, borderRadius: radii.lg, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   applyText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.white },
-});
+  });
+}

@@ -68,12 +68,17 @@ export async function createVideo(input: CreateVideoInput): Promise<VideoRow> {
   return data;
 }
 
-export async function getMyVideos(playerId: string): Promise<VideoRow[]> {
+// Bounded rather than paginated: a player's own video grid (and a scout's
+// view of it) renders inline inside a ScrollView tab, not a load-more list,
+// so a generous cap replaces the old fully-unbounded query without a bigger
+// screen rewrite. No real uploader is likely to ever approach this limit.
+export async function getMyVideos(playerId: string, limit = 60): Promise<VideoRow[]> {
   const { data, error } = await supabase
     .from('videos')
     .select('*')
     .eq('player_id', playerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return data ?? [];
 }
@@ -102,6 +107,23 @@ export async function getVideoAnalysisJob(videoId: string): Promise<JobRow | nul
     .from('video_analysis_jobs')
     .select('*')
     .eq('video_id', videoId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// The AI Ratings screen previously showed attribute rows appearing (or not)
+// with no signal about *why* -- a player mid-analysis and a player who
+// simply never uploaded looked identical. This surfaces the real, live
+// video_analysis_jobs status (RLS: jobs_select_own already lets a player
+// read their own rows) for whichever job is most recent.
+export async function getLatestAnalysisJob(playerId: string): Promise<JobRow | null> {
+  const { data, error } = await supabase
+    .from('video_analysis_jobs')
+    .select('*')
+    .eq('player_id', playerId)
+    .order('requested_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error) throw error;
   return data;
@@ -152,15 +174,30 @@ export async function toggleSave(videoId: string, profileId: string, saved: bool
 export type CommentWithAuthor = CommentRow & {
   profiles: { full_name: string | null; avatar_url: string | null } | null;
 };
+export type CommentPage = { items: CommentWithAuthor[]; hasMore: boolean };
 
-export async function listComments(videoId: string): Promise<CommentWithAuthor[]> {
+// A popular clip can draw far more comments than a viewer needs loaded at
+// once -- previously the entire comment history downloaded unbounded every
+// time the comments sheet opened. Newest first (page 0 = latest), same
+// convention as chat threads.
+export async function listComments(
+  videoId: string,
+  pagination: { page?: number; pageSize?: number } = {}
+): Promise<CommentPage> {
+  const pageSize = pagination.pageSize ?? 30;
+  const from = (pagination.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
   const { data, error } = await supabase
     .from('video_comments')
     .select('*, profiles(full_name, avatar_url)')
     .eq('video_id', videoId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false })
+    .range(from, to);
   if (error) throw error;
-  return (data ?? []) as unknown as CommentWithAuthor[];
+  const rows = (data ?? []) as unknown as CommentWithAuthor[];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
 }
 
 export async function addComment(videoId: string, authorId: string, body: string): Promise<CommentRow> {
@@ -200,4 +237,19 @@ export async function getVideoUrl(storagePath: string): Promise<string> {
   const { data, error } = await supabase.storage.from('videos').createSignedUrl(storagePath, 3600);
   if (error) throw error;
   return data.signedUrl;
+}
+
+// Batched form of getVideoUrl — one round-trip for N paths instead of N
+// parallel round-trips. Callers signing a whole feed/grid's worth of
+// thumbnails at once should use this instead of Promise.all-ing getVideoUrl.
+export async function getVideoUrls(storagePaths: string[]): Promise<Record<string, string>> {
+  const unique = Array.from(new Set(storagePaths));
+  if (!unique.length) return {};
+  const { data, error } = await supabase.storage.from('videos').createSignedUrls(unique, 3600);
+  if (error) throw error;
+  const map: Record<string, string> = {};
+  for (const row of data ?? []) {
+    if (row.signedUrl && row.path) map[row.path] = row.signedUrl;
+  }
+  return map;
 }

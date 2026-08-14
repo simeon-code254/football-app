@@ -142,3 +142,56 @@ def resolve_confidence(dominance_margin: float, valid_interval_count: int, durat
     ):
         return "Medium"
     return "Low"
+
+
+# Fraction of each benchmark constant below which a metric is flagged as an
+# improvement area. Deliberately low (25-30%) so this only fires on a real,
+# sizeable gap -- not on ordinary clip-to-clip variance.
+_LOW_SPRINT_RATE_FRACTION = 0.25
+_LOW_DIR_CHANGE_FRACTION = 0.25
+_LOW_AVG_SPEED_FRACTION = 0.3
+
+
+def generate_recommendations(movement: MovementStats, duration_s: float) -> list[str]:
+    """Short, rule-based text grounded only in the real numbers already
+    computed above -- never a fabricated or LLM-generated verdict. Each line
+    names the actual measured value against the same benchmark constant this
+    module already uses to compute the score, so it's independently
+    checkable against the raw result_summary. No line fires unless the real
+    gap is large enough to matter (see the _LOW_*_FRACTION constants) --
+    an empty list is the honest outcome when nothing stands out, not padded
+    with generic advice to always have something to show."""
+    duration_min = max(duration_s / 60, 1e-6)
+    notes: list[str] = []
+
+    if movement.peak_speed_kmh < SPRINT_THRESHOLD_KMH:
+        notes.append(
+            f"Your peak speed in this clip was {movement.peak_speed_kmh:.1f} km/h, below the "
+            f"{SPRINT_THRESHOLD_KMH:.0f} km/h sprint threshold this score uses — sprint conditioning "
+            "work would help your Pace rating."
+        )
+
+    sprints_per_min = movement.sprint_count / duration_min
+    if sprints_per_min < PHYSICAL_SPRINTS_PER_MIN_CEILING * _LOW_SPRINT_RATE_FRACTION:
+        notes.append(
+            f"You logged {movement.sprint_count} sprint{'s' if movement.sprint_count != 1 else ''} in this clip "
+            f"(~{sprints_per_min:.1f}/min) against the {PHYSICAL_SPRINTS_PER_MIN_CEILING:.0f}/min benchmark for "
+            "this score — more repeated sprint efforts during play would lift your Physical rating."
+        )
+
+    dir_changes_per_min = movement.direction_change_count / duration_min
+    if dir_changes_per_min < PHYSICAL_DIR_CHANGES_PER_MIN_CEILING * _LOW_DIR_CHANGE_FRACTION:
+        notes.append(
+            f"Direction changes were low in this clip (~{dir_changes_per_min:.1f}/min vs a "
+            f"{PHYSICAL_DIR_CHANGES_PER_MIN_CEILING:.0f}/min benchmark) — more agility and cutting work could help "
+            "your Physical rating reflect quicker changes of direction."
+        )
+
+    if movement.avg_speed_m_per_s < PHYSICAL_AVG_SPEED_CEILING_MPS * _LOW_AVG_SPEED_FRACTION:
+        notes.append(
+            f"Average movement speed across the clip was {movement.avg_speed_m_per_s:.1f} m/s, well under the "
+            f"{PHYSICAL_AVG_SPEED_CEILING_MPS:.1f} m/s benchmark — more sustained running intensity during play "
+            "would help."
+        )
+
+    return notes[:3]

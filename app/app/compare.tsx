@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { colors, fontFamily, fontSize, radii } from '../src/theme';
+import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
 import * as profileRepository from '../src/repositories/profileRepository';
@@ -13,6 +14,8 @@ import { QueryState } from '../src/components/QueryState';
 // attributes each selected player actually has (a GK and an outfield player
 // share almost none), so a missing cell reads as "—", not a fabricated 0.
 export default function ComparePlayers() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const { ids } = useLocalSearchParams<{ ids?: string }>();
   const playerIds = (ids ?? '').split(',').filter(Boolean);
 
@@ -125,14 +128,15 @@ export default function ComparePlayers() {
 const COL_WIDTH = 110;
 const LABEL_WIDTH = 130;
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   notFound: { textAlign: 'center', marginTop: 40, fontFamily: fontFamily.regular, color: colors.textMuted },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
   rowAlt: { backgroundColor: colors.surfaceMuted },
-  rowHighlight: { backgroundColor: '#EBF2FF' },
+  rowHighlight: { backgroundColor: colors.infoTint },
   labelCol: { width: LABEL_WIDTH, paddingLeft: 20 },
   rowLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
   rowLabelBold: { fontFamily: fontFamily.bold, fontSize: fontSize.sm, color: colors.textPrimary },
@@ -143,4 +147,5 @@ const styles = StyleSheet.create({
   overallValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.headingLg, color: colors.primary },
   cellValue: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   cellValueBest: { color: colors.success },
-});
+  });
+}

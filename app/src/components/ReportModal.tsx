@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TextInput } from 'react-native';
-import { colors, fontFamily, fontSize, radii, spacing } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
 import * as reportsRepository from '../repositories/reportsRepository';
@@ -21,6 +21,8 @@ type Props = {
 // Save/Notes/Invite in player/[id].tsx, just factored out since this one
 // needs to be reachable from several unrelated screens.
 export function ReportModal({ visible, title, targetType, targetId, reporterId, onClose }: Props) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,20 +71,22 @@ export function ReportModal({ visible, title, targetType, targetId, reporterId, 
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.lg },
-  title: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
-  hint: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4, marginBottom: 14 },
-  inputBox: {
-    borderRadius: radii.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.inputBackground,
-    padding: 12,
-    minHeight: 100,
-    marginBottom: 16,
-  },
-  input: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 80, textAlignVertical: 'top' },
-  actions: { flexDirection: 'row', gap: 10 },
-});
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
+    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing.lg },
+    title: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
+    hint: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4, marginBottom: 14 },
+    inputBox: {
+      borderRadius: radii.md,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.inputBackground,
+      padding: 12,
+      minHeight: 100,
+      marginBottom: 16,
+    },
+    input: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 80, textAlignVertical: 'top' },
+    actions: { flexDirection: 'row', gap: 10 },
+  });
+}

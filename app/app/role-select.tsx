@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
@@ -31,12 +32,14 @@ const ROLES: { key: Role; label: string; icon: React.ComponentProps<typeof Feath
 // Matches Matobev v4.dc.html's ROLE SELECTION block — given a hero photo (the
 // mockup had none on this screen, which read as bare white space up top).
 export default function RoleSelect() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [selected, setSelected] = useState<Role | null>(null);
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <View style={styles.hero}>
-        <Image source={{ uri: images.onboardSlide3 }} style={styles.heroImage} resizeMode="cover" />
+        <Image source={{ uri: images.onboardSlide3 }} style={styles.heroImage} contentFit="cover" />
         <LinearGradient colors={['rgba(10,22,40,0.1)', 'rgba(10,22,40,0.7)']} style={StyleSheet.absoluteFill} />
         <View style={styles.heroTop}>
           <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
@@ -57,13 +60,13 @@ export default function RoleSelect() {
                 styles.card,
                 {
                   borderColor: isSelected ? colors.primary : colors.border,
-                  backgroundColor: isSelected ? '#F0F5FF' : colors.surface,
+                  backgroundColor: isSelected ? colors.infoTint : colors.surface,
                 },
               ]}
             >
               <View style={styles.cardHeader}>
                 <View style={[styles.iconChip, { backgroundColor: isSelected ? '#E0EAFF' : colors.surfaceMuted }]}>
-                  <Feather name={role.icon} size={22} color={isSelected ? colors.primary : '#9CA3AF'} />
+                  <Feather name={role.icon} size={22} color={isSelected ? colors.primary : colors.textDisabled} />
                 </View>
                 <Text style={styles.cardTitle}>{role.label}</Text>
               </View>
@@ -92,7 +95,8 @@ export default function RoleSelect() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   hero: { height: 150 },
   heroImage: { width: '100%', height: '100%' },
@@ -109,4 +113,5 @@ const styles = StyleSheet.create({
   loginRow: { marginTop: 14, alignItems: 'center' },
   loginText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
   loginLink: { color: colors.primary, fontFamily: fontFamily.semiBold },
-});
+  });
+}

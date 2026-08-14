@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize } from '../src/theme';
+import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
@@ -12,6 +12,8 @@ import * as authRepository from '../src/repositories/authRepository';
 // Login's "Forgot Password?" was dead text — now wired to a real
 // supabase.auth.resetPasswordForEmail call.
 export default function ForgotPassword() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -73,21 +75,27 @@ export default function ForgotPassword() {
           loading={sending}
           style={{ marginTop: 20 }}
         />
+        {!email.trim() && !sending && (
+          <Text style={styles.submitHint}>Enter your email address to get a reset link.</Text>
+        )}
       </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { paddingHorizontal: 20, paddingTop: 4 },
   content: { paddingHorizontal: 28, paddingTop: 20 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.displayLg, color: colors.textPrimary, marginBottom: 4 },
   sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 28, lineHeight: 20 },
+  submitHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
   successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  successBadge: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#EBF2FF', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  successBadge: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   successTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginBottom: 8 },
   successSub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
   email: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
-});
+  });
+}

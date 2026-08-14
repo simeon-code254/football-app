@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { IconButton } from '../../src/components/IconButton';
@@ -20,6 +21,8 @@ import { QueryState } from '../../src/components/QueryState';
 // preferences feed the Recommended For You / match-score logic (spec §29),
 // which is why it lives as a real (if locally-stored) form, not a stub.
 export default function ScoutProfile() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
   const userId = useSessionStore((s) => s.session?.user.id);
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -34,17 +37,17 @@ export default function ScoutProfile() {
     queryKey: ['scoutProfileScreen', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const [profile, scout, countries, trials, conversations, saved, prefs] = await Promise.all([
+      const [profile, scout, countries, trialsRun, playersContacted, savedCount, prefs] = await Promise.all([
         profileRepository.getMyProfile(userId!),
         profileRepository.getMyScout(userId!),
         profileRepository.getCountries(),
-        trialsRepository.listMyTrials(userId!),
-        messagesRepository.listConversations(userId!),
-        scoutingRepository.listSavedPlayers(userId!),
+        trialsRepository.getMyTrialsCount(userId!),
+        messagesRepository.getConversationsCount(userId!),
+        scoutingRepository.getSavedPlayersCount(userId!),
         scoutingRepository.getPreferences(userId!),
       ]);
       const countryName = scout ? countries.find((c) => c.code === scout.country_code)?.name ?? null : null;
-      return { profile, scout, countryName, trialsRun: trials.length, playersContacted: conversations.length, savedCount: saved.length, prefs };
+      return { profile, scout, countryName, trialsRun, playersContacted, savedCount, prefs };
     },
   });
 
@@ -88,11 +91,13 @@ export default function ScoutProfile() {
           <IconButton icon="settings" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         </View>
         <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{data?.profile.full_name || 'Complete your profile'}</Text>
-          {scoutVerified && <Feather name="check-circle" size={16} color={colors.success} />}
+        <Text style={styles.name}>{data?.profile.full_name || 'Complete your profile'}</Text>
+        <View style={[styles.verifiedPill, scoutVerified ? styles.verifiedPillActive : styles.verifiedPillPending]}>
+          <Feather name={scoutVerified ? 'check-circle' : 'clock'} size={11} color={scoutVerified ? colors.success : colors.goldDark} />
+          <Text style={[styles.verifiedLabel, { color: scoutVerified ? colors.success : colors.goldDark }]}>
+            {scoutVerified ? 'Verified Scout' : 'Verification Pending'}
+          </Text>
         </View>
-        <Text style={styles.verifiedLabel}>{scoutVerified ? 'Verified Scout' : 'Verification Pending'}</Text>
         <Text style={styles.org}>
           {[data?.scout?.organization, data?.countryName].filter(Boolean).join(' · ') || '—'}
         </Text>
@@ -113,7 +118,9 @@ export default function ScoutProfile() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.bio}>{data?.scout?.bio || 'No bio yet — add one from Edit Profile.'}</Text>
+        <View style={styles.bioCard}>
+          <Text style={styles.bio}>{data?.scout?.bio || 'No bio yet — add one from Edit Profile.'}</Text>
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -134,8 +141,8 @@ export default function ScoutProfile() {
             ['Trials Run', data ? String(data.trialsRun) : '—'],
             ['Players Contacted', data ? String(data.playersContacted) : '—'],
             ['Saved Players', data ? String(data.savedCount) : '—'],
-          ].map(([label, value]) => (
-            <View key={label} style={styles.activityTile}>
+          ].map(([label, value], i) => (
+            <View key={label} style={[styles.activityTile, i < 2 && styles.activityTileDivider]}>
               <Text style={styles.activityValue}>{value}</Text>
               <Text style={styles.activityLabel}>{label}</Text>
             </View>
@@ -147,7 +154,7 @@ export default function ScoutProfile() {
         <Text style={styles.sectionTitle}>Scouting Preferences</Text>
         <View style={styles.settingsList}>
           <Pressable style={styles.settingsRow} onPress={() => setPrefsOpen(true)}>
-            <Feather name="sliders" size={17} color={colors.textBody} style={{ width: 24 }} />
+            <Feather name="sliders" size={15} color={colors.textBody} />
             <Text style={styles.settingsText}>Preferred positions, age & rating filters</Text>
             <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
           </Pressable>
@@ -157,7 +164,7 @@ export default function ScoutProfile() {
       </QueryState>
 
       <Modal visible={prefsOpen} animationType="slide" onRequestClose={() => setPrefsOpen(false)}>
-        <View style={styles.prefsRoot}>
+        <KeyboardAvoidingView style={styles.prefsRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.prefsHeader}>
             <Pressable onPress={() => setPrefsOpen(false)}>
               <Feather name="x" size={22} color={colors.textPrimary} />
@@ -208,38 +215,43 @@ export default function ScoutProfile() {
               <Text style={styles.savePrefsText}>{savingPrefs ? 'Saving…' : 'Save Preferences'}</Text>
             </Pressable>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { alignItems: 'center', paddingTop: 32, paddingBottom: 20 },
   headerSettingsBtn: { position: 'absolute', top: 44, right: 16, zIndex: 1 },
-  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surfaceMuted },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
-  name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary },
-  verifiedLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.success, marginTop: 2 },
-  org: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginTop: 4 },
+  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surfaceMuted, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 12 },
+  verifiedPill: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 4, marginTop: 6 },
+  verifiedPillActive: { backgroundColor: colors.successTint },
+  verifiedPillPending: { backgroundColor: colors.warningTint },
+  verifiedLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs },
+  org: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginTop: 8 },
   since: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, marginTop: 2 },
   editProfileLink: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   editProfileLinkText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.primary },
   verifyCta: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.goldDark, borderRadius: radii.pill, paddingHorizontal: 16, paddingVertical: 10, marginTop: 14 },
   verifyCtaText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.white },
   section: { paddingHorizontal: 20, marginTop: 20 },
-  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 10 },
+  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary, marginBottom: 10, letterSpacing: 0.2 },
+  bioCard: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: spacing.lg, borderLeftWidth: 3, borderLeftColor: colors.primary },
   bio: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody, lineHeight: 21 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 6 },
   tagText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
-  activityGrid: { flexDirection: 'row', gap: 10 },
-  activityTile: { flex: 1, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 14, alignItems: 'center' },
+  activityGrid: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingVertical: 14 },
+  activityTile: { flex: 1, alignItems: 'center' },
+  activityTileDivider: { borderRightWidth: 1, borderRightColor: colors.divider },
   activityValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.headingLg, color: colors.textPrimary },
   activityLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2, textAlign: 'center' },
   settingsList: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.divider },
   settingsText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
   prefsRoot: { flex: 1, backgroundColor: colors.surface, paddingTop: 50 },
   prefsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 10 },
@@ -256,4 +268,5 @@ const styles = StyleSheet.create({
   rangeDash: { color: colors.textMuted },
   savePrefsBtn: { backgroundColor: colors.primary, borderRadius: radii.lg, height: 52, alignItems: 'center', justifyContent: 'center', marginTop: 28 },
   savePrefsText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.white },
-});
+  });
+}

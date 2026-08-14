@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
-import { colors, fontFamily, fontSize, radii, spacing } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
@@ -18,6 +19,8 @@ import { useSessionStore } from '../src/store/useSessionStore';
 // had none on this screen, which read as bare) and a password visibility
 // toggle, which a static HTML mockup can't express.
 export default function Login() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -28,12 +31,21 @@ export default function Login() {
     setSubmitting(true);
     try {
       const session = await authRepository.signIn(email.trim(), password);
-      await hydrate(session);
       // Don't rely on the async auth-state listener's timing to know where
       // to route — read the role (and, for players, completion status)
       // directly. A player who abandoned the profile wizard must land back
       // on it, not on the tabs with a blank profile.
       const profile = await profileRepository.getMyProfile(session.user.id);
+      if (profile.role !== 'player' && profile.role !== 'scout') {
+        // Admin accounts (and any other non-player/non-scout role) have no
+        // matching players/scouts row and no UI in this app -- fetching
+        // either previously 406'd. This app is player/scout only; admins
+        // use the separate web dashboard.
+        await authRepository.signOut();
+        showAlert('This account isn\'t supported here', 'Admin accounts use the Matobev web dashboard, not this app.');
+        return;
+      }
+      await hydrate(session);
       if (profile.role === 'scout') {
         router.replace('/(scout-tabs)/home');
       } else {
@@ -51,7 +63,7 @@ export default function Login() {
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.hero}>
-        <Image source={{ uri: images.authHero }} style={styles.heroImage} resizeMode="cover" />
+        <Image source={{ uri: images.authHero }} style={styles.heroImage} contentFit="cover" />
         <LinearGradient colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.75)']} style={StyleSheet.absoluteFill} />
         <View style={styles.heroTop}>
           <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
@@ -108,6 +120,9 @@ export default function Login() {
           loading={submitting}
           style={styles.submitBtn}
         />
+        {(!email.trim() || !password) && !submitting && (
+          <Text style={styles.submitHint}>Enter your email and password to sign in.</Text>
+        )}
 
         <View style={styles.signupRow}>
           <Text style={styles.signupText}>Don't have an account? </Text>
@@ -121,7 +136,8 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   hero: { height: 180 },
   heroImage: { width: '100%', height: '100%' },
@@ -139,7 +155,7 @@ const styles = StyleSheet.create({
   forgotText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.primary },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   divider: { flex: 1, height: 1, backgroundColor: colors.divider },
-  dividerText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: '#9CA3AF' },
+  dividerText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textDisabled },
   socialRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   socialBtn: {
     flex: 1,
@@ -151,7 +167,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitBtn: { marginTop: 'auto' },
+  submitHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
   signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 12 },
   signupText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
   signupLink: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.primary },
-});
+  });
+}
