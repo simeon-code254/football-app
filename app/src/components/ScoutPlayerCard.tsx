@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
-import { fontFamily, fontSize, radii, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../theme';
 
 export type ScoutPlayerCardAttribute = { key: string; displayName: string; value: number | null };
 
@@ -26,9 +26,10 @@ type Props = {
 // position match, recent activity) — never a fabricated explanation.
 export function ScoutPlayerCard({ id, name, avatar, overall, position, country, age, topAttributes, matchReasons, saved, onToggleSave }: Props) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, elevation('raised', isDark)]}>
       <View style={styles.imageWrap}>
         {/* See PlayerCard for why these three props matter on a recycled list row. */}
         <Image

@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { IconButton } from '../../src/components/IconButton';
@@ -39,6 +39,7 @@ function formatCompact(n: number): string {
 // built out here with real content matching the app's data model.
 export default function Profile() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const [tab, setTab] = useState<(typeof TABS)[number]>('About');
   const userId = useSessionStore((s) => s.session?.user.id);
@@ -124,7 +125,7 @@ export default function Profile() {
         </Text>
       </View>
 
-      <View style={styles.statCard}>
+      <View style={[styles.statCard, elevation('raised', isDark)]}>
         {statTiles.map((t, i) => (
           <View key={t.label} style={[styles.statTile, i < statTiles.length - 1 && styles.statTileDivider]}>
             <Text style={styles.statTileValue}>{t.value}</Text>
@@ -304,14 +305,14 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     flexDirection: 'row',
     marginHorizontal: 20,
     marginTop: 20,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     borderRadius: radii.lg,
-    paddingVertical: 14,
+    paddingVertical: spacing.lg,
   },
   statTile: { flex: 1, alignItems: 'center' },
   statTileDivider: { borderRightWidth: 1, borderRightColor: colors.divider },
-  statTileValue: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary },
-  statTileLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  statTileValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: -0.5 },
+  statTileLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 3, letterSpacing: 0.3 },
   tabRow: { flexDirection: 'row', marginTop: 24, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingHorizontal: 20 },
   tabItem: { marginRight: 20, paddingBottom: 10 },
   tabLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },

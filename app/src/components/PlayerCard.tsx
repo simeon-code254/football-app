@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../theme';
 import { RatingBadge } from './RatingBadge';
 
 type Props = {
@@ -15,11 +15,12 @@ type Props = {
 // city, rating badge.
 export function PlayerCard({ name, positionLine, avatar, rating, onPress }: Props) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [styles.card, elevation('raised', isDark), pressed && styles.cardPressed]}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={`${name}, ${positionLine}, rating ${rating}`}
     >

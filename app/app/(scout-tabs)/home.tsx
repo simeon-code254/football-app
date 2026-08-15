@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { ScoutPlayerCard } from '../../src/components/ScoutPlayerCard';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -37,6 +37,7 @@ function getGreeting() {
 // Active Trials.
 export default function ScoutDashboard() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const [topFilter, setTopFilter] = useState<(typeof TOP_FILTERS)[number]>('All');
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
@@ -289,7 +290,7 @@ export default function ScoutDashboard() {
         {/* Scouting overview */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Scouting Overview</Text>
-          <View style={styles.overviewRow}>
+          <View style={[styles.overviewRow, elevation('raised', isDark)]}>
             {[
               { label: 'Views', val: overview?.views ?? 0 },
               { label: 'Saved', val: overview?.saved ?? 0 },
@@ -339,7 +340,7 @@ export default function ScoutDashboard() {
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
               {recentUploads.map((v) => (
-                <Pressable key={v.id} style={styles.uploadCard} onPress={() => router.push({ pathname: '/player/[id]', params: { id: v.player_id } })}>
+                <Pressable key={v.id} style={[styles.uploadCard, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/player/[id]', params: { id: v.player_id } })}>
                   {uploadThumbs?.[v.id] ? (
                     <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} contentFit="contain"
           cachePolicy="memory-disk"
@@ -377,7 +378,7 @@ export default function ScoutDashboard() {
               );
             })}
           </ScrollView>
-          <View style={styles.leaderboard}>
+          <View style={[styles.leaderboard, elevation('raised', isDark)]}>
             {!topPerformers?.length ? (
               <Text style={[styles.emptyText, { padding: 14 }]}>
                 {topFilter === 'My Region' && !scout?.country_code
@@ -454,9 +455,13 @@ function QuickAction({
   disabled?: boolean;
 }) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   return (
-    <Pressable style={[styles.quickAction, disabled && { opacity: 0.5 }]} onPress={disabled ? undefined : onPress}>
+    <Pressable
+      style={[styles.quickAction, elevation('raised', isDark), disabled && { opacity: 0.5 }]}
+      onPress={disabled ? undefined : onPress}
+    >
       <View style={styles.quickIcon}>
         <Feather name={icon} size={18} color={colors.primary} />
       </View>
