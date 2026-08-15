@@ -88,8 +88,13 @@ export default function Home() {
         <View style={styles.header}>
           <View style={styles.headerText}>
             <Text style={styles.greeting}>{getGreeting()}</Text>
+            {/* First name only. The rating card directly below already
+                prints the full name in caps, so spelling it out twice cost
+                the header its space and truncated to "simeon odhiam...".
+                Shrinking the type would have been the wrong fix -- the name
+                is meant to be the largest thing up here. */}
             <Text style={styles.name} numberOfLines={1}>
-              {data?.profile.full_name || 'Welcome'}
+              {data?.profile.full_name?.trim().split(/\s+/)[0] || 'Welcome'}
             </Text>
           </View>
           <View style={styles.headerActions}>
