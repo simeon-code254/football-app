@@ -18,6 +18,7 @@ import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
 import { ReportModal } from '../src/components/ReportModal';
+import { ScoutSafetyNotice } from '../src/components/ScoutSafetyNotice';
 
 function isImagePath(path: string) {
   return /\.(jpe?g|png|webp)$/i.test(path);
@@ -334,15 +335,23 @@ export default function Messages() {
               keyExtractor={(m) => m.id}
               contentContainerStyle={styles.threadBody}
               ListHeaderComponent={
-                hasOlderMessages ? (
-                  <Pressable style={styles.loadEarlierBtn} onPress={() => fetchOlderMessages()} disabled={isFetchingOlderMessages}>
-                    {isFetchingOlderMessages ? (
-                      <ActivityIndicator color={colors.primary} size="small" />
-                    ) : (
-                      <Text style={styles.loadEarlierText}>Load earlier messages</Text>
-                    )}
-                  </Pressable>
-                ) : null
+                <>
+                  {/* Shown at the top of every scout thread, on the player
+                      side only. This is the exact moment the documented harm
+                      in this market happens -- an adult making contact with a
+                      young player -- so the guidance belongs here rather than
+                      buried in a help screen nobody opens. */}
+                  <ScoutSafetyNotice compact />
+                  {hasOlderMessages ? (
+                    <Pressable style={styles.loadEarlierBtn} onPress={() => fetchOlderMessages()} disabled={isFetchingOlderMessages}>
+                      {isFetchingOlderMessages ? (
+                        <ActivityIndicator color={colors.primary} size="small" />
+                      ) : (
+                        <Text style={styles.loadEarlierText}>Load earlier messages</Text>
+                      )}
+                    </Pressable>
+                  ) : null}
+                </>
               }
               renderItem={renderMessage}
               ListEmptyComponent={

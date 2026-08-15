@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { ScoutSafetyNotice } from '../src/components/ScoutSafetyNotice';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 
@@ -57,6 +58,9 @@ export default function HelpSettings() {
           </View>
           <Feather name="external-link" size={16} color={colors.textPlaceholder} />
         </Pressable>
+
+        <Text style={styles.sectionLabel}>Your safety</Text>
+        <ScoutSafetyNotice />
 
         <Text style={styles.sectionLabel}>Frequently Asked</Text>
         <View style={styles.list}>
