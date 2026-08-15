@@ -12,6 +12,7 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as scoutingRepository from '../../src/repositories/scoutingRepository';
+import * as communityRepository from '../../src/repositories/communityRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
 import { tapFeedback } from '../../src/lib/haptics';
@@ -44,6 +45,26 @@ export default function PlayerDetail() {
   const [savingNote, setSavingNote] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+
+  // Peer recognition. Scouting is rare; following is available to everyone
+  // and is what gives the app a reason to exist between uploads.
+  const { data: following, refetch: refetchFollowing } = useQuery({
+    queryKey: ['isFollowing', viewerId, id],
+    enabled: !!viewerId && !!id && viewerId !== id,
+    queryFn: () => communityRepository.isFollowing(viewerId!, id!),
+  });
+
+  const toggleFollow = async () => {
+    if (!viewerId || !id) return;
+    tapFeedback();
+    try {
+      if (following) await communityRepository.unfollowUser(viewerId, id);
+      else await communityRepository.followUser(viewerId, id);
+      refetchFollowing();
+    } catch (err) {
+      showAlert('Could not update', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['playerDetail', id],
@@ -182,7 +203,15 @@ export default function PlayerDetail() {
           <View style={styles.coverTop}>
             <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
             {viewerId && viewerId !== id && (
-              <IconButton icon="flag" light accessibilityLabel="Report this player" onPress={() => setReportOpen(true)} />
+              <>
+                <IconButton
+                  icon={following ? 'user-check' : 'user-plus'}
+                  light
+                  accessibilityLabel={following ? 'Unfollow this player' : 'Follow this player'}
+                  onPress={toggleFollow}
+                />
+                <IconButton icon="flag" light accessibilityLabel="Report this player" onPress={() => setReportOpen(true)} />
+              </>
             )}
           </View>
         </View>

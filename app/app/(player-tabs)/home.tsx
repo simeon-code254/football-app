@@ -89,6 +89,9 @@ export default function Home() {
             <Text style={styles.name}>{data?.profile.full_name || 'Welcome'}</Text>
           </View>
           <View style={styles.headerActions}>
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/leaderboard')} accessibilityRole="button" accessibilityLabel="Leaderboard">
+              <Feather name="bar-chart-2" size={18} color={colors.textPrimary} />
+            </Pressable>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/news')} accessibilityRole="button" accessibilityLabel="News">
               <Feather name="file-text" size={18} color={colors.textPrimary} />
             </Pressable>
