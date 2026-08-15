@@ -89,6 +89,32 @@ export type Database = {
         }
         Relationships: []
       }
+      attribute_position_weights: {
+        Row: {
+          attribute_id: number
+          position: Database["public"]["Enums"]["position_code"]
+          weight: number
+        }
+        Insert: {
+          attribute_id: number
+          position: Database["public"]["Enums"]["position_code"]
+          weight: number
+        }
+        Update: {
+          attribute_id?: number
+          position?: Database["public"]["Enums"]["position_code"]
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_position_weights_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "attribute_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -140,16 +166,19 @@ export type Database = {
           code: string
           is_active: boolean
           name: string
+          region: string
         }
         Insert: {
           code: string
           is_active?: boolean
           name: string
+          region: string
         }
         Update: {
           code?: string
           is_active?: boolean
           name?: string
+          region?: string
         }
         Relationships: []
       }
@@ -208,6 +237,7 @@ export type Database = {
           is_published: boolean
           published_at: string
           title: string
+          trial_id: string | null
           updated_at: string
         }
         Insert: {
@@ -219,6 +249,7 @@ export type Database = {
           is_published?: boolean
           published_at?: string
           title: string
+          trial_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -230,6 +261,7 @@ export type Database = {
           is_published?: boolean
           published_at?: string
           title?: string
+          trial_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -238,6 +270,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_posts_trial_id_fkey"
+            columns: ["trial_id"]
+            isOneToOne: false
+            referencedRelation: "trials"
             referencedColumns: ["id"]
           },
         ]
@@ -1287,7 +1326,9 @@ export type Database = {
           avatar_url: string | null
           club: string | null
           full_name: string | null
+          height_cm: number | null
           id: string | null
+          is_goalkeeper: boolean | null
           nationality_code: string | null
           nationality_name: string | null
           overall_rating: number | null
@@ -1298,6 +1339,7 @@ export type Database = {
             | Database["public"]["Enums"]["position_code"]
             | null
           video_count: number | null
+          weight_kg: number | null
         }
         Relationships: [
           {
@@ -1327,6 +1369,7 @@ export type Database = {
           unread_count: number
         }[]
       }
+      delete_stale_notifications: { Args: never; Returns: undefined }
       increment_video_share: {
         Args: { p_video_id: string }
         Returns: undefined
