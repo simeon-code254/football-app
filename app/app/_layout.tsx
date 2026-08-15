@@ -190,6 +190,7 @@ function RootLayout() {
             <Stack.Screen name="messages" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="browse" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="blocked-accounts" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="account-settings" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="security-settings" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="privacy-settings" options={{ animation: 'slide_from_right' }} />

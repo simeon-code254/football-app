@@ -23,6 +23,7 @@ import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
+import * as blocksRepository from '../../src/repositories/blocksRepository';
 import type { CommentWithAuthor } from '../../src/repositories/videosRepository';
 import { QueryState } from '../../src/components/QueryState';
 import { ReportModal } from '../../src/components/ReportModal';
@@ -250,10 +251,21 @@ export default function Reels() {
   });
   const initialReels = useMemo(() => reelPages?.pages.flatMap((p) => p.items), [reelPages]);
 
+  // Blocking has to remove people from view, not merely stop them
+  // messaging -- seeing a blocked person's videos in your feed makes the
+  // block feel broken even though contact is genuinely severed.
+  const { data: blockedIds } = useQuery({
+    queryKey: ['blockedIds', userId],
+    enabled: !!userId,
+    queryFn: () => blocksRepository.listBlockedIds(userId!),
+  });
+
   const [reels, setReels] = useState<ReelState[]>([]);
   useEffect(() => {
-    if (initialReels) setReels(initialReels);
-  }, [initialReels]);
+    if (!initialReels) return;
+    const blocked = new Set(blockedIds ?? []);
+    setReels(blocked.size ? initialReels.filter((r) => !blocked.has(r.creatorId)) : initialReels);
+  }, [initialReels, blockedIds]);
 
   const [viewportHeight, setViewportHeight] = useState(0);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -471,6 +483,7 @@ export default function Reels() {
         title="Report Video"
         targetType="video"
         targetId={reportTarget ?? ''}
+        blockableProfileId={reels.find((r) => r.id === reportTarget)?.creatorId}
         reporterId={userId ?? ''}
         onClose={() => setReportTarget(null)}
       />

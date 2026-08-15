@@ -389,6 +389,7 @@ export default function Messages() {
         title="Report User"
         targetType="profile"
         targetId={activeConversation?.scout_id ?? ''}
+        blockableProfileId={activeConversation?.scout_id ?? undefined}
         reporterId={userId ?? ''}
         onClose={() => setReportOpen(false)}
       />

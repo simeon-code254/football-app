@@ -400,6 +400,7 @@ export default function PlayerDetail() {
         title="Report Player"
         targetType="profile"
         targetId={id}
+        blockableProfileId={id}
         reporterId={viewerId ?? ''}
         onClose={() => setReportOpen(false)}
       />
