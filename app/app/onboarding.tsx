@@ -82,6 +82,8 @@ export default function Onboarding() {
             <Pressable
               onPress={() => setSlide((s) => Math.min(s + 1, SLIDES.length - 1))}
               style={({ pressed }) => [styles.nextBtn, pressed && { transform: [{ scale: 0.95 }] }]}
+              accessibilityRole="button"
+              accessibilityLabel="Next"
             >
               <Feather name="arrow-right" size={22} color={colors.white} />
             </Pressable>

@@ -333,7 +333,7 @@ export default function Upload() {
             )}
             <View style={styles.videoPreview}>
               <VideoPreviewPlayer uri={video.uri} />
-              <Pressable style={styles.videoRemoveBtn} onPress={resetVideo}>
+              <Pressable style={styles.videoRemoveBtn} onPress={resetVideo} accessibilityRole="button" accessibilityLabel="Remove selected video">
                 <Feather name="x" size={14} color={colors.white} />
               </Pressable>
             </View>
@@ -413,7 +413,7 @@ export default function Upload() {
       <Modal visible={tagModalOpen} animationType="slide" onRequestClose={() => setTagModalOpen(false)}>
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
           <View style={styles.tagModalHeader}>
-            <Pressable onPress={() => setTagModalOpen(false)}>
+            <Pressable onPress={() => setTagModalOpen(false)} accessibilityRole="button" accessibilityLabel="Close">
               <Feather name="x" size={22} color={colors.textPrimary} />
             </Pressable>
             <Text style={styles.tagModalTitle}>Tag Yourself</Text>

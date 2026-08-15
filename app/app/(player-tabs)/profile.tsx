@@ -271,7 +271,7 @@ export default function Profile() {
       <Modal visible={!!playingVideoUrl} animationType="fade" onRequestClose={() => setPlayingVideoUrl(null)}>
         <View style={{ flex: 1, backgroundColor: '#000' }}>
           {playingVideoUrl && <VideoPreview url={playingVideoUrl} />}
-          <Pressable style={styles.videoCloseBtn} onPress={() => setPlayingVideoUrl(null)}>
+          <Pressable style={styles.videoCloseBtn} onPress={() => setPlayingVideoUrl(null)} accessibilityRole="button" accessibilityLabel="Close video">
             <Feather name="x" size={20} color={colors.white} />
           </Pressable>
         </View>

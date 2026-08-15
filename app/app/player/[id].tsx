@@ -348,7 +348,13 @@ export default function PlayerDetail() {
                 value={newFolderName}
                 onChangeText={setNewFolderName}
               />
-              <Pressable style={styles.newFolderBtn} onPress={createFolderAndSave} disabled={!newFolderName.trim()}>
+              <Pressable
+                style={styles.newFolderBtn}
+                onPress={createFolderAndSave}
+                disabled={!newFolderName.trim()}
+                accessibilityRole="button"
+                accessibilityLabel="Create folder and save player"
+              >
                 <Feather name="plus" size={16} color={colors.primary} />
               </Pressable>
             </View>

@@ -201,7 +201,7 @@ export default function ScoutVerification() {
                 <View style={styles.filePill}>
                   <Feather name="file-text" size={16} color={colors.primary} />
                   <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                  <Pressable onPress={() => remove(slot.type)} hitSlop={8}>
+                  <Pressable onPress={() => remove(slot.type)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Remove document">
                     <Feather name="x" size={16} color={colors.textMuted} />
                   </Pressable>
                 </View>

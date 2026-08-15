@@ -179,6 +179,9 @@ export default function DiscoverPlayers() {
           onPress={() =>
             compareMode ? toggleSelected(id) : router.push({ pathname: '/player/[id]', params: { id } })
           }
+          accessibilityRole={compareMode ? 'checkbox' : 'button'}
+          accessibilityLabel={compareMode ? `Compare ${item.full_name || 'player'}` : `View ${item.full_name || 'player'}`}
+          accessibilityState={compareMode ? { checked: selected } : undefined}
         >
           <View style={compareMode && selected ? styles.cardSelected : undefined}>
             <PlayerCard
@@ -222,7 +225,7 @@ export default function DiscoverPlayers() {
             onChangeText={setQuery}
           />
         </View>
-        <Pressable style={styles.filterBtn} onPress={openSheet}>
+        <Pressable style={styles.filterBtn} onPress={openSheet} accessibilityRole="button" accessibilityLabel="Filters">
           <Feather name="sliders" size={16} color={colors.white} />
         </Pressable>
       </View>

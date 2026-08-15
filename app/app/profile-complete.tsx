@@ -298,7 +298,7 @@ export default function ProfileComplete() {
         <View style={styles.headerTopRow}>
           <Text style={styles.stepLabel}>Step {step} of 4</Text>
           {isEdit && (
-            <Pressable onPress={() => router.replace('/(player-tabs)/profile')} hitSlop={8}>
+            <Pressable onPress={() => router.replace('/(player-tabs)/profile')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close without saving">
               <Feather name="x" size={20} color={colors.textMuted} />
             </Pressable>
           )}

@@ -16,7 +16,7 @@ export function RatingBadge({ rating, size = 'md' }: Props) {
       accessible
       accessibilityLabel={`Overall rating ${rating}`}
     >
-      <Text style={[styles.text, { fontSize: fs }]}>{rating}</Text>
+      <Text style={[styles.text, { fontSize: fs }]} maxFontSizeMultiplier={1.2}>{rating}</Text>
     </View>
   );
 }

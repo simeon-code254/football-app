@@ -470,7 +470,7 @@ export default function Reels() {
                 value={draft}
                 onChangeText={setDraft}
               />
-              <Pressable style={styles.commentSendBtn} onPress={addComment}>
+              <Pressable style={styles.commentSendBtn} onPress={addComment} accessibilityRole="button" accessibilityLabel="Send comment">
                 <Feather name="send" size={16} color={colors.white} />
               </Pressable>
             </View>

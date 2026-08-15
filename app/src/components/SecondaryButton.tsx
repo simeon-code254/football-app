@@ -24,7 +24,7 @@ export function SecondaryButton({ label, onPress, style, height = 52 }: Props) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label} maxFontSizeMultiplier={1.3}>{label}</Text>
     </Pressable>
   );
 }

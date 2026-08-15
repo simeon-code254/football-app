@@ -159,7 +159,13 @@ export default function TrialDetail() {
       const age = ageFromDob(player?.date_of_birth ?? null);
       return (
         <View style={styles.applicantCard}>
-          <Pressable onPress={() => toggleSelect(a.id)} style={styles.checkbox}>
+          <Pressable
+            onPress={() => toggleSelect(a.id)}
+            style={styles.checkbox}
+            accessibilityRole="checkbox"
+            accessibilityLabel="Select applicant"
+            accessibilityState={{ checked: isSelected }}
+          >
             <View style={[styles.checkboxBox, isSelected && styles.checkboxBoxActive]}>
               {isSelected && <Feather name="check" size={12} color={colors.white} />}
             </View>
@@ -429,7 +435,7 @@ export default function TrialDetail() {
       <Modal visible={editOpen} animationType="slide" onRequestClose={() => setEditOpen(false)}>
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
           <View style={styles.header}>
-            <Pressable onPress={() => setEditOpen(false)}>
+            <Pressable onPress={() => setEditOpen(false)} accessibilityRole="button" accessibilityLabel="Close">
               <Feather name="x" size={22} color={colors.textPrimary} />
             </Pressable>
             <Text style={styles.headerTitle}>Edit Trial</Text>

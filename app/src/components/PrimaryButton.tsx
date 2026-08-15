@@ -39,7 +39,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, style, height
           {loading ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.label} maxFontSizeMultiplier={1.3}>{label}</Text>
           )}
         </LinearGradient>
       )}

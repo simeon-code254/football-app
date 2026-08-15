@@ -323,7 +323,7 @@ export default function Messages() {
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
             <View style={styles.threadHeader}>
-              <Pressable onPress={() => setActiveConversationId(null)}>
+              <Pressable onPress={() => setActiveConversationId(null)} accessibilityRole="button" accessibilityLabel="Back to conversations">
                 <Feather name="chevron-left" size={22} color={colors.textPrimary} />
               </Pressable>
               <Image source={{ uri: activeConversation?.players?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar}

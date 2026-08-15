@@ -167,7 +167,7 @@ export default function Discover() {
             onChangeText={setQuery}
           />
         </View>
-        <Pressable style={styles.filterBtn} onPress={openSheet}>
+        <Pressable style={styles.filterBtn} onPress={openSheet} accessibilityRole="button" accessibilityLabel="Filters">
           <Feather name="sliders" size={16} color={colors.white} />
         </Pressable>
       </View>

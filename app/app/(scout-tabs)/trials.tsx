@@ -235,7 +235,7 @@ export default function Trials() {
       <Modal visible={createOpen} animationType="slide" onRequestClose={() => setCreateOpen(false)}>
         <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
           <View style={styles.header}>
-            <Pressable onPress={() => setCreateOpen(false)}>
+            <Pressable onPress={() => setCreateOpen(false)} accessibilityRole="button" accessibilityLabel="Close">
               <Feather name="x" size={22} color={colors.textPrimary} />
             </Pressable>
             <Text style={styles.title}>Create Trial</Text>
