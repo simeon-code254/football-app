@@ -35,6 +35,9 @@ export default function ThemeSettings() {
                 key={opt.mode}
                 style={[styles.row, i < OPTIONS.length - 1 && styles.rowBorder]}
                 onPress={() => setMode(opt.mode)}
+                accessibilityRole="radio"
+                accessibilityLabel={opt.label}
+                accessibilityState={{ selected: active }}
               >
                 <View style={styles.rowIcon}>
                   <Feather name={opt.icon} size={17} color={active ? colors.primary : colors.textBody} />

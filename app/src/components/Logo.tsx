@@ -19,5 +19,7 @@ const SOURCES = {
 // instead of a generic icon anywhere the app needs to show its own identity
 // (splash, auth headers, nav branding).
 export function Logo({ variant = 'color', size = 48, style }: Props) {
-  return <Image source={SOURCES[variant]} style={[{ width: size, height: size }, style]} contentFit="contain" />;
+  return <Image
+      accessibilityElementsHidden
+      importantForAccessibility="no" source={SOURCES[variant]} style={[{ width: size, height: size }, style]} contentFit="contain" />;
 }

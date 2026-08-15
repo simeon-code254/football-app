@@ -11,7 +11,11 @@ export function RatingBadge({ rating, size = 'md' }: Props) {
   const dims = { sm: 28, md: 36, lg: 48 }[size];
   const fs = { sm: fontSize.sm, md: fontSize.body, lg: fontSize.headingLg }[size];
   return (
-    <View style={[styles.badge, { width: dims, height: dims, borderRadius: dims / 2 }]}>
+    <View
+      style={[styles.badge, { width: dims, height: dims, borderRadius: dims / 2 }]}
+      accessible
+      accessibilityLabel={`Overall rating ${rating}`}
+    >
       <Text style={[styles.text, { fontSize: fs }]}>{rating}</Text>
     </View>
   );

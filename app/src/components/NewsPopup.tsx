@@ -53,15 +53,15 @@ export function NewsPopup() {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
-      <Pressable style={styles.backdrop} onPress={dismiss}>
-        <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
+      <Pressable style={styles.backdrop} onPress={dismiss} accessibilityRole="button" accessibilityLabel="Dismiss announcement">
+        <Pressable style={styles.card} onPress={(e) => e.stopPropagation()} accessible={false}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="contain" />}
           <View style={styles.body}>
             <Text style={styles.eyebrow}>{latest.trial_id ? 'New trial' : "What's new"}</Text>
             <Text style={styles.title}>{latest.title}</Text>
             <Text style={styles.excerpt} numberOfLines={3}>{latest.body}</Text>
             <View style={styles.actions}>
-              <Pressable onPress={dismiss} style={styles.dismissBtn}>
+              <Pressable onPress={dismiss} style={styles.dismissBtn} accessibilityRole="button" accessibilityLabel="Dismiss">
                 <Text style={styles.dismissText}>Not now</Text>
               </Pressable>
               <Pressable onPress={readMore} style={styles.readBtn}>

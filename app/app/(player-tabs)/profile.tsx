@@ -164,6 +164,9 @@ export default function Profile() {
             key={t}
             onPress={() => (t === 'AI Ratings' ? router.push('/ai-ratings') : setTab(t))}
             style={styles.tabItem}
+            accessibilityRole="tab"
+            accessibilityLabel={t}
+            accessibilityState={{ selected: tab === t }}
           >
             <Text style={[styles.tabLabel, tab === t && styles.tabLabelActive]}>{t}</Text>
             {tab === t && <View style={styles.tabIndicator} />}

@@ -237,7 +237,10 @@ export default function PlayerDetail() {
 
         <View style={styles.tabRow}>
           {TABS.map((t) => (
-            <Pressable key={t} onPress={() => setTab(t)} style={styles.tabItem}>
+            <Pressable key={t} onPress={() => setTab(t)} style={styles.tabItem}
+            accessibilityRole="tab"
+            accessibilityLabel={t}
+            accessibilityState={{ selected: tab === t }}>
               <Text style={[styles.tabLabel, tab === t && styles.tabLabelActive]}>{t}</Text>
               {tab === t && <View style={styles.tabIndicator} />}
             </Pressable>

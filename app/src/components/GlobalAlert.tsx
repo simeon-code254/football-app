@@ -33,6 +33,8 @@ export function GlobalAlert() {
                   i > 0 && (buttons.length > 2 ? styles.buttonStackedSpacing : styles.buttonRowSpacing),
                 ]}
                 onPress={() => handlePress(btn.onPress)}
+                accessibilityRole="button"
+                accessibilityLabel={btn.text}
               >
                 <Text
                   style={[
