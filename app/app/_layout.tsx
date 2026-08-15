@@ -3,7 +3,7 @@ import { Stack, useSegments, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 // The package's own root barrel (`@expo-google-fonts/poppins`) requires
 // all 18 weight/style .ttf files unconditionally in one module -- importing
 // anything from it, even just `useFonts`, pulls every one of them into the
@@ -16,7 +16,9 @@ import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
 import { Poppins_700Bold } from '@expo-google-fonts/poppins/700Bold';
 import { Poppins_800ExtraBold } from '@expo-google-fonts/poppins/800ExtraBold';
 import { useThemeColors, useIsDark } from '../src/theme';
-import { queryClient } from '../src/lib/queryClient';
+import { queryClient, persistOptions } from '../src/lib/queryClient';
+import { startNetworkWatcher } from '../src/lib/network';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
 import { GlobalAlert } from '../src/components/GlobalAlert';
@@ -81,6 +83,15 @@ function RootLayout() {
     });
     return () => subscription.unsubscribe();
   }, [hydrate]);
+
+  // Teaches React Query what "online" means on a phone. Without it the
+  // client assumes it is always connected (its default detection uses
+  // browser window events that don't exist here), so requests on a dead
+  // connection burn their full retry cycle and nothing refetches when
+  // signal returns. Started once for the app's lifetime.
+  useEffect(() => {
+    startNetworkWatcher();
+  }, []);
 
   const ready = fontsLoaded && sessionStatus !== 'loading';
 
@@ -149,8 +160,9 @@ function RootLayout() {
   if (!ready) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <OfflineBanner />
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <ErrorBoundary>
           <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
@@ -186,7 +198,7 @@ function RootLayout() {
           <GlobalAlert />
         </ErrorBoundary>
       </View>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
