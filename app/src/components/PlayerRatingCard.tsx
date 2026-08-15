@@ -22,16 +22,11 @@ import { fontFamily, fontSize, radii, spacing, elevation, useIsDark } from '../t
 // players a "bronze" verdict on work the analysis cannot yet judge
 // properly. One treatment for everyone until the ratings are worth ranking.
 
-// ISO 3166-1 alpha-2 -> regional indicator pair. Real data the app already
-// stores, rendered the way a card would show it.
-function flagFor(code?: string | null): string {
-  if (!code || code.length !== 2) return '';
-  const base = 0x1f1e6;
-  return String.fromCodePoint(
-    base + (code.toUpperCase().charCodeAt(0) - 65),
-    base + (code.toUpperCase().charCodeAt(1) - 65)
-  );
-}
+// Emoji flags were the first instinct here and were wrong: regional
+// indicator pairs do not render at all on Windows Chrome and are patchy on
+// older Android, so a Kenyan player saw the letters "KE" where a flag
+// should be. A typeset country code is legible on every platform and reads
+// as a deliberate card element rather than a failed glyph.
 
 export type RatingAttribute = { key: string; displayName: string; value: number | null };
 
@@ -57,7 +52,6 @@ export function PlayerRatingCard({
   const isDark = useIsDark();
   const rated = attributes.filter((a) => a.value != null).slice(0, 4);
   const provisional = assessedCount > 0 && assessedCount < totalCount;
-  const flag = flagFor(countryCode);
 
   return (
     <LinearGradient
@@ -81,7 +75,11 @@ export function PlayerRatingCard({
         </View>
 
         <View style={styles.topRight}>
-          {!!flag && <Text style={styles.flag}>{flag}</Text>}
+          {!!countryCode && (
+            <View style={styles.countryChip}>
+              <Text style={styles.countryText}>{countryCode.toUpperCase()}</Text>
+            </View>
+          )}
           <Pressable
             onPress={onPressReport}
             style={styles.reportBtn}
@@ -132,15 +130,16 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl,
     marginTop: spacing.md,
     borderRadius: radii.xl,
-    padding: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
     overflow: 'hidden',
   },
   edge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   rating: {
     fontFamily: fontFamily.extraBold,
-    fontSize: 58,
-    lineHeight: 60,
+    fontSize: 52,
+    lineHeight: 54,
     color: GOLD,
     letterSpacing: -2.5,
   },
@@ -152,7 +151,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   topRight: { alignItems: 'flex-end', gap: spacing.md },
-  flag: { fontSize: 26 },
+  countryChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,213,79,0.4)',
+    borderRadius: radii.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  countryText: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: GOLD, letterSpacing: 1.5 },
   reportBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -164,7 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   reportText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: GOLD },
-  rule: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: spacing.md },
+  rule: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: spacing.sm },
   name: {
     fontFamily: fontFamily.bold,
     fontSize: fontSize.bodyLg,
@@ -172,8 +178,11 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     textAlign: 'center',
   },
-  attrRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.lg },
-  attr: { alignItems: 'center', flex: 1 },
+  // Left-aligned with a fixed gap: space-between pushed two values to
+  // opposite edges of the card, which looked like a layout error rather
+  // than a design.
+  attrRow: { flexDirection: 'row', gap: spacing.huge, marginTop: spacing.md, paddingLeft: spacing.xs },
+  attr: { alignItems: 'flex-start' },
   attrValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.headingLg, color: '#FFFFFF' },
   attrKey: { fontFamily: fontFamily.semiBold, fontSize: 10, color: MUTED, letterSpacing: 1.2, marginTop: 2 },
   pending: {
