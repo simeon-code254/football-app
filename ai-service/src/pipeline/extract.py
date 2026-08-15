@@ -6,8 +6,19 @@ import cv2
 from src.config import FPS_SAMPLE_RATE
 
 
-def extract_frames(video_bytes: bytes) -> tuple[list, float]:
-    """Writes video_bytes to a temp file, samples frames at FPS_SAMPLE_RATE.
+def extract_frames(video_bytes: bytes, fps_override: float | None = None) -> tuple[list, float]:
+    """Writes video_bytes to a temp file, samples frames at FPS_SAMPLE_RATE
+    (or `fps_override` when given).
+
+    Phase A's full-highlight-clip extraction (Pace/Physical) always uses the
+    default -- this override exists for features.py's short (~2.5s)
+    event-window clips, where a touch itself only lasts a few frames at 5fps
+    and finer temporal resolution genuinely changes what's measurable (where
+    exactly the touch lands, how sharply the ball redirects). Both the
+    offline training path and, once wired in, live event-window inference
+    call this with the same override, so train/serve parity is preserved --
+    it's Phase A's own full-clip default that stays untouched, not a
+    per-caller inconsistency.
 
     Returns (frames, duration_seconds). Frames are BGR numpy arrays (OpenCV
     default), in playback order.
@@ -25,7 +36,8 @@ def extract_frames(video_bytes: bytes) -> tuple[list, float]:
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration_s = frame_count / native_fps if native_fps > 0 else 0.0
 
-        skip = max(1, round(native_fps / FPS_SAMPLE_RATE))
+        target_fps = fps_override if fps_override is not None else FPS_SAMPLE_RATE
+        skip = max(1, round(native_fps / target_fps))
         frames = []
         idx = 0
         while True:

@@ -3,6 +3,13 @@
 __pycache__/
 *.pyc
 models/*.pt
+models/*.task
+models/classifiers/*
+!models/classifiers/.gitkeep
 sample_clips/*.mp4
 sample_clips/*.mov
 sample_clips/*.avi
+data/*
+!data/.gitkeep
+!data/raw_pixabay/.gitkeep
+training/reports/*.csv

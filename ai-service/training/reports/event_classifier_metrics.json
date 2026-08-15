@@ -1,0 +1,65 @@
+{
+  "train_clips": 1469,
+  "test_clips": 598,
+  "test_games": [
+    "20191001_reading_fulham",
+    "20191001_stoke_city_huddersfield_town"
+  ],
+  "classification_report": {
+    "drive": {
+      "precision": 0.6005586592178771,
+      "recall": 0.7190635451505016,
+      "f1-score": 0.654490106544901,
+      "support": 299.0
+    },
+    "pass": {
+      "precision": 0.65,
+      "recall": 0.5217391304347826,
+      "f1-score": 0.5788497217068646,
+      "support": 299.0
+    },
+    "accuracy": 0.6204013377926422,
+    "macro avg": {
+      "precision": 0.6252793296089385,
+      "recall": 0.6204013377926421,
+      "f1-score": 0.6166699141258828,
+      "support": 598.0
+    },
+    "weighted avg": {
+      "precision": 0.6252793296089385,
+      "recall": 0.6204013377926422,
+      "f1-score": 0.6166699141258828,
+      "support": 598.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      215,
+      84
+    ],
+    [
+      143,
+      156
+    ]
+  ],
+  "confusion_matrix_labels": [
+    "drive",
+    "pass"
+  ],
+  "feature_importances": {
+    "min_ball_person_dist_norm": 0.1442445620692765,
+    "speed_before_norm": 0.12470787757859138,
+    "speed_after_norm": 0.12448374181997815,
+    "speed_ratio": 0.10785874618713262,
+    "close_frac": 0.10782156352257263,
+    "ball_frame_coverage": 0.04341672532140921,
+    "touch_position_in_window": 0.09859415431632093,
+    "pose_available": 0.005523420356071416,
+    "knee_angle_at_touch": 0.008728668894568335,
+    "leg_extension_norm": 0.010193347074775141,
+    "ankle_velocity_norm": 0.0024078952782183483,
+    "ball_acceleration_norm": 0.12018194526670452,
+    "direction_change_available": 0.004974320142398511,
+    "direction_change_at_touch": 0.09686303217198226
+  }
+}

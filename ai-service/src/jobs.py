@@ -10,6 +10,26 @@ from src.supabase_client import get_client
 
 logger = logging.getLogger("ai-service.jobs")
 
+# The CV pipeline (run.py) shares mutable, process-lifetime model singletons
+# across every job -- most critically the person tracker's internal state
+# (see detect_track.py's track_frames(), fixed this session to reset that
+# state per video). That fix only works if jobs are never actually
+# processed concurrently -- and nothing enforced that. reap_stale_
+# processing()'s own docstring already assumed "single-worker" as a design
+# intent, but three independent, real entry points (poll_loop, the realtime
+# listener's on_insert, and the manual /process/{job_id} endpoint) can each
+# reach process_job() with no serialization between them; two videos
+# uploaded close together could genuinely have their pipeline runs
+# interleave across real OS threads (asyncio.to_thread). Concurrent access
+# to the same tracker object isn't just "the reset fires at the wrong time"
+# -- it's two videos' frame-by-frame track updates corrupting the same
+# shared state simultaneously, for both jobs at once. This lock makes the
+# documented single-worker assumption real instead of aspirational: only
+# the actual CV computation is serialized (not the DB/network I/O around
+# it), so a second job's non-pipeline work still proceeds concurrently, it
+# just waits its turn for the shared, stateful model singletons.
+_pipeline_lock = asyncio.Lock()
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -98,14 +118,15 @@ async def process_job(job_id: str) -> None:
             else None
         )
 
-        result = await asyncio.to_thread(
-            run_pipeline,
-            video_bytes,
-            player.get("height_cm"),
-            bool(player.get("is_goalkeeper")),
-            subject_hint,
-            player.get("jersey_number"),
-        )
+        async with _pipeline_lock:
+            result = await asyncio.to_thread(
+                run_pipeline,
+                video_bytes,
+                player.get("height_cm"),
+                bool(player.get("is_goalkeeper")),
+                subject_hint,
+                player.get("jersey_number"),
+            )
 
         if not result.ok:
             await fail_job(job_id, result.skipped_reason or "pipeline failed with no reason given")
@@ -113,7 +134,7 @@ async def process_job(job_id: str) -> None:
             return
 
         if result.scores:
-            await write_scores(job["player_id"], job["video_id"], job_id, result.scores)
+            await write_scores(job["player_id"], job["video_id"], job_id, result.category, result.scores)
 
         await complete_job(job_id, result.result_summary)
         logger.info("Job %s completed (%s)", job_id, "scored" if result.scores else "skipped")
