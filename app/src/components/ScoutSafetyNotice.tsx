@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../theme';
+import { useTranslation } from '../i18n';
 
 // Shown the first time a scout contacts a player, and permanently on the
 // help screen.
@@ -18,33 +19,30 @@ import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors 
 // market reach; this is the thing they don't do.
 export function ScoutSafetyNotice({ compact = false }: { compact?: boolean }) {
   const colors = useThemeColors();
+  const { t } = useTranslation();
   const styles = makeStyles(colors);
 
   return (
-    <View style={styles.card} accessible accessibilityLabel="Safety information about scouts">
+    <View style={styles.card} accessible accessibilityLabel={t('safety.title')}>
       <View style={styles.headRow}>
         <Feather name="shield" size={15} color={colors.primary} />
-        <Text style={styles.title}>Staying safe with scouts</Text>
+        <Text style={styles.title}>{t('safety.title')}</Text>
       </View>
 
       <Text style={styles.point}>
-        <Text style={styles.bold}>No real scout asks you for money.</Text> Not for trials, not for registration, not
-        for travel. A request for payment is the clearest sign of a scam.
+        <Text style={styles.bold}>{t('safety.noMoney')}</Text> {t('safety.noMoneyBody')}
       </Text>
 
       {!compact && (
         <>
           <Text style={styles.point}>
-            <Text style={styles.bold}>A real club pays your way.</Text> Under FIFA rules, a club inviting you to a
-            trial covers travel, accommodation and meals.
+            <Text style={styles.bold}>{t('safety.clubPays')}</Text> {t('safety.clubPaysBody')}
           </Text>
           <Text style={styles.point}>
-            <Text style={styles.bold}>Verified means we checked.</Text> A verified scout submitted identity and
-            organisation documents that our team reviewed. Unverified accounts can't message you at all.
+            <Text style={styles.bold}>{t('safety.verified')}</Text> {t('safety.verifiedBody')}
           </Text>
           <Text style={styles.point}>
-            <Text style={styles.bold}>Tell someone you trust.</Text> Bring a parent, guardian or your coach into any
-            conversation about a trial before you agree to anything.
+            <Text style={styles.bold}>{t('safety.tellSomeone')}</Text> {t('safety.tellSomeoneBody')}
           </Text>
         </>
       )}
@@ -54,9 +52,9 @@ export function ScoutSafetyNotice({ compact = false }: { compact?: boolean }) {
         hitSlop={8}
         style={styles.linkRow}
         accessibilityRole="button"
-        accessibilityLabel="Read the full safety guide"
+        accessibilityLabel={t('safety.readGuide')}
       >
-        <Text style={styles.link}>{compact ? 'Read the full safety guide' : 'Report anything that feels wrong'}</Text>
+        <Text style={styles.link}>{compact ? t('safety.readGuide') : t('safety.reportWrong')}</Text>
         <Feather name="chevron-right" size={14} color={colors.primary} />
       </Pressable>
     </View>

@@ -4,6 +4,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 import { registerForPush } from '../lib/push';
+import { useTranslation } from '../i18n';
 
 // The screen shown BEFORE the operating system's own permission dialog.
 //
@@ -26,6 +27,7 @@ export function PushPrimer({
   onDone: (granted: boolean) => void;
 }) {
   const colors = useThemeColors();
+  const { t } = useTranslation();
   const styles = makeStyles(colors);
   const [working, setWorking] = useState(false);
 
@@ -42,10 +44,10 @@ export function PushPrimer({
   };
 
   const reasons: { icon: React.ComponentProps<typeof Feather>['name']; text: string }[] = [
-    { icon: 'eye', text: 'A scout viewed your profile' },
-    { icon: 'message-circle', text: 'A scout sent you a message' },
-    { icon: 'clipboard', text: 'Your trial application was accepted' },
-    { icon: 'bar-chart-2', text: 'Your video rating is ready' },
+    { icon: 'eye', text: t('push.reasonViewed') },
+    { icon: 'message-circle', text: t('push.reasonMessage') },
+    { icon: 'clipboard', text: t('push.reasonAccepted') },
+    { icon: 'bar-chart-2', text: t('push.reasonRating') },
   ];
 
   return (
@@ -55,9 +57,9 @@ export function PushPrimer({
           <View style={styles.iconWrap}>
             <Feather name="bell" size={22} color={colors.primary} />
           </View>
-          <Text style={styles.title}>Don't miss your moment</Text>
+          <Text style={styles.title}>{t('push.title')}</Text>
           <Text style={styles.sub}>
-            Scouts move fast. We'll only notify you when something real happens:
+            {t('push.sub')}
           </Text>
 
           <View style={styles.reasons}>
@@ -69,10 +71,10 @@ export function PushPrimer({
             ))}
           </View>
 
-          <Text style={styles.fine}>No spam, and you can turn these off anytime in Settings.</Text>
+          <Text style={styles.fine}>{t('push.fine')}</Text>
 
           <PrimaryButton
-            label={working ? 'Just a moment…' : 'Turn on notifications'}
+            label={working ? `${t('common.loading')}…` : t('push.enable')}
             onPress={enable}
             disabled={working}
             loading={working}
@@ -83,9 +85,9 @@ export function PushPrimer({
             hitSlop={10}
             style={styles.later}
             accessibilityRole="button"
-            accessibilityLabel="Not now"
+            accessibilityLabel={t('common.notNow')}
           >
-            <Text style={styles.laterText}>Not now</Text>
+            <Text style={styles.laterText}>{t('common.notNow')}</Text>
           </Pressable>
         </View>
       </View>

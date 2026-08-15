@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../theme';
+import { useTranslation } from '../i18n';
 
 type StrengthInput = {
   avatarUrl?: string | null;
@@ -24,24 +25,25 @@ type Item = { key: string; label: string; done: boolean; route?: string };
 // Every item here is something a scout genuinely uses when deciding
 // whether to look at a player, which is why the copy names the benefit
 // rather than the field.
-export function buildStrengthItems(p: StrengthInput): Item[] {
+export function buildStrengthItems(p: StrengthInput, t: (k: string) => string): Item[] {
   const hasSocial = !!(p.socials?.instagram || p.socials?.youtube || p.socials?.tiktok || p.socials?.facebook);
   return [
-    { key: 'video', label: 'Upload a highlight', done: p.videoCount > 0, route: '/(player-tabs)/upload' },
-    { key: 'avatar', label: 'Add a profile photo', done: !!p.avatarUrl, route: '/profile-complete?mode=edit' },
-    { key: 'club', label: 'Add your current club', done: !!p.club, route: '/profile-complete?mode=edit' },
-    { key: 'bio', label: 'Write a short bio', done: !!p.bio?.trim(), route: '/profile-complete?mode=edit' },
-    { key: 'height', label: 'Add your height', done: p.heightCm != null, route: '/profile-complete?mode=edit' },
-    { key: 'second', label: 'Add a secondary position', done: !!p.secondaryPosition, route: '/profile-complete?mode=edit' },
-    { key: 'social', label: 'Link a social profile', done: hasSocial, route: '/profile-complete?mode=edit' },
+    { key: 'video', label: t('profileStrength.addVideo'), done: p.videoCount > 0, route: '/(player-tabs)/upload' },
+    { key: 'avatar', label: t('profileStrength.addPhoto'), done: !!p.avatarUrl, route: '/profile-complete?mode=edit' },
+    { key: 'club', label: t('profileStrength.addClub'), done: !!p.club, route: '/profile-complete?mode=edit' },
+    { key: 'bio', label: t('profileStrength.addBio'), done: !!p.bio?.trim(), route: '/profile-complete?mode=edit' },
+    { key: 'height', label: t('profileStrength.addHeight'), done: p.heightCm != null, route: '/profile-complete?mode=edit' },
+    { key: 'second', label: t('profileStrength.addSecondPosition'), done: !!p.secondaryPosition, route: '/profile-complete?mode=edit' },
+    { key: 'social', label: t('profileStrength.addSocial'), done: hasSocial, route: '/profile-complete?mode=edit' },
   ];
 }
 
 export function ProfileStrength(props: StrengthInput) {
   const colors = useThemeColors();
+  const { t } = useTranslation();
   const styles = makeStyles(colors);
 
-  const items = buildStrengthItems(props);
+  const items = buildStrengthItems(props, t);
   const done = items.filter((i) => i.done).length;
   const pct = Math.round((done / items.length) * 100);
   // Only ever show the next single missing thing. A checklist of seven
@@ -52,7 +54,7 @@ export function ProfileStrength(props: StrengthInput) {
   return (
     <View style={styles.card}>
       <View style={styles.headRow}>
-        <Text style={styles.title}>Profile strength</Text>
+        <Text style={styles.title}>{t('profileStrength.title')}</Text>
         <Text style={styles.pct}>{pct}%</Text>
       </View>
 
@@ -78,7 +80,7 @@ export function ProfileStrength(props: StrengthInput) {
       ) : (
         <View style={styles.nextRow}>
           <Feather name="check-circle" size={16} color={colors.success} />
-          <Text style={styles.doneText}>Your profile is complete — scouts see everything.</Text>
+          <Text style={styles.doneText}>{t('profileStrength.complete')}</Text>
         </View>
       )}
     </View>
