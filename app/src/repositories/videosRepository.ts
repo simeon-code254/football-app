@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { uploadFileToStorage } from '../lib/uploadFile';
+import { uploadFileToStorage, type UploadOptions } from '../lib/uploadFile';
 import type { Database } from '../lib/database.types';
 
 export type VideoRow = Database['public']['Tables']['videos']['Row'];
@@ -235,11 +235,12 @@ export async function uploadVideoSource(
   playerId: string,
   videoId: string,
   fileUri: string,
-  fileName?: string | null
+  fileName?: string | null,
+  opts?: UploadOptions
 ) {
   const { mime, ext } = videoMimeFor(fileUri, fileName);
   const path = `${playerId}/${videoId}/source.${ext}`;
-  await uploadFileToStorage('videos', path, fileUri, mime);
+  await uploadFileToStorage('videos', path, fileUri, mime, opts);
   return path;
 }
 

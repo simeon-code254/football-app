@@ -120,6 +120,11 @@ export default function Upload() {
   // Asked only AFTER a successful upload -- the user has just done the thing
   // notifications are about, so the request finally makes sense to them.
   const [primerVisible, setPrimerVisible] = useState(false);
+  // Real byte progress, and a way out. Previously the only feedback was the
+  // button label changing, with no way to stop a large upload once started
+  // -- on metered data that meant watching money leave with no exit.
+  const [progress, setProgress] = useState(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   // "Tag yourself" step (see src/pipeline/subject.py on the AI service side)
   // — without this the AI can only guess which detected person is the
@@ -231,7 +236,15 @@ export default function Upload() {
         // upload itself should still succeed, just without a thumbnail.
       }
 
-      const storagePath = await videosRepository.uploadVideoSource(userId, videoId, video.uri, video.fileName);
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const storagePath = await videosRepository.uploadVideoSource(
+        userId,
+        videoId,
+        video.uri,
+        video.fileName,
+        { onProgress: setProgress, signal: controller.signal }
+      );
 
       try {
         await videosRepository.createVideo({
@@ -287,9 +300,16 @@ export default function Upload() {
         [{ text: 'OK', onPress: resetForm }]
       );
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // The user asked to stop; anything already written is cleaned up
+        // by the orphan handling above, so this needs no alert.
+        return;
+      }
       errorFeedback();
       showAlert('Upload Failed', err instanceof Error ? err.message : 'Something went wrong submitting your video. Please try again.');
     } finally {
+      abortRef.current = null;
+      setProgress(0);
       setPublishing(false);
     }
   };
@@ -402,12 +422,31 @@ export default function Upload() {
         )}
 
         <PrimaryButton
-          label={publishing ? 'Uploading…' : 'Upload & Publish'}
+          label={publishing ? `Uploading… ${Math.round(progress * 100)}%` : 'Upload & Publish'}
           onPress={publish}
           disabled={!video || publishing}
           loading={publishing}
           style={styles.submitBtn}
         />
+
+        {publishing && (
+          <>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${Math.max(2, progress * 100)}%` }]} />
+            </View>
+            {/* An upload of this size on metered data is a real cost, so
+                stopping it has to be possible -- not just waiting it out. */}
+            <Pressable
+              onPress={() => abortRef.current?.abort()}
+              hitSlop={10}
+              style={styles.cancelWrap}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel upload"
+            >
+              <Text style={styles.cancelText}>Cancel upload</Text>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
 
       <Modal visible={tagModalOpen} animationType="slide" onRequestClose={() => setTagModalOpen(false)}>
@@ -517,6 +556,16 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   dropTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   dropSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
   pickedFileName: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginBottom: 2 },
+  progressTrack: {
+    height: 4,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceMuted,
+    overflow: 'hidden',
+    marginTop: 12,
+  },
+  progressFill: { height: '100%', borderRadius: radii.pill, backgroundColor: colors.primary },
+  cancelWrap: { alignItems: 'center', marginTop: 12 },
+  cancelText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.error },
   pickedFileSize: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, textAlign: 'center', marginBottom: 8 },
   videoPreview: {
     width: '70%',
