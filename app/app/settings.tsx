@@ -7,6 +7,7 @@ import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
+import { unregisterPush } from '../src/lib/push';
 import { showAlert } from '../src/lib/alert';
 
 type SettingsRow = { title: string; icon: React.ComponentProps<typeof Feather>['name']; onPress: () => void };
@@ -15,6 +16,7 @@ export default function Settings() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const clearSession = useSessionStore((s) => s.clear);
+  const userId = useSessionStore((s) => s.session?.user.id);
   const [deleting, setDeleting] = useState(false);
 
   const rows: SettingsRow[] = [
@@ -28,6 +30,11 @@ export default function Settings() {
   ];
 
   const logout = async () => {
+    // Drop this device's push token FIRST, while the session still exists
+    // -- the delete is RLS-scoped to the signed-in profile, so after
+    // signOut() it would be rejected and the phone would keep receiving
+    // the previous account's notifications.
+    if (userId) await unregisterPush(userId);
     await authRepository.signOut();
     clearSession();
     router.replace('/welcome');

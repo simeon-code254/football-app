@@ -15,6 +15,8 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import { showAlert } from '../../src/lib/alert';
 import { successFeedback, errorFeedback } from '../../src/lib/haptics';
+import { PushPrimer } from '../../src/components/PushPrimer';
+import { getPushPermission } from '../../src/lib/push';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = {
@@ -115,6 +117,9 @@ export default function Upload() {
   const [opponent, setOpponent] = useState('');
   const [tags, setTags] = useState('');
   const [publishing, setPublishing] = useState(false);
+  // Asked only AFTER a successful upload -- the user has just done the thing
+  // notifications are about, so the request finally makes sense to them.
+  const [primerVisible, setPrimerVisible] = useState(false);
 
   // "Tag yourself" step (see src/pipeline/subject.py on the AI service side)
   // — without this the AI can only guess which detected person is the
@@ -260,6 +265,14 @@ export default function Upload() {
       }
 
       successFeedback();
+
+      // Only if the OS hasn't already been asked. Re-prompting a user who
+      // declined is both useless (iOS won't show it again) and annoying.
+      getPushPermission()
+        .then((p) => {
+          if (p === 'undetermined') setPrimerVisible(true);
+        })
+        .catch(() => {});
 
       // Previously this always force-navigated to Profile on OK, regardless
       // of mode -- for a highlight-only upload nothing new shows up there
@@ -467,6 +480,12 @@ export default function Upload() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      <PushPrimer
+        visible={primerVisible}
+        profileId={userId ?? ''}
+        onDone={() => setPrimerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
