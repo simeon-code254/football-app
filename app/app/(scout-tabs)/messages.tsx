@@ -15,6 +15,7 @@ import * as messagesRepository from '../../src/repositories/messagesRepository';
 import type { MessageRow, MessagePage } from '../../src/repositories/messagesRepository';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonRow } from '../../src/components/Skeleton';
 import { showAlert } from '../../src/lib/alert';
 import { ReportModal } from '../../src/components/ReportModal';
 
@@ -297,7 +298,7 @@ export default function Messages() {
         <Text style={styles.title}>Messages</Text>
       </View>
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations} skeleton={<SkeletonRow />}>
       {!conversations.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />

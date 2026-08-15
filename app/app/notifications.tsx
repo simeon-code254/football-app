@@ -12,6 +12,7 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import * as notificationsRepository from '../src/repositories/notificationsRepository';
 import type { NotificationRow, NotificationPage } from '../src/repositories/notificationsRepository';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
 
 const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
@@ -225,7 +226,7 @@ export default function Notifications() {
       </View>
       <Text style={styles.expiryHint}>Notifications you don't clear disappear automatically after 72 hours.</Text>
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonRow />}>
       <FlashList
         data={items ?? []}
         keyExtractor={(n) => n.id}

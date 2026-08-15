@@ -19,6 +19,13 @@ type Props = {
   isEmpty?: boolean;
   emptyIcon?: React.ComponentProps<typeof Feather>['name'];
   emptyMessage?: string;
+  /**
+   * Shape-matched placeholder shown instead of the spinner while loading.
+   * Pass one of the presets from components/Skeleton.tsx. Screens that
+   * don't supply one keep the spinner, so this stays additive -- nothing
+   * breaks by not adopting it.
+   */
+  skeleton?: ReactNode;
   children: ReactNode;
 };
 
@@ -35,7 +42,7 @@ type Props = {
 // then renders children. Screens that already have their own FlatList
 // empty-state copy can keep using `isEmpty`/`emptyMessage` here instead of
 // duplicating it, or omit both and handle empty lists themselves.
-export function QueryState({ isLoading, error, onRetry, isEmpty, emptyIcon, emptyMessage, children }: Props) {
+export function QueryState({ isLoading, error, onRetry, isEmpty, emptyIcon, emptyMessage, skeleton, children }: Props) {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
 
@@ -49,9 +56,10 @@ export function QueryState({ isLoading, error, onRetry, isEmpty, emptyIcon, empt
   }, [error]);
 
   if (isLoading) {
+    if (skeleton) return <>{skeleton}</>;
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={colors.primary} accessibilityLabel="Loading" />
       </View>
     );
   }

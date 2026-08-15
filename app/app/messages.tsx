@@ -15,6 +15,7 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import * as messagesRepository from '../src/repositories/messagesRepository';
 import type { MessageRow, MessagePage } from '../src/repositories/messagesRepository';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
 import { ReportModal } from '../src/components/ReportModal';
 
@@ -281,7 +282,7 @@ export default function Messages() {
         <View style={{ width: 36 }} />
       </View>
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations} skeleton={<SkeletonRow />}>
       {!conversations.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />

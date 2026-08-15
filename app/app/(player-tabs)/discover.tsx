@@ -13,6 +13,7 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import type { PlayerFilters } from '../../src/repositories/profileRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonRow } from '../../src/components/Skeleton';
 
 const CATEGORIES = ['All', 'Strikers', 'Midfield', 'Defense', 'GK'] as const;
 
@@ -240,7 +241,7 @@ export default function Discover() {
         onEndReachedThreshold={0.4}
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
-          <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+          <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonRow />}>
             <Text style={styles.emptyText}>No players found.</Text>
           </QueryState>
         }

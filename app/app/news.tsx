@@ -11,6 +11,7 @@ import { IconButton } from '../src/components/IconButton';
 import * as newsRepository from '../src/repositories/newsRepository';
 import type { NewsPostRow } from '../src/repositories/newsRepository';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonCards } from '../src/components/Skeleton';
 import { getPublicStorageUrl } from '../src/lib/publicUrl';
 
 function formatDate(iso: string) {
@@ -86,7 +87,7 @@ export default function News() {
         <View style={{ width: 36 }} />
       </View>
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonCards />}>
         <FlashList
           data={posts}
           keyExtractor={(p) => p.id}

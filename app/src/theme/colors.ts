@@ -50,6 +50,13 @@ export const lightColors = {
   dangerTint: '#FEF2F2',
   notificationDot: '#FF4444',
 
+  // Skeleton placeholders. `skeleton` is the resting block colour and
+  // `skeletonHighlight` the lighter band that sweeps across it -- kept as
+  // tokens so both themes stay legible instead of a hardcoded grey that
+  // vanishes on one of them.
+  skeleton: '#DFE4EB',
+  skeletonHighlight: '#EDF1F6',
+
   white: '#FFFFFF',
   black: '#000000',
 };
@@ -87,6 +94,9 @@ export const darkColors: typeof lightColors = {
   successTint: '#0F2818',
   dangerTint: '#3A1414',
   notificationDot: '#FF5252',
+
+  skeleton: '#1C2536',
+  skeletonHighlight: '#263146',
 
   white: '#FFFFFF',
   black: '#000000',

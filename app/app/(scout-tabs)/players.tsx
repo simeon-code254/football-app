@@ -14,6 +14,7 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import type { PlayerFilters } from '../../src/repositories/profileRepository';
 import * as scoutingRepository from '../../src/repositories/scoutingRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonCards } from '../../src/components/Skeleton';
 
 const MAX_COMPARE = 3;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -262,7 +263,7 @@ export default function DiscoverPlayers() {
         onEndReachedThreshold={0.4}
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
-          <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+          <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonCards />}>
             <View style={styles.empty}>
               <Feather name={savedOnly ? 'heart' : 'users'} size={28} color={colors.textPlaceholder} />
               <Text style={styles.emptyTitle}>

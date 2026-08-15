@@ -17,6 +17,7 @@ import { POSITIONS } from '../../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../../src/constants/africanCountries';
 import { showAlert } from '../../src/lib/alert';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonProfile } from '../../src/components/Skeleton';
 
 // Scout Profile (spec §26) + Settings (§27) + Scouting Preferences (§28) —
 // preferences feed the Recommended For You / match-score logic (spec §29),
@@ -92,7 +93,7 @@ export default function ScoutProfile() {
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
       <LinearGradient colors={gradients.primaryButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
         <View style={styles.heroTopRow}>
           <View style={{ width: 36 }} />

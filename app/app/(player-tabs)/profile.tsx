@@ -14,6 +14,7 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonProfile } from '../../src/components/Skeleton';
 import { showAlert } from '../../src/lib/alert';
 
 function VideoPreview({ url }: { url: string }) {
@@ -101,7 +102,7 @@ export default function Profile() {
 
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
       <View style={styles.coverWrap}>
         <Image source={{ uri: COVER }} style={styles.cover} />
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} style={StyleSheet.absoluteFill} />

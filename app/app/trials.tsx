@@ -11,6 +11,7 @@ import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as trialsRepository from '../src/repositories/trialsRepository';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonCards } from '../src/components/Skeleton';
 import { getPublicStorageUrl } from '../src/lib/publicUrl';
 
 const SEGMENTS = ['Open Trials', 'My Applications'] as const;
@@ -100,7 +101,7 @@ export default function PlayerTrials() {
         <QueryState
           isLoading={loadingOpen}
           error={openError}
-          onRetry={refetchOpen}
+          onRetry={refetchOpen} skeleton={<SkeletonCards />}
           isEmpty={!openTrials.length}
           emptyIcon="calendar"
           emptyMessage="No open trials right now."

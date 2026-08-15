@@ -15,6 +15,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { POSITIONS } from '../../src/constants/football';
 import { showAlert } from '../../src/lib/alert';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonCards } from '../../src/components/Skeleton';
 import { getPublicStorageUrl } from '../../src/lib/publicUrl';
 
 function parseDate(text: string): string | null {
@@ -206,7 +207,7 @@ export default function Trials() {
         </View>
       )}
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonCards />}>
       {!trials.length ? (
         <View style={styles.empty}>
           <Feather name="clipboard" size={28} color={colors.textPlaceholder} />
