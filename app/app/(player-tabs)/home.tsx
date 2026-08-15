@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
@@ -31,6 +31,7 @@ function getGreeting() {
 // trace, filled out with the Trials feature from the product brief.
 export default function Home() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const { data, isLoading, isRefetching, error, refetch } = useQuery({
@@ -116,14 +117,23 @@ export default function Home() {
           <FirstWinCard primaryPosition={data.player.primary_position} />
         )}
 
-        <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.ratingCard}>
+        {/* The hero. A player opens this app to see one number, so it now
+            behaves like one thing rather than a card of equal parts: the
+            rating dominates, the label sits under it as a caption, and the
+            whole card lifts off the page instead of sitting flat in it. */}
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.ratingCard, elevation('floating', isDark)]}
+        >
           <View style={styles.ratingCardTop}>
-            <View>
-              <Text style={styles.ratingLabel}>Overall Rating</Text>
+            <View style={{ flex: 1 }}>
               <Text style={styles.ratingValue}>{data?.player.overall_rating != null ? data.player.overall_rating : '—'}</Text>
+              <Text style={styles.ratingLabel}>Overall rating</Text>
             </View>
-            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/ai-ratings')}>
-              <Text style={styles.viewReportText}>View Report</Text>
+            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/ai-ratings')} accessibilityRole="button" accessibilityLabel="View full report">
+              <Text style={styles.viewReportText}>Report</Text>
               <Feather name="arrow-right" size={14} color={colors.white} />
             </Pressable>
           </View>
@@ -142,24 +152,58 @@ export default function Home() {
           </View>
         </LinearGradient>
 
+        {/* Uploading is the entire point of the product, and it used to be
+            one of three identical tiles. It now leads: full width, its own
+            weight, with the supporting actions clearly secondary. */}
+        <Pressable
+          style={[styles.primaryAction, elevation('raised', isDark)]}
+          onPress={() => router.push('/(player-tabs)/upload')}
+          accessibilityRole="button"
+          accessibilityLabel="Upload a highlight"
+        >
+          <View style={styles.primaryActionIcon}>
+            <Feather name="upload" size={20} color={colors.white} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.primaryActionLabel}>Upload a highlight</Text>
+            <Text style={styles.primaryActionSub}>Get rated and seen by scouts</Text>
+          </View>
+          <Feather name="arrow-right" size={18} color={colors.primary} />
+        </Pressable>
+
         <View style={styles.quickActions}>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/(player-tabs)/upload')}>
-            <View style={[styles.actionIcon, { backgroundColor: colors.infoTint }]}>
-              <Feather name="upload" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.actionLabel}>Upload Highlight</Text>
-          </Pressable>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/trials')}>
+          <Pressable
+            style={[styles.actionCard, elevation('raised', isDark)]}
+            onPress={() => router.push('/trials')}
+            accessibilityRole="button"
+            accessibilityLabel="Browse trials"
+          >
             <View style={[styles.actionIcon, { backgroundColor: colors.warningTint }]}>
-              <Feather name="award" size={20} color={colors.goldDark} />
+              <Feather name="award" size={18} color={colors.goldDark} />
             </View>
-            <Text style={styles.actionLabel}>Browse Trials</Text>
+            <Text style={styles.actionLabel}>Trials</Text>
           </Pressable>
-          <Pressable style={styles.actionCard} onPress={() => router.push('/messages')}>
+          <Pressable
+            style={[styles.actionCard, elevation('raised', isDark)]}
+            onPress={() => router.push('/messages')}
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+          >
             <View style={[styles.actionIcon, { backgroundColor: colors.successTint }]}>
-              <Feather name="message-circle" size={20} color={colors.success} />
+              <Feather name="message-circle" size={18} color={colors.success} />
             </View>
             <Text style={styles.actionLabel}>Messages</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.actionCard, elevation('raised', isDark)]}
+            onPress={() => router.push('/leaderboard')}
+            accessibilityRole="button"
+            accessibilityLabel="Leaderboard"
+          >
+            <View style={[styles.actionIcon, { backgroundColor: colors.infoTint }]}>
+              <Feather name="bar-chart-2" size={18} color={colors.primary} />
+            </View>
+            <Text style={styles.actionLabel}>Ranking</Text>
           </Pressable>
         </View>
 
@@ -177,7 +221,7 @@ export default function Home() {
               </Text>
             )}
             {(trials ?? []).slice(0, 8).map((trial) => (
-              <Pressable key={trial.id} style={styles.trialCard} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+              <Pressable key={trial.id} style={[styles.trialCard, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                 <View style={styles.trialDateBadge}>
                   <Text style={styles.trialDateText}>{trial.trial_date}</Text>
                 </View>
@@ -222,8 +266,10 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     paddingTop: 14,
     paddingBottom: 10,
   },
-  greeting: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted },
-  name: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.textPrimary },
+  // The name is the largest thing in the header and the greeting is a
+  // caption above it, rather than the two competing at similar weight.
+  greeting: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 0.3 },
+  name: { fontFamily: fontFamily.extraBold, fontSize: fontSize.displayLg, color: colors.textPrimary, letterSpacing: -0.5, marginTop: 1 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   iconBtn: {
     width: 34,
@@ -239,25 +285,47 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   dot: { position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.notificationDot, borderWidth: 1.5, borderColor: colors.surface },
   avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.primary },
-  ratingCard: { marginHorizontal: 20, borderRadius: radii.xl, padding: 20, marginTop: 4 },
+  ratingCard: { marginHorizontal: spacing.xl, borderRadius: radii.xxl, padding: spacing.xxl, marginTop: spacing.md },
   ratingCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  ratingLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.8)' },
-  ratingValue: { fontFamily: fontFamily.extraBold, fontSize: 40, color: colors.white, marginTop: 2 },
+  // Caption UNDER the number, not above it -- the number is the headline,
+  // the label only explains it.
+  ratingLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.75)', marginTop: -2, letterSpacing: 0.2 },
+  ratingValue: { fontFamily: fontFamily.extraBold, fontSize: 56, lineHeight: 60, color: colors.white, letterSpacing: -2 },
   viewReportBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.pill },
   viewReportText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.white },
   statRow: { flexDirection: 'row', gap: 10, marginTop: 20 },
   statChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: radii.md, paddingVertical: 10, alignItems: 'center' },
   statVal: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.white },
   statKey: { fontFamily: fontFamily.medium, fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  quickActions: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginTop: 16 },
-  actionCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 14, alignItems: 'flex-start', gap: 10 },
-  actionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
-  section: { paddingHorizontal: 20, marginTop: 24 },
+  primaryAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radii.xl,
+    backgroundColor: colors.surface,
+  },
+  primaryActionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radii.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryActionLabel: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
+  primaryActionSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
+  quickActions: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl, marginTop: spacing.md },
+  actionCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.md, alignItems: 'center', gap: spacing.sm },
+  actionIcon: { width: 36, height: 36, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
+  actionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textPrimary },
+  section: { paddingHorizontal: spacing.xl, marginTop: spacing.huge },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.title, color: colors.textPrimary },
+  sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary, letterSpacing: -0.2 },
   sectionLink: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.primary },
-  trialCard: { width: 180, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 14 },
+  trialCard: { width: 190, backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg },
   trialDateBadge: { alignSelf: 'flex-start', backgroundColor: colors.infoTint, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 10 },
   trialDateText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.primary },
   trialClub: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
