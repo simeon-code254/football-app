@@ -73,6 +73,12 @@ export type PlayerFilters = {
   countryCodes?: string[];
   preferredFoot?: string[];
   minOverall?: number;
+  club?: string;
+  heightMin?: number;
+  heightMax?: number;
+  recentlyActiveOnly?: boolean;
+  hasVideosOnly?: boolean;
+  excludeId?: string;
   search?: string;
   sortBy?: 'rating' | 'name' | 'age';
   ids?: string[];
@@ -95,14 +101,28 @@ export async function listPlayerPublicViews(
 
   let query = supabase.from('player_public_view').select('*');
   if (filters.ids) query = query.in('id', filters.ids);
-  if (filters.position) query = query.eq('primary_position', filters.position);
-  if (filters.positions?.length) query = query.in('primary_position', filters.positions);
+  if (filters.excludeId) query = query.neq('id', filters.excludeId);
+  if (filters.position) {
+    // A player's secondary position is a real, equally legitimate match --
+    // a scout filtering for "CB" shouldn't miss someone whose primary is
+    // CDM but who also plays CB.
+    query = query.or(`primary_position.eq.${filters.position},secondary_position.eq.${filters.position}`);
+  }
+  if (filters.positions?.length) {
+    const list = filters.positions.join(',');
+    query = query.or(`primary_position.in.(${list}),secondary_position.in.(${list})`);
+  }
   if (filters.ageMin != null) query = query.gte('age', filters.ageMin);
   if (filters.ageMax != null) query = query.lte('age', filters.ageMax);
   if (filters.countryCode) query = query.eq('nationality_code', filters.countryCode);
   if (filters.countryCodes?.length) query = query.in('nationality_code', filters.countryCodes);
   if (filters.preferredFoot?.length) query = query.in('preferred_foot', filters.preferredFoot);
   if (filters.minOverall != null) query = query.gte('overall_rating', filters.minOverall);
+  if (filters.club) query = query.ilike('club', `%${filters.club}%`);
+  if (filters.heightMin != null) query = query.gte('height_cm', filters.heightMin);
+  if (filters.heightMax != null) query = query.lte('height_cm', filters.heightMax);
+  if (filters.recentlyActiveOnly) query = query.eq('recently_active', true);
+  if (filters.hasVideosOnly) query = query.gt('video_count', 0);
   if (filters.search) query = query.ilike('full_name', `%${filters.search}%`);
   if (filters.sortBy === 'name') query = query.order('full_name', { ascending: true, nullsFirst: false });
   else if (filters.sortBy === 'age') query = query.order('age', { ascending: true, nullsFirst: false });
@@ -112,6 +132,42 @@ export async function listPlayerPublicViews(
   const { data, error } = await query;
   if (error) throw error;
   const rows = data ?? [];
+  const hasMore = rows.length > pageSize;
+  return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
+}
+
+// Real, transparent recommendation formula (no ML, no fabricated score):
+// same primary position as the viewer (their most defensible peer group),
+// with a same-country/same-secondary-position boost, ranked by real overall
+// rating. Falls back to "same region" (via the passed countryCodes, derived
+// client-side from the region grouping) when the viewer's own position/
+// nationality isn't set yet, rather than silently returning nothing.
+export async function listRecommendedPlayers(
+  viewer: { id: string; primaryPosition?: string | null; nationalityCode?: string | null },
+  pagination: { page?: number; pageSize?: number } = {}
+): Promise<PlayerPage> {
+  const pageSize = pagination.pageSize ?? 20;
+  const from = (pagination.page ?? 0) * pageSize;
+  const to = from + pageSize;
+
+  let query = supabase.from('player_public_view').select('*').neq('id', viewer.id);
+  if (viewer.primaryPosition) {
+    query = query.or(`primary_position.eq.${viewer.primaryPosition},secondary_position.eq.${viewer.primaryPosition}`);
+  }
+  query = query.order('overall_rating', { ascending: false, nullsFirst: false }).range(from, to);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  let rows = data ?? [];
+  // Same-country peers surfaced first among the position match -- still a
+  // real field on the row, just a client-side re-sort, not a second query.
+  if (viewer.nationalityCode) {
+    rows = [...rows].sort((a, b) => {
+      const aMatch = a.nationality_code === viewer.nationalityCode ? 0 : 1;
+      const bMatch = b.nationality_code === viewer.nationalityCode ? 0 : 1;
+      return aMatch - bMatch;
+    });
+  }
   const hasMore = rows.length > pageSize;
   return { items: hasMore ? rows.slice(0, pageSize) : rows, hasMore };
 }

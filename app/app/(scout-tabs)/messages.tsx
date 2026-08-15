@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -104,7 +104,6 @@ export default function Messages() {
   const {
     data: messagePages,
     isLoading: isLoadingMessages,
-    refetch: refetchMessages,
     fetchNextPage: fetchOlderMessages,
     hasNextPage: hasOlderMessages,
     isFetchingNextPage: isFetchingOlderMessages,
@@ -132,15 +131,29 @@ export default function Messages() {
     }
   }, [isLoadingMessages, messages.length, activeConversationId]);
 
+  // Shared by both the realtime handler and send()'s own direct append
+  // below -- de-duped by message id, since both paths can legitimately try
+  // to add the *same* row: Supabase Realtime echoes a sender's own insert
+  // back to them (not just the other participant), so without this guard
+  // the just-sent message got appended twice -- once by send() itself,
+  // once again when its own insert event arrived over the realtime
+  // channel. That was a real duplicate row in the rendered list (not in
+  // the DB), and FlatList's keyExtractor="id" throws a duplicate-key error
+  // the moment it happens.
+  const appendMessage = (message: MessageRow) => {
+    queryClient.setQueryData<InfiniteData<MessagePage>>(threadQueryKey, (old) => {
+      if (!old) return old;
+      const [first, ...rest] = old.pages;
+      if (first.items.some((m) => m.id === message.id)) return old;
+      return { ...old, pages: [{ ...first, items: [...first.items, message] }, ...rest] };
+    });
+  };
+
   useEffect(() => {
     if (!activeConversationId || !userId) return;
     messagesRepository.markMessagesRead(activeConversationId, userId).then(() => refetchConversations());
     const unsubscribe = messagesRepository.subscribeToMessages(activeConversationId, (message) => {
-      queryClient.setQueryData<InfiniteData<MessagePage>>(threadQueryKey, (old) => {
-        if (!old) return old;
-        const [first, ...rest] = old.pages;
-        return { ...old, pages: [{ ...first, items: [...first.items, message] }, ...rest] };
-      });
+      appendMessage(message);
       requestAnimationFrame(() => threadListRef.current?.scrollToEnd({ animated: true }));
     });
     return unsubscribe;
@@ -161,8 +174,12 @@ export default function Messages() {
       const attachmentPath = attachment
         ? await messagesRepository.uploadMessageAttachment(activeConversationId, attachment.uri, attachment.name, attachment.mimeType)
         : undefined;
-      await messagesRepository.sendMessage(activeConversationId, userId, body, attachmentPath);
-      refetchMessages();
+      const sent = await messagesRepository.sendMessage(activeConversationId, userId, body, attachmentPath);
+      // Append the real row directly instead of refetch()ing the whole
+      // page -- immediate feedback with no network round-trip gap, and
+      // appendMessage()'s own id check means it's safe even if the
+      // realtime echo for this exact message arrives a moment later.
+      appendMessage(sent);
       refetchConversations();
     } catch (err) {
       setDraft(body);

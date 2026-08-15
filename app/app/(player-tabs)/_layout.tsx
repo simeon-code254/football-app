@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
 
 // Matches Matobev v4.dc.html's MAIN APP tab bar: Home | Reels | Upload |

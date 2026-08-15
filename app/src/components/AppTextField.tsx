@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
 
 type Props = TextInputProps & {

@@ -1,13 +1,16 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
+import { AppTextField } from '../../src/components/AppTextField';
 import { images } from '../../src/constants/images';
+import { POSITIONS } from '../../src/constants/football';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
@@ -30,6 +33,29 @@ function ageFromDob(dob: string | null): number | null {
   return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
 }
 
+// Mirrors (scout-tabs)/trials.tsx's own parseDate/formatDate pair -- the
+// create and edit forms both work in DD / MM / YYYY text, ISO on the wire.
+function parseDate(text: string): string | null {
+  const parts = text.split(/\D+/).filter(Boolean);
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts;
+  if (y.length !== 4) return null;
+  const day = Number(d);
+  const month = Number(m);
+  const year = Number(y);
+  if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) return null;
+  if (month < 1 || month > 12) return null;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  if (day < 1 || day > daysInMonth) return null;
+  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+function formatDateForInput(iso: string | null): string {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 // Trial Management + Applicant review (spec §14/§15): trial detail header,
 // status tabs, per-applicant Shortlist/Accept/Reject, and bulk selection.
 export default function TrialDetail() {
@@ -48,6 +74,14 @@ export default function TrialDetail() {
   const [tab, setTab] = useState<'all' | ApplicantStatus>('all');
   const [selected, setSelected] = useState<string[]>([]);
   const [applying, setApplying] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: '', club: '', location: '', ageMin: '', ageMax: '',
+    positions: [] as string[], trialDate: '', deadline: '', description: '',
+  });
+  const [editCoverUri, setEditCoverUri] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: trial, isLoading: loadingTrial, error: trialError, refetch: refetchTrial } = useQuery({
     queryKey: ['trial', id],
@@ -55,7 +89,7 @@ export default function TrialDetail() {
     queryFn: () => trialsRepository.getTrialById(id),
   });
 
-  const { data: myApplication, refetch: refetchMyApplication } = useQuery({
+  const { data: myApplication, isLoading: loadingMyApplication, refetch: refetchMyApplication } = useQuery({
     queryKey: ['myApplicationForTrial', id, userId],
     enabled: role === 'player' && !!userId && !!id,
     queryFn: () => trialsRepository.getMyApplicationForTrial(userId!, id),
@@ -89,71 +123,14 @@ export default function TrialDetail() {
   });
   const totalApplicantCount = Object.values(statusCounts ?? {}).reduce((sum, n) => sum + n, 0);
 
-  if (loadingTrial || trialError || !trial) {
-    return (
-      <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        <QueryState isLoading={loadingTrial} error={trialError} onRetry={refetchTrial}>
-          <Text style={styles.notFound}>Trial not found.</Text>
-        </QueryState>
-      </SafeAreaView>
-    );
-  }
-
-  const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
-
-  const apply = async () => {
-    if (!userId) return;
-    setApplying(true);
-    try {
-      await trialsRepository.applyToTrial(userId, trial.id);
-      await refetchMyApplication();
-    } catch (err) {
-      showAlert('Could not apply', err instanceof Error ? err.message : 'Please try again.');
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  if (role === 'player') {
-    const status = myApplication?.status;
-    return (
-      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <View style={styles.header}>
-          <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-          <Text style={styles.headerTitle}>Trial Details</Text>
-          <View style={{ width: 36 }} />
-        </View>
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-          {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.trialCover} contentFit="contain" />}
-          <View style={styles.infoCard}>
-            <Text style={styles.trialTitle}>{trial.title}</Text>
-            <Text style={styles.trialClub}>{trial.club}</Text>
-            <View style={styles.infoGrid}>
-              <InfoCell label="Location" value={trial.location} />
-              <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
-              <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
-              <InfoCell label="Deadline" value={trial.application_deadline} />
-            </View>
-            {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
-          </View>
-
-          <View style={{ paddingHorizontal: 20 }}>
-            {status ? (
-              <View style={[styles.myStatusBanner, { backgroundColor: MY_STATUS_STYLE[status]?.bg }]}>
-                <Feather name="check-circle" size={16} color={MY_STATUS_STYLE[status]?.text} />
-                <Text style={[styles.myStatusText, { color: MY_STATUS_STYLE[status]?.text }]}>
-                  {myApplication?.source === 'invited' && status === 'pending' ? 'Invited' : MY_STATUS_STYLE[status]?.label}
-                </Text>
-              </View>
-            ) : (
-              <PrimaryButton label={applying ? 'Applying…' : 'Apply for Trial'} onPress={apply} disabled={applying} loading={applying} />
-            )}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
+  // These must stay above the early `return` below -- every hook in this
+  // component (including the useCallback here) has to run unconditionally
+  // on every render. Defining renderApplicant's useCallback after an early
+  // return meant it was skipped entirely while the trial was still loading,
+  // then suddenly called on the next render once `trial` resolved -- a real
+  // "Rendered more hooks than during the previous render" crash, not a
+  // theoretical one (React's Rules of Hooks require the exact same hooks,
+  // same order, every render).
   const setStatus = async (applicationId: string, status: ApplicantStatus) => {
     try {
       await trialsRepository.updateApplicationStatus(applicationId, status);
@@ -215,12 +192,182 @@ export default function TrialDetail() {
     [selected, colors, styles]
   );
 
+  if (loadingTrial || trialError || !trial) {
+    return (
+      <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <QueryState isLoading={loadingTrial} error={trialError} onRetry={refetchTrial}>
+          <Text style={styles.notFound}>Trial not found.</Text>
+        </QueryState>
+      </SafeAreaView>
+    );
+  }
+
+  const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
+
+  const apply = async () => {
+    if (!userId) return;
+    setApplying(true);
+    try {
+      await trialsRepository.applyToTrial(userId, trial.id);
+      await refetchMyApplication();
+    } catch (err) {
+      showAlert('Could not apply', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  if (role === 'player') {
+    const status = myApplication?.status;
+    return (
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
+          <Text style={styles.headerTitle}>Trial Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+          {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.trialCover} contentFit="contain" />}
+          <View style={styles.infoCard}>
+            <Text style={styles.trialTitle}>{trial.title}</Text>
+            <Text style={styles.trialClub}>{trial.club}</Text>
+            <View style={styles.infoGrid}>
+              <InfoCell label="Location" value={trial.location} />
+              <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
+              <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
+              <InfoCell label="Deadline" value={trial.application_deadline} />
+            </View>
+            {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
+          </View>
+
+          <View style={{ paddingHorizontal: 20 }}>
+            {loadingMyApplication ? (
+              // Don't flash "Apply for Trial" while we still don't know
+              // whether an application already exists -- that gap is what
+              // let a real double-tap or a fast reopen insert a duplicate
+              // row and hit the trial_applications unique-constraint 409.
+              <ActivityIndicator color={colors.primary} style={{ paddingVertical: 14 }} />
+            ) : status ? (
+              <View style={[styles.myStatusBanner, { backgroundColor: MY_STATUS_STYLE[status]?.bg }]}>
+                <Feather name="check-circle" size={16} color={MY_STATUS_STYLE[status]?.text} />
+                <Text style={[styles.myStatusText, { color: MY_STATUS_STYLE[status]?.text }]}>
+                  {myApplication?.source === 'invited' && status === 'pending' ? 'Invited' : MY_STATUS_STYLE[status]?.label}
+                </Text>
+              </View>
+            ) : (
+              <PrimaryButton label={applying ? 'Applying…' : 'Apply for Trial'} onPress={apply} disabled={applying} loading={applying} />
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const openEdit = () => {
+    setEditForm({
+      title: trial.title,
+      club: trial.club,
+      location: trial.location,
+      ageMin: trial.age_min != null ? String(trial.age_min) : '',
+      ageMax: trial.age_max != null ? String(trial.age_max) : '',
+      positions: trial.positions,
+      trialDate: formatDateForInput(trial.trial_date),
+      deadline: formatDateForInput(trial.application_deadline),
+      description: trial.description ?? '',
+    });
+    setEditCoverUri(null);
+    setEditOpen(true);
+  };
+
+  const toggleEditPosition = (p: string) =>
+    setEditForm((f) => ({ ...f, positions: f.positions.includes(p) ? f.positions.filter((x) => x !== p) : [...f.positions, p] }));
+
+  const pickEditCoverImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert(
+        'Permission needed',
+        'Allow photo library access to set a cover image.',
+        perm.canAskAgain || Platform.OS === 'web'
+          ? undefined
+          : [{ text: 'Cancel', style: 'cancel' }, { text: 'Open Settings', onPress: () => Linking.openSettings() }]
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.8 });
+    if (result.canceled || !result.assets?.[0]) return;
+    setEditCoverUri(result.assets[0].uri);
+  };
+
+  const saveEdit = async () => {
+    const trialDateIso = parseDate(editForm.trialDate);
+    const deadlineIso = parseDate(editForm.deadline);
+    if (!editForm.title.trim() || !editForm.club.trim() || !editForm.location.trim() || !trialDateIso || !deadlineIso) {
+      showAlert('Missing details', 'Fill in title, club, location, trial date and deadline (DD / MM / YYYY).');
+      return;
+    }
+    setSaving(true);
+    try {
+      await trialsRepository.updateTrial(trial.id, {
+        title: editForm.title.trim(),
+        club: editForm.club.trim(),
+        location: editForm.location.trim(),
+        ageMin: editForm.ageMin ? Number(editForm.ageMin) : undefined,
+        ageMax: editForm.ageMax ? Number(editForm.ageMax) : undefined,
+        positions: editForm.positions,
+        trialDate: trialDateIso,
+        applicationDeadline: deadlineIso,
+        description: editForm.description.trim() || undefined,
+      });
+      if (editCoverUri && userId) {
+        try {
+          await trialsRepository.uploadTrialCoverImage(userId, trial.id, editCoverUri);
+        } catch (err) {
+          showAlert('Trial updated, cover image failed', err instanceof Error ? err.message : 'Please try again.');
+        }
+      }
+      setEditOpen(false);
+      await refetchTrial();
+    } catch (err) {
+      showAlert('Could not update trial', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDeleteTrial = () => {
+    showAlert(
+      'Delete this trial?',
+      'This permanently removes the trial and cannot be undone. Applicants will no longer see it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await trialsRepository.deleteTrial(trial.id);
+              router.back();
+            } catch (err) {
+              showAlert('Could not delete trial', err instanceof Error ? err.message : 'Please try again.');
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Trial Management</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          <IconButton icon="edit-2" accessibilityLabel="Edit trial" onPress={openEdit} />
+          <IconButton icon="trash-2" accessibilityLabel="Delete trial" onPress={deleting ? undefined : confirmDeleteTrial} />
+        </View>
       </View>
 
       <FlatList
@@ -277,6 +424,70 @@ export default function TrialDetail() {
         ListEmptyComponent={<Text style={styles.emptyText}>No applicants in this stage yet.</Text>}
         renderItem={renderApplicant}
       />
+
+      <Modal visible={editOpen} animationType="slide" onRequestClose={() => setEditOpen(false)}>
+        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+          <View style={styles.header}>
+            <Pressable onPress={() => setEditOpen(false)}>
+              <Feather name="x" size={22} color={colors.textPrimary} />
+            </Pressable>
+            <Text style={styles.headerTitle}>Edit Trial</Text>
+            <View style={{ width: 22 }} />
+          </View>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <ScrollView contentContainerStyle={styles.formContent} keyboardShouldPersistTaps="handled">
+              <View>
+                <Text style={styles.label}>Cover Image (optional)</Text>
+                <Pressable style={styles.coverPicker} onPress={pickEditCoverImage}>
+                  {editCoverUri || coverUrl ? (
+                    <Image source={{ uri: editCoverUri ?? coverUrl! }} style={styles.coverPickerImage} contentFit="contain" />
+                  ) : (
+                    <>
+                      <Feather name="image" size={22} color={colors.textPlaceholder} />
+                      <Text style={styles.coverPickerText}>Add a cover image</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+              <AppTextField label="Trial Title" value={editForm.title} onChangeText={(v) => setEditForm((f) => ({ ...f, title: v }))} />
+              <AppTextField label="Club / Organization" value={editForm.club} onChangeText={(v) => setEditForm((f) => ({ ...f, club: v }))} />
+              <AppTextField label="Location" value={editForm.location} onChangeText={(v) => setEditForm((f) => ({ ...f, location: v }))} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <AppTextField label="Age Min" keyboardType="numeric" value={editForm.ageMin} onChangeText={(v) => setEditForm((f) => ({ ...f, ageMin: v }))} />
+                <AppTextField label="Age Max" keyboardType="numeric" value={editForm.ageMax} onChangeText={(v) => setEditForm((f) => ({ ...f, ageMax: v }))} />
+              </View>
+              <View>
+                <Text style={styles.label}>Positions</Text>
+                <View style={styles.wrapRow}>
+                  {POSITIONS.map((p) => {
+                    const active = editForm.positions.includes(p);
+                    return (
+                      <Pressable key={p} style={[styles.optionPill, active && styles.optionPillActive]} onPress={() => toggleEditPosition(p)}>
+                        <Text style={[styles.optionPillText, active && styles.optionPillTextActive]}>{p}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+              <AppTextField label="Trial Date" placeholder="DD / MM / YYYY" value={editForm.trialDate} onChangeText={(v) => setEditForm((f) => ({ ...f, trialDate: v }))} />
+              <AppTextField label="Application Deadline" placeholder="DD / MM / YYYY" value={editForm.deadline} onChangeText={(v) => setEditForm((f) => ({ ...f, deadline: v }))} />
+              <View>
+                <Text style={styles.label}>Description</Text>
+                <View style={styles.descBox}>
+                  <TextInput
+                    placeholderTextColor={colors.textPlaceholder}
+                    style={styles.descInput}
+                    multiline
+                    value={editForm.description}
+                    onChangeText={(v) => setEditForm((f) => ({ ...f, description: v }))}
+                  />
+                </View>
+              </View>
+              <PrimaryButton label={saving ? 'Saving…' : 'Save Changes'} onPress={saveEdit} disabled={saving} loading={saving} style={{ marginTop: 12 }} />
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -334,5 +545,17 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   smallActionText: { fontFamily: fontFamily.semiBold, fontSize: 10, color: colors.textPrimary },
   myStatusBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: radii.md, padding: 14 },
   myStatusText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm },
+  formContent: { padding: 20, gap: 14 },
+  label: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textLabel, marginBottom: 5 },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  optionPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted },
+  optionPillActive: { backgroundColor: colors.primary },
+  optionPillText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
+  optionPillTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
+  descBox: { borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 12, minHeight: 90 },
+  descInput: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 70, textAlignVertical: 'top' },
+  coverPicker: { height: 120, borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed', backgroundColor: colors.inputBackground, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  coverPickerImage: { width: '100%', height: '100%' },
+  coverPickerText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textPlaceholder, marginTop: 6 },
   });
 }

@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';

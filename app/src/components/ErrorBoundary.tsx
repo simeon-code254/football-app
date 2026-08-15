@@ -1,7 +1,7 @@
 import { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, spacing, useThemeColors, type ThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadFileToStorage } from '../lib/uploadFile';
 import type { Database } from '../lib/database.types';
 
 export type TrialRow = Database['public']['Tables']['trials']['Row'];
@@ -7,6 +8,18 @@ export type ApplicantStatus = 'pending' | 'shortlisted' | 'accepted' | 'rejected
 
 type NewTrialInput = {
   scoutId: string;
+  title: string;
+  club: string;
+  location: string;
+  ageMin?: number;
+  ageMax?: number;
+  positions: string[];
+  trialDate: string; // ISO date
+  applicationDeadline: string; // ISO date
+  description?: string;
+};
+
+type TrialEditableFields = {
   title: string;
   club: string;
   location: string;
@@ -105,11 +118,61 @@ export async function createTrial(input: NewTrialInput): Promise<TrialRow> {
   return data;
 }
 
+// Backed by the trials_update_own RLS policy (scout_id = auth.uid()) --
+// already existed in the schema with no caller anywhere in the app until
+// now, same story as deleteTrial below.
+export async function updateTrial(trialId: string, input: TrialEditableFields): Promise<TrialRow> {
+  const { data, error } = await supabase
+    .from('trials')
+    .update({
+      title: input.title,
+      club: input.club,
+      location: input.location,
+      age_min: input.ageMin,
+      age_max: input.ageMax,
+      positions: input.positions as never,
+      trial_date: input.trialDate,
+      application_deadline: input.applicationDeadline,
+      description: input.description,
+    })
+    .eq('id', trialId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTrial(trialId: string) {
+  const { error } = await supabase.from('trials').delete().eq('id', trialId);
+  if (error) throw error;
+}
+
+// post-images is public-read; write is scoped to the caller's own uid
+// folder (post_images_scout_write_own, verified scouts only) -- see
+// 20260815010000_trials_scout_cover_images.sql. Stores just the storage
+// path in trials.cover_image_path (trial/[id].tsx already reads it via
+// getPublicStorageUrl), not a full URL.
+export async function uploadTrialCoverImage(scoutId: string, trialId: string, fileUri: string): Promise<string> {
+  const path = `${scoutId}/trial-covers/${trialId}.jpg`;
+  await uploadFileToStorage('post-images', path, fileUri, 'image/jpeg');
+  const { error } = await supabase.from('trials').update({ cover_image_path: path }).eq('id', trialId);
+  if (error) throw error;
+  return path;
+}
+
 export async function applyToTrial(playerId: string, trialId: string) {
   const { error } = await supabase
     .from('trial_applications')
     .insert({ player_id: playerId, trial_id: trialId, source: 'applied' });
-  if (error) throw error;
+  if (error) {
+    // unique(trial_id, player_id) conflict -- an application already exists
+    // (e.g. a second tap that raced the first insert, or the status query
+    // hadn't loaded yet when Apply was pressed). The player's intent
+    // ("I want to be applied to this trial") is already satisfied, so treat
+    // this as a no-op success instead of a scary error alert.
+    if (error.code === '23505') return;
+    throw error;
+  }
 }
 
 export async function withdrawApplication(applicationId: string) {

@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { useSessionStore } from '../src/store/useSessionStore';

@@ -39,7 +39,13 @@ export function NewsPopup() {
 
   const readMore = () => {
     dismiss();
-    router.push('/news');
+    // Trial-originated posts (see 20260815020000_trials_as_news.sql) go
+    // straight to the real trial, same reasoning as news.tsx's own list.
+    if (latest?.trial_id) {
+      router.push({ pathname: '/trial/[id]', params: { id: latest.trial_id } });
+    } else {
+      router.push('/news');
+    }
   };
 
   if (!latest) return null;
@@ -51,7 +57,7 @@ export function NewsPopup() {
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="contain" />}
           <View style={styles.body}>
-            <Text style={styles.eyebrow}>What's new</Text>
+            <Text style={styles.eyebrow}>{latest.trial_id ? 'New trial' : "What's new"}</Text>
             <Text style={styles.title}>{latest.title}</Text>
             <Text style={styles.excerpt} numberOfLines={3}>{latest.body}</Text>
             <View style={styles.actions}>
@@ -59,7 +65,7 @@ export function NewsPopup() {
                 <Text style={styles.dismissText}>Not now</Text>
               </Pressable>
               <Pressable onPress={readMore} style={styles.readBtn}>
-                <Text style={styles.readText}>Read more</Text>
+                <Text style={styles.readText}>{latest.trial_id ? 'View Trial' : 'Read more'}</Text>
               </Pressable>
             </View>
           </View>

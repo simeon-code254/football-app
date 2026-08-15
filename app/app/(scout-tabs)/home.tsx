@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { ScoutPlayerCard } from '../../src/components/ScoutPlayerCard';

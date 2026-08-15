@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, Pressable, FlatList, Modal, ScrollVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
@@ -29,9 +29,26 @@ type Filters = {
   minOverall: string;
   countries: string[]; // country codes
   foot: string[];
+  club: string;
+  minHeight: string;
+  maxHeight: string;
+  recentlyActiveOnly: boolean;
+  hasVideosOnly: boolean;
 };
 
-const EMPTY_FILTERS: Filters = { positions: [], minAge: '', maxAge: '', minOverall: '', countries: [], foot: [] };
+const EMPTY_FILTERS: Filters = {
+  positions: [],
+  minAge: '',
+  maxAge: '',
+  minOverall: '',
+  countries: [],
+  foot: [],
+  club: '',
+  minHeight: '',
+  maxHeight: '',
+  recentlyActiveOnly: false,
+  hasVideosOnly: false,
+};
 
 // Discover Players — spec §16/17: the scouting database with a filter
 // bottom sheet instead of 20 filters crammed on-screen, and applied filters
@@ -98,6 +115,11 @@ export default function DiscoverPlayers() {
           ageMin: filters.minAge ? Number(filters.minAge) : undefined,
           ageMax: filters.maxAge ? Number(filters.maxAge) : undefined,
           minOverall: filters.minOverall ? Number(filters.minOverall) : undefined,
+          club: filters.club || undefined,
+          heightMin: filters.minHeight ? Number(filters.minHeight) : undefined,
+          heightMax: filters.maxHeight ? Number(filters.maxHeight) : undefined,
+          recentlyActiveOnly: filters.recentlyActiveOnly || undefined,
+          hasVideosOnly: filters.hasVideosOnly || undefined,
           sortBy,
         },
         { page: pageParam, pageSize: PAGE_SIZE }
@@ -125,6 +147,17 @@ export default function DiscoverPlayers() {
     ...(filters.minOverall ? [{ key: 'minovr', label: `OVR ${filters.minOverall}+`, clear: () => setFilters((f) => ({ ...f, minOverall: '' })) }] : []),
     ...(filters.minAge || filters.maxAge
       ? [{ key: 'age', label: `Age ${filters.minAge || '0'}-${filters.maxAge || '99'}`, clear: () => setFilters((f) => ({ ...f, minAge: '', maxAge: '' })) }]
+      : []),
+    ...(filters.minHeight || filters.maxHeight
+      ? [{ key: 'height', label: `${filters.minHeight || '0'}-${filters.maxHeight || '220'}cm`, clear: () => setFilters((f) => ({ ...f, minHeight: '', maxHeight: '' })) }]
+      : []),
+    ...filters.foot.map((f) => ({ key: `foot-${f}`, label: f, clear: () => setFilters((flt) => ({ ...flt, foot: flt.foot.filter((x) => x !== f) })) })),
+    ...(filters.club ? [{ key: 'club', label: filters.club, clear: () => setFilters((f) => ({ ...f, club: '' })) }] : []),
+    ...(filters.recentlyActiveOnly
+      ? [{ key: 'active', label: 'Recently active', clear: () => setFilters((f) => ({ ...f, recentlyActiveOnly: false })) }]
+      : []),
+    ...(filters.hasVideosOnly
+      ? [{ key: 'videos', label: 'Has highlights', clear: () => setFilters((f) => ({ ...f, hasVideosOnly: false })) }]
       : []),
   ];
 
@@ -338,6 +371,54 @@ export default function DiscoverPlayers() {
                   );
                 })}
               </View>
+
+              <Text style={styles.filterLabel}>Height (cm)</Text>
+              <View style={styles.rangeRow}>
+                <TextInput
+                  placeholder="Min"
+                  keyboardType="numeric"
+                  style={styles.rangeInput}
+                  value={draftFilters.minHeight}
+                  onChangeText={(v) => setDraftFilters((f) => ({ ...f, minHeight: v }))}
+                />
+                <Text style={styles.rangeDash}>—</Text>
+                <TextInput
+                  placeholder="Max"
+                  keyboardType="numeric"
+                  style={styles.rangeInput}
+                  value={draftFilters.maxHeight}
+                  onChangeText={(v) => setDraftFilters((f) => ({ ...f, maxHeight: v }))}
+                />
+              </View>
+
+              <Text style={styles.filterLabel}>Club / Team</Text>
+              <TextInput
+                placeholder="e.g. Gor Mahia"
+                placeholderTextColor={colors.textPlaceholder}
+                style={styles.clubInput}
+                value={draftFilters.club}
+                onChangeText={(v) => setDraftFilters((f) => ({ ...f, club: v }))}
+              />
+
+              <Pressable
+                style={styles.toggleRow}
+                onPress={() => setDraftFilters((f) => ({ ...f, recentlyActiveOnly: !f.recentlyActiveOnly }))}
+              >
+                <View style={[styles.checkbox, draftFilters.recentlyActiveOnly && styles.checkboxActive]}>
+                  {draftFilters.recentlyActiveOnly && <Feather name="check" size={12} color={colors.white} />}
+                </View>
+                <Text style={styles.toggleLabel}>Recently active (posted in last 14 days)</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.toggleRow}
+                onPress={() => setDraftFilters((f) => ({ ...f, hasVideosOnly: !f.hasVideosOnly }))}
+              >
+                <View style={[styles.checkbox, draftFilters.hasVideosOnly && styles.checkboxActive]}>
+                  {draftFilters.hasVideosOnly && <Feather name="check" size={12} color={colors.white} />}
+                </View>
+                <Text style={styles.toggleLabel}>Has highlight videos</Text>
+              </Pressable>
             </ScrollView>
 
             <View style={styles.sheetActions}>
@@ -406,6 +487,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rangeInput: { flex: 1, height: 44, borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, paddingHorizontal: 14, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
   rangeDash: { color: colors.textMuted },
+  clubInput: { height: 44, borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, paddingHorizontal: 14, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+  checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  checkboxActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  toggleLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody, flex: 1 },
   sheetActions: { flexDirection: 'row', gap: 10, marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.divider },
   resetBtn: { flex: 1, height: 50, borderRadius: radii.lg, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   resetText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
 
 // Scout gets a different tab set from Player — Players/Trials/Messages

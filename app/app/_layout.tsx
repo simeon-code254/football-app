@@ -4,16 +4,17 @@ import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
-import {
-  useFonts,
-  Poppins_300Light,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-  Poppins_900Black,
-} from '@expo-google-fonts/poppins';
+// The package's own root barrel (`@expo-google-fonts/poppins`) requires
+// all 18 weight/style .ttf files unconditionally in one module -- importing
+// anything from it, even just `useFonts`, pulls every one of them into the
+// bundle regardless of which named exports are actually used. Per-weight
+// subpath imports avoid that the same way @expo/vector-icons/Feather does.
+import { useFonts } from '@expo-google-fonts/poppins/useFonts';
+import { Poppins_400Regular } from '@expo-google-fonts/poppins/400Regular';
+import { Poppins_500Medium } from '@expo-google-fonts/poppins/500Medium';
+import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
+import { Poppins_700Bold } from '@expo-google-fonts/poppins/700Bold';
+import { Poppins_800ExtraBold } from '@expo-google-fonts/poppins/800ExtraBold';
 import { useThemeColors, useIsDark } from '../src/theme';
 import { queryClient } from '../src/lib/queryClient';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -25,13 +26,11 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Poppins_300Light,
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
     Poppins_800ExtraBold,
-    Poppins_900Black,
   });
 
   const sessionStatus = useSessionStore((s) => s.status);
@@ -53,37 +52,59 @@ export default function RootLayout() {
 
   const ready = fontsLoaded && sessionStatus !== 'loading';
 
-  // Global enforcement, not just a redirect after signup/login: a signed-in
-  // player with an incomplete profile gets bounced back to the wizard from
-  // anywhere — cold start with a persisted session, a deep link, any future
-  // entry point — instead of relying on every screen that routes a player
-  // in to remember this check individually.
+  // Global route enforcement -- a signed-in user gets bounced to the right
+  // place from anywhere (cold start with a persisted session, a deep link,
+  // a direct URL on web) instead of relying on every screen to remember
+  // its own guard. Three checks, one effect, ONE router.replace() at most
+  // per run (each branch below returns immediately after firing one) --
+  // this used to be three separate effects, which could each independently
+  // decide to redirect on the same render (e.g. right after login, when
+  // role/profile/segments all update together) and dispatch multiple
+  // navigation actions back to back. React Navigation only cleanly handles
+  // one action against a given state at a time; the second dispatch landed
+  // on a navigator mid-transition and surfaced as expo-router's own
+  // "onUnhandledAction" warning. Explicit priority order fixes that at the
+  // root instead of chasing individual redirect races: suspension (blocks
+  // everything, both roles) > incomplete player profile (must finish the
+  // wizard first) > role-mismatched route (wrong tab group / wrong-role
+  // top-level screen).
   const AUTH_STACK_SCREENS = new Set([
     '', 'index', 'onboarding', 'welcome', 'role-select', 'signup',
     'verify-email', 'login', 'forgot-password', 'profile-complete',
   ]);
+  const SUSPENSION_EXEMPT_SCREENS = new Set([...AUTH_STACK_SCREENS, 'suspended']);
+  // Root-level screens that assume a `players` row exists (ai-ratings,
+  // trials, messages, profile-complete) or a `scouts` row exists
+  // (scout-edit-profile, scout-verification) are directly addressable by
+  // URL on web with no per-screen guard of their own -- a scout landing on
+  // /ai-ratings, for example, previously fired a raw 406 from a `.single()`
+  // query against a `players` row that will never exist for that account.
+  // Covers two distinct route shapes: top-level ungrouped screens
+  // (segments[0] is the screen's own name) AND the (player-tabs)/
+  // (scout-tabs) route GROUPS themselves (segments[0] is the literal group
+  // folder name, not the screen inside it -- expo-router includes group
+  // segments as-is, so a scout on /(player-tabs)/profile needs the group
+  // check, not just the named-screen one).
+  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete']);
+  const SCOUT_ONLY_SCREENS = new Set(['scout-edit-profile', 'scout-verification']);
   useEffect(() => {
-    if (!ready || sessionStatus !== 'signed-in' || role !== 'player' || !player) return;
-    if (profile?.is_active === false) return; // suspension gate below takes priority
+    if (!ready || sessionStatus !== 'signed-in') return;
     const top = segments[0] ?? '';
-    if (!player.profile_completed && !AUTH_STACK_SCREENS.has(top)) {
-      router.replace('/profile-complete');
+
+    if (profile?.is_active === false) {
+      if (!SUSPENSION_EXEMPT_SCREENS.has(top)) router.replace('/suspended');
+      return;
+    }
+    if (role === 'player' && player && !player.profile_completed) {
+      if (!AUTH_STACK_SCREENS.has(top)) router.replace('/profile-complete');
+      return;
+    }
+    if (role === 'scout' && (PLAYER_ONLY_SCREENS.has(top) || top === '(player-tabs)')) {
+      router.replace('/(scout-tabs)/home');
+    } else if (role === 'player' && (SCOUT_ONLY_SCREENS.has(top) || top === '(scout-tabs)')) {
+      router.replace('/(player-tabs)/home');
     }
   }, [ready, sessionStatus, role, player, profile, segments]);
-
-  // Same enforcement shape as above, but keyed only on profile (applies to
-  // both roles — an admin can suspend a scout too, not just players). A
-  // real UI-level lockout: hides the whole app behind /suspended, though it
-  // doesn't block writes at the RLS layer (a separate, larger change) and
-  // won't evict someone already mid-session until their next auth event.
-  const SUSPENSION_EXEMPT_SCREENS = new Set([...AUTH_STACK_SCREENS, 'suspended']);
-  useEffect(() => {
-    if (!ready || sessionStatus !== 'signed-in' || !profile) return;
-    const top = segments[0] ?? '';
-    if (profile.is_active === false && !SUSPENSION_EXEMPT_SCREENS.has(top)) {
-      router.replace('/suspended');
-    }
-  }, [ready, sessionStatus, profile, segments]);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready) await SplashScreen.hideAsync();

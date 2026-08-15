@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';

@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
@@ -12,6 +14,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { POSITIONS } from '../../src/constants/football';
 import { showAlert } from '../../src/lib/alert';
 import { QueryState } from '../../src/components/QueryState';
+import { getPublicStorageUrl } from '../../src/lib/publicUrl';
 
 function parseDate(text: string): string | null {
   const parts = text.split(/\D+/).filter(Boolean);
@@ -51,7 +54,30 @@ export default function Trials() {
   const [trialDate, setTrialDate] = useState('');
   const [deadline, setDeadline] = useState('');
   const [description, setDescription] = useState('');
+  const [coverUri, setCoverUri] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+
+  const pickCoverImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert(
+        'Permission needed',
+        'Allow photo library access to set a cover image.',
+        perm.canAskAgain || Platform.OS === 'web'
+          ? undefined
+          : [{ text: 'Cancel', style: 'cancel' }, { text: 'Open Settings', onPress: () => Linking.openSettings() }]
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    setCoverUri(result.assets[0].uri);
+  };
 
   const PAGE_SIZE = 20;
   const {
@@ -82,7 +108,7 @@ export default function Trials() {
 
   const resetForm = () => {
     setTitle(''); setClub(''); setLocation(''); setAgeMin(''); setAgeMax('');
-    setPositions([]); setTrialDate(''); setDeadline(''); setDescription('');
+    setPositions([]); setTrialDate(''); setDeadline(''); setDescription(''); setCoverUri(null);
   };
 
   const togglePosition = (p: string) =>
@@ -98,7 +124,7 @@ export default function Trials() {
     }
     setPublishing(true);
     try {
-      await trialsRepository.createTrial({
+      const trial = await trialsRepository.createTrial({
         scoutId: userId,
         title: title.trim(),
         club: club.trim(),
@@ -110,6 +136,20 @@ export default function Trials() {
         applicationDeadline: deadlineIso,
         description: description.trim() || undefined,
       });
+      // Cover image needs a real trial.id first (same id-first-then-upload
+      // pattern already used for video uploads) -- a failed image upload
+      // here shouldn't undo the trial itself, so it's a separate try/catch
+      // with its own honest failure message.
+      if (coverUri) {
+        try {
+          await trialsRepository.uploadTrialCoverImage(userId, trial.id, coverUri);
+        } catch (err) {
+          showAlert(
+            'Trial published, cover image failed',
+            err instanceof Error ? err.message : 'You can add a cover image later by editing the trial.'
+          );
+        }
+      }
       resetForm();
       setCreateOpen(false);
       refetch();
@@ -123,8 +163,10 @@ export default function Trials() {
   const renderTrial = useCallback(
     ({ item: trial }: { item: (typeof trials)[number] }) => {
       const statusStyle = STATUS_STYLE[trial.status] ?? STATUS_STYLE.open;
+      const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
       return (
         <Pressable style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+          {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardCover} contentFit="contain" />}
           <View style={styles.cardTop}>
             <Text style={styles.cardTitle}>{trial.title}</Text>
             <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
@@ -201,6 +243,19 @@ export default function Trials() {
           </View>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.formContent} keyboardShouldPersistTaps="handled">
+            <View>
+              <Text style={styles.label}>Cover Image (optional)</Text>
+              <Pressable style={styles.coverPicker} onPress={pickCoverImage}>
+                {coverUri ? (
+                  <Image source={{ uri: coverUri }} style={styles.coverPickerImage} contentFit="contain" />
+                ) : (
+                  <>
+                    <Feather name="image" size={22} color={colors.textPlaceholder} />
+                    <Text style={styles.coverPickerText}>Add a cover image</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
             <AppTextField label="Trial Title" placeholder="e.g. U21 Winger Trial" value={title} onChangeText={setTitle} />
             <AppTextField label="Club / Organization" placeholder="Your club or organization" value={club} onChangeText={setClub} />
             <AppTextField label="Location" placeholder="City, Country" value={location} onChangeText={setLocation} />
@@ -265,6 +320,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   emptyTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8, textAlign: 'center' },
   emptySub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: 16 },
+  cardCover: { width: '100%', height: 120, borderRadius: radii.md, marginBottom: 10, backgroundColor: colors.surfaceMuted },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   cardTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary, flex: 1 },
   statusBadge: { backgroundColor: colors.successTint, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 3 },
@@ -281,6 +337,9 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   optionPillText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
   optionPillTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
   descBox: { borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 12, minHeight: 90 },
+  coverPicker: { height: 120, borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed', backgroundColor: colors.inputBackground, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  coverPickerImage: { width: '100%', height: '100%' },
+  coverPickerText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textPlaceholder, marginTop: 6 },
   descInput: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 70, textAlignVertical: 'top' },
   });
 }

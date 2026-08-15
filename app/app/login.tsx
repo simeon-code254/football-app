@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';

@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import * as newsRepository from '../src/repositories/newsRepository';
@@ -16,9 +16,11 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Matobev-authored announcements (admin/'s News CRUD). A single expandable
-// list, not a list+detail pair -- these are short posts with no
-// cross-linking or deep-link need, unlike trials.
+// Matobev-authored announcements (admin/'s News CRUD) plus scout-created
+// trials, auto-synced into this same feed by a DB trigger (see
+// 20260815020000_trials_as_news.sql) so a new trial shows up here and in
+// the NewsPopup exactly like an admin post. Plain announcements expand
+// inline; trial-originated posts route straight to the real trial detail.
 export default function News() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
@@ -46,17 +48,29 @@ export default function News() {
     ({ item }: { item: NewsPostRow }) => {
       const expanded = expandedId === item.id;
       const coverUrl = getPublicStorageUrl('post-images', item.cover_image_path);
+      const isTrial = !!item.trial_id;
+      // Trial-originated posts (see 20260815020000_trials_as_news.sql's
+      // sync trigger) go straight to the real trial detail page -- there's
+      // a whole apply/manage-applicants screen behind it, unlike a plain
+      // announcement which only ever had inline expand/collapse text.
+      const onPress = () =>
+        isTrial ? router.push({ pathname: '/trial/[id]', params: { id: item.trial_id! } }) : setExpandedId(expanded ? null : item.id);
       return (
-        <Pressable style={styles.card} onPress={() => setExpandedId(expanded ? null : item.id)}>
+        <Pressable style={styles.card} onPress={onPress}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardCover} contentFit="contain" />}
           <View style={styles.cardTop}>
             <Text style={styles.cardTitle}>{item.title}</Text>
-            <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textPlaceholder} />
+            {isTrial ? (
+              <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
+            ) : (
+              <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textPlaceholder} />
+            )}
           </View>
           <Text style={styles.cardDate}>{formatDate(item.published_at)}</Text>
-          <Text style={styles.cardBody} numberOfLines={expanded ? undefined : 3}>
+          <Text style={styles.cardBody} numberOfLines={isTrial ? 3 : expanded ? undefined : 3}>
             {item.body}
           </Text>
+          {isTrial && <Text style={styles.viewTrialLink}>View trial details →</Text>}
         </Pressable>
       );
     },
@@ -110,5 +124,6 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   cardTitle: { flex: 1, fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   cardDate: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, marginTop: 2 },
   cardBody: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody, marginTop: 8, lineHeight: 20 },
+  viewTrialLink: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.primary, marginTop: 8 },
   });
 }

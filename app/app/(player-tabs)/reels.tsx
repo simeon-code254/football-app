@@ -18,7 +18,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';

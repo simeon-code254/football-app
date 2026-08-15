@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, spacing, useThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { AppTextField } from '../src/components/AppTextField';

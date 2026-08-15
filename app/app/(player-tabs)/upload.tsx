@@ -7,7 +7,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';

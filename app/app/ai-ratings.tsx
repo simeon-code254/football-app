@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -36,10 +36,17 @@ export default function AiRatings() {
     Low: colors.error,
   };
   const userId = useSessionStore((s) => s.session?.user.id);
+  const role = useSessionStore((s) => s.role);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['aiRatingsScreen', userId],
-    enabled: !!userId,
+    // Player-only screen -- _layout.tsx redirects a scout away in an
+    // effect, but that runs after the first render, so this query would
+    // otherwise still fire once against a `players` row that will never
+    // exist for a scout account (a real 406 seen in practice, not
+    // hypothetical). Gating on role here is the defense-in-depth half of
+    // that fix.
+    enabled: !!userId && role === 'player',
     queryFn: async () => {
       const [player, publicView] = await Promise.all([
         profileRepository.getMyPlayer(userId!),

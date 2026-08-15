@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 import { radii, useThemeColors } from '../theme';
 
 type Props = {
