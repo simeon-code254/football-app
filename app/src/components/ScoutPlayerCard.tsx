@@ -30,7 +30,14 @@ export function ScoutPlayerCard({ id, name, avatar, overall, position, country, 
   return (
     <View style={styles.card}>
       <View style={styles.imageWrap}>
-        <Image source={{ uri: avatar }} style={styles.image} />
+        {/* See PlayerCard for why these three props matter on a recycled list row. */}
+        <Image
+          source={{ uri: avatar }}
+          style={styles.image}
+          cachePolicy="memory-disk"
+          recyclingKey={avatar}
+          transition={200}
+        />
         <View style={styles.ovrBadge}>
           <Text style={styles.ovrValue}>{overall ?? '—'}</Text>
           <Text style={styles.ovrLabel}>OVR</Text>

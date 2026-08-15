@@ -21,10 +21,42 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
 import { GlobalAlert } from '../src/components/GlobalAlert';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import * as Sentry from '@sentry/react-native';
+
+// Crash + error reporting. Deliberately configured tighter than Sentry's
+// own default snippet, because this app handles minors' personal data
+// (date of birth, phone, and video of the player themselves):
+//
+//   sendDefaultPii: false  -- the default `true` attaches IP addresses and
+//     user identifiers to every event. Not something to switch on by
+//     default for an under-18 user base.
+//   no Session Replay      -- mobileReplayIntegration() records the screen.
+//     Replaying a minor completing the profile wizard or reviewing their own
+//     footage is a privacy problem, not a debugging win. Revisit only with
+//     masking configured and a real reason.
+//   tracesSampleRate 0.2   -- 100% performance tracing is quota-expensive
+//     and unnecessary; a fifth of traffic is plenty to spot regressions.
+//
+// Disabled entirely without a DSN (fresh checkout, or a contributor who
+// hasn't been given one), but deliberately LEFT ON in development: there
+// are no production users yet, so the ability to confirm reporting
+// actually works is worth more than keeping dev noise out. Every event is
+// tagged with its environment, so `environment:development` can be
+// filtered out in Sentry -- and once there's real traffic, flipping this
+// to `!!SENTRY_DSN && !__DEV__` silences dev again in one line.
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
+
+Sentry.init({
+  dsn: SENTRY_DSN,
+  enabled: !!SENTRY_DSN,
+  environment: __DEV__ ? 'development' : 'production',
+  tracesSampleRate: 0.2,
+  sendDefaultPii: false,
+});
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -157,3 +189,7 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+// Sentry.wrap adds the touch/navigation breadcrumbs that turn a bare stack
+// trace into "here's what the user actually did before it broke".
+export default Sentry.wrap(RootLayout);

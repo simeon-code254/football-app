@@ -2,6 +2,7 @@ import { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Feather from '@expo/vector-icons/Feather';
+import * as Sentry from '@sentry/react-native';
 import { fontFamily, fontSize, spacing, useThemeColors, type ThemeColors } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 
@@ -24,6 +25,14 @@ class ErrorBoundaryClass extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
     console.error('Unhandled render error caught by ErrorBoundary:', error, info.componentStack);
+    // Without this, a render crash shows the fallback screen below and is
+    // never reported -- the user sees "Something went wrong" and we never
+    // find out. Sentry.wrap() in _layout.tsx catches errors that escape to
+    // the root, but anything this boundary handles is, by definition,
+    // already caught and would otherwise be swallowed here.
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } },
+    });
   }
 
   reset = () => this.setState({ error: null });

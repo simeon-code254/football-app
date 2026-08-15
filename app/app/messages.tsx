@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Modal, TextInput, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, TextInput, KeyboardAvoidingView, Platform, RefreshControl, ActivityIndicator, Linking } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -113,7 +114,7 @@ export default function Messages() {
     [messagePages]
   );
 
-  const threadListRef = useRef<FlatList<MessageRow>>(null);
+  const threadListRef = useRef<FlashListRef<MessageRow>>(null);
   const scrolledForConversationRef = useRef<string | null>(null);
   useEffect(() => {
     if (!isLoadingMessages && messages.length && scrolledForConversationRef.current !== activeConversationId) {
@@ -187,7 +188,10 @@ export default function Messages() {
       const preview = previews?.[item.id];
       return (
         <Pressable style={styles.convoRow} onPress={() => setActiveConversationId(item.id)}>
-          <Image source={{ uri: scout?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar} />
+          <Image source={{ uri: scout?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar}
+          cachePolicy="memory-disk"
+          transition={200}
+        />
           <View style={{ flex: 1 }}>
             <View style={styles.convoNameRow}>
               <Text style={styles.convoName}>{scout?.profiles?.full_name || 'Scout'}</Text>
@@ -234,7 +238,10 @@ export default function Messages() {
               isImage ? (
                 attachmentUrl ? (
                   <Pressable onPress={() => Linking.openURL(attachmentUrl)}>
-                    <Image source={{ uri: attachmentUrl }} style={styles.attachmentImage} contentFit="cover" />
+                    <Image source={{ uri: attachmentUrl }} style={styles.attachmentImage} contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={200}
+        />
                   </Pressable>
                 ) : (
                   <View style={[styles.attachmentImage, styles.attachmentImagePlaceholder]}>
@@ -282,15 +289,13 @@ export default function Messages() {
           <Text style={styles.emptySub}>Scouts who message you will show up here.</Text>
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={conversations}
           keyExtractor={(c) => c.id}
           contentContainerStyle={{ padding: 20, gap: 10 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetchConversations} colors={[colors.primary]} tintColor={colors.primary} />}
           onEndReached={() => hasMoreConvos && !isFetchingConvos && fetchNextConvoPage()}
           onEndReachedThreshold={0.4}
-          initialNumToRender={10}
-          windowSize={7}
           ListFooterComponent={isFetchingConvos ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
           renderItem={renderConversation}
         />
@@ -304,7 +309,10 @@ export default function Messages() {
               <Pressable onPress={() => setActiveConversationId(null)}>
                 <Feather name="chevron-left" size={22} color={colors.textPrimary} />
               </Pressable>
-              <Image source={{ uri: activeConversation?.scouts?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar} />
+              <Image source={{ uri: activeConversation?.scouts?.profiles?.avatar_url || images.avatarMale }} style={styles.threadAvatar}
+          cachePolicy="memory-disk"
+          transition={200}
+        />
               <View style={{ flex: 1 }}>
                 <View style={styles.convoNameRow}>
                   <Text style={styles.threadName}>{activeConversation?.scouts?.profiles?.full_name || 'Scout'}</Text>
@@ -319,7 +327,7 @@ export default function Messages() {
               </Pressable>
             </View>
 
-            <FlatList
+            <FlashList
               ref={threadListRef}
               data={messages}
               keyExtractor={(m) => m.id}

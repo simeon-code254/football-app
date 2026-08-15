@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, RefreshControl, ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, RefreshControl, ActivityIndicator, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
@@ -217,7 +218,7 @@ export default function Discover() {
         </ScrollView>
       )}
 
-      <FlatList
+      <FlashList
         data={filtered}
         keyExtractor={(item) => item.id ?? ''}
         contentContainerStyle={styles.listContent}
@@ -237,8 +238,6 @@ export default function Discover() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
         onEndReachedThreshold={0.4}
-        initialNumToRender={10}
-        windowSize={7}
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
           <QueryState isLoading={isLoading} error={error} onRetry={refetch}>

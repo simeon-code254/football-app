@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -370,14 +371,12 @@ export default function TrialDetail() {
         </View>
       </View>
 
-      <FlatList
+      <FlashList
         data={applicants}
         keyExtractor={(a) => a.id}
         showsVerticalScrollIndicator={false}
         onEndReached={() => hasMoreApplicants && !isFetchingApplicants && fetchMoreApplicants()}
         onEndReachedThreshold={0.4}
-        initialNumToRender={10}
-        windowSize={7}
         ListFooterComponent={isFetchingApplicants ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListHeaderComponent={
           <>

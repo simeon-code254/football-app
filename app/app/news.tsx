@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -86,7 +87,7 @@ export default function News() {
       </View>
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
-        <FlatList
+        <FlashList
           data={posts}
           keyExtractor={(p) => p.id}
           contentContainerStyle={styles.list}
@@ -94,8 +95,6 @@ export default function News() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
           onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
           onEndReachedThreshold={0.4}
-          initialNumToRender={10}
-          windowSize={7}
           ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
           ListEmptyComponent={
             <View style={styles.empty}>

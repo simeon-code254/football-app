@@ -181,7 +181,10 @@ export default function ScoutDashboard() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image source={{ uri: profile?.avatar_url ?? images.avatarMale }} style={styles.avatar} />
+            <Image source={{ uri: profile?.avatar_url ?? images.avatarMale }} style={styles.avatar}
+          cachePolicy="memory-disk"
+          transition={200}
+        />
             <View>
               <Text style={styles.greeting}>{getGreeting()}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}</Text>
               {scoutVerified ? (
@@ -315,7 +318,10 @@ export default function ScoutDashboard() {
               {recentUploads.map((v) => (
                 <Pressable key={v.id} style={styles.uploadCard} onPress={() => router.push({ pathname: '/player/[id]', params: { id: v.player_id } })}>
                   {uploadThumbs?.[v.id] ? (
-                    <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} contentFit="contain" />
+                    <Image source={{ uri: uploadThumbs[v.id] }} style={styles.uploadThumb} contentFit="contain"
+          cachePolicy="memory-disk"
+          transition={200}
+        />
                   ) : (
                     <View style={[styles.uploadThumb, styles.uploadThumbPlaceholder]}>
                       <Feather name="film" size={20} color={colors.textPlaceholder} />
@@ -359,7 +365,10 @@ export default function ScoutDashboard() {
               topPerformers.slice(0, 4).map((p, i) => (
                 <Pressable key={p.id} style={styles.leaderRow} onPress={() => router.push({ pathname: '/player/[id]', params: { id: p.id ?? '' } })}>
                   <Text style={styles.leaderRank}>{i + 1}</Text>
-                  <Image source={{ uri: p.avatar_url ?? images.avatarMale }} style={styles.leaderAvatar} />
+                  <Image source={{ uri: p.avatar_url ?? images.avatarMale }} style={styles.leaderAvatar}
+          cachePolicy="memory-disk"
+          transition={200}
+        />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.leaderName}>{p.full_name || 'Unnamed player'}</Text>
                     <Text style={styles.leaderMeta}>{p.primary_position ?? '—'} · {p.nationality_name ?? '—'}</Text>

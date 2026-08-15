@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -225,7 +226,7 @@ export default function Notifications() {
       <Text style={styles.expiryHint}>Notifications you don't clear disappear automatically after 72 hours.</Text>
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
-      <FlatList
+      <FlashList
         data={items ?? []}
         keyExtractor={(n) => n.id}
         contentContainerStyle={styles.list}
@@ -233,8 +234,6 @@ export default function Notifications() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
         onEndReachedThreshold={0.4}
-        initialNumToRender={10}
-        windowSize={7}
         ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
         ListEmptyComponent={
           <View style={styles.empty}>

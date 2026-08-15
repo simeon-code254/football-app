@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -216,7 +217,7 @@ export default function Trials() {
           )}
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={trials}
           keyExtractor={(t) => t.id}
           contentContainerStyle={styles.list}
@@ -224,8 +225,6 @@ export default function Trials() {
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
           onEndReachedThreshold={0.4}
-          initialNumToRender={10}
-          windowSize={7}
           ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
           renderItem={renderTrial}
         />

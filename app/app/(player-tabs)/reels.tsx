@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  FlatList,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -13,6 +12,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
@@ -82,10 +82,17 @@ async function fetchReelsPage(userId: string, cursor?: string): Promise<ReelsPag
   return { items, nextCursor };
 }
 
-function ReelItem({
+// Memoized, and every handler takes the reel's id rather than closing over
+// it. Before this, renderItem built a fresh arrow per item on every render
+// AND depended on the whole `reels` array, so a single like re-rendered
+// every mounted video row -- each of which owns a useVideoPlayer instance.
+// With stable handlers + memo, only the rows whose own props actually
+// changed re-render.
+const ReelItem = memo(function ReelItem({
   item,
   height,
   isActive,
+  viewerId,
   onLike,
   onSave,
   onShare,
@@ -95,12 +102,16 @@ function ReelItem({
   item: ReelState;
   height: number;
   isActive: boolean;
-  onLike: () => void;
-  onSave: () => void;
-  onShare: () => void;
-  onOpenComments: () => void;
-  onReport?: () => void;
+  viewerId?: string;
+  onLike: (id: string) => void;
+  onSave: (id: string) => void;
+  onShare: (id: string) => void;
+  onOpenComments: (id: string) => void;
+  onReport: (id: string) => void;
 }) {
+  // Reporting your own upload makes no sense; computed here so the parent
+  // doesn't have to build a per-item conditional closure.
+  const canReport = !!viewerId && item.creatorId !== viewerId;
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const player = useVideoPlayer(item.videoUrl, (p) => {
@@ -150,7 +161,7 @@ function ReelItem({
       <View style={styles.actionRail}>
         <Pressable
           style={styles.actionItem}
-          onPress={onLike}
+          onPress={() => onLike(item.id)}
           accessibilityRole="button"
           accessibilityLabel={item.liked ? 'Unlike' : 'Like'}
           accessibilityState={{ selected: item.liked }}
@@ -160,7 +171,7 @@ function ReelItem({
         </Pressable>
         <Pressable
           style={styles.actionItem}
-          onPress={onOpenComments}
+          onPress={() => onOpenComments(item.id)}
           accessibilityRole="button"
           accessibilityLabel="View comments"
         >
@@ -169,7 +180,7 @@ function ReelItem({
         </Pressable>
         <Pressable
           style={styles.actionItem}
-          onPress={onShare}
+          onPress={() => onShare(item.id)}
           accessibilityRole="button"
           accessibilityLabel="Share this video"
         >
@@ -178,7 +189,7 @@ function ReelItem({
         </Pressable>
         <Pressable
           style={styles.actionItem}
-          onPress={onSave}
+          onPress={() => onSave(item.id)}
           accessibilityRole="button"
           accessibilityLabel={item.saved ? 'Unsave' : 'Save'}
           accessibilityState={{ selected: item.saved }}
@@ -186,8 +197,8 @@ function ReelItem({
           <Feather name="bookmark" size={26} color={item.saved ? colors.gold : colors.white} />
           <Text style={styles.actionCount}>{formatCount(item.saveCount)}</Text>
         </Pressable>
-        {onReport && (
-          <Pressable style={styles.actionItem} onPress={onReport} accessibilityLabel="Report this video">
+        {canReport && (
+          <Pressable style={styles.actionItem} onPress={() => onReport(item.id)} accessibilityLabel="Report this video">
             <Feather name="flag" size={24} color={colors.white} />
           </Pressable>
         )}
@@ -195,7 +206,10 @@ function ReelItem({
 
       <View style={styles.bottomInfo}>
         <View style={styles.creatorRow}>
-          <Image source={{ uri: item.creatorAvatar }} style={styles.creatorAvatar} />
+          <Image source={{ uri: item.creatorAvatar }} style={styles.creatorAvatar}
+          cachePolicy="memory-disk"
+          transition={200}
+        />
           <Text style={styles.creatorName}>{item.creatorName}</Text>
         </View>
         {!!item.caption && <Text style={styles.caption}>{item.caption}</Text>}
@@ -203,7 +217,7 @@ function ReelItem({
       </View>
     </View>
   );
-}
+});
 
 // A real vertical feed (paging FlatList, one clip per screen) backed by
 // `videos`/`video_likes`/`video_saves`/`video_comments`, with only the
@@ -278,40 +292,59 @@ export default function Reels() {
     }
   }).current;
 
-  const toggleLike = (id: string) => {
-    if (!userId) return;
-    const target = reels.find((r) => r.id === id);
-    if (!target) return;
-    const nextLiked = !target.liked;
-    setReels((list) =>
-      list.map((r) => (r.id === id ? { ...r, liked: nextLiked, likeCount: r.likeCount + (nextLiked ? 1 : -1) } : r))
-    );
-    videosRepository.toggleLike(id, userId, target.liked).catch(() => {
-      setReels((list) =>
-        list.map((r) => (r.id === id ? { ...r, liked: target.liked, likeCount: target.likeCount } : r))
-      );
-    });
-  };
+  // Current reels are mirrored into a ref so the handlers below can read the
+  // item they're acting on WITHOUT closing over `reels` itself. That closure
+  // was what forced `reels` into renderItem's dependency list, which in turn
+  // re-rendered every mounted video row on each like/save. Reading through a
+  // ref keeps these callbacks referentially stable across those updates.
+  const reelsRef = useRef<ReelState[]>([]);
+  useEffect(() => {
+    reelsRef.current = reels;
+  }, [reels]);
 
-  const toggleSave = (id: string) => {
-    if (!userId) return;
-    const target = reels.find((r) => r.id === id);
-    if (!target) return;
-    const nextSaved = !target.saved;
-    setReels((list) =>
-      list.map((r) => (r.id === id ? { ...r, saved: nextSaved, saveCount: r.saveCount + (nextSaved ? 1 : -1) } : r))
-    );
-    videosRepository.toggleSave(id, userId, target.saved).catch(() => {
+  const toggleLike = useCallback(
+    (id: string) => {
+      if (!userId) return;
+      const target = reelsRef.current.find((r) => r.id === id);
+      if (!target) return;
+      const nextLiked = !target.liked;
       setReels((list) =>
-        list.map((r) => (r.id === id ? { ...r, saved: target.saved, saveCount: target.saveCount } : r))
+        list.map((r) => (r.id === id ? { ...r, liked: nextLiked, likeCount: r.likeCount + (nextLiked ? 1 : -1) } : r))
       );
-    });
-  };
+      videosRepository.toggleLike(id, userId, target.liked).catch(() => {
+        setReels((list) =>
+          list.map((r) => (r.id === id ? { ...r, liked: target.liked, likeCount: target.likeCount } : r))
+        );
+      });
+    },
+    [userId]
+  );
 
-  const share = (id: string) => {
+  const toggleSave = useCallback(
+    (id: string) => {
+      if (!userId) return;
+      const target = reelsRef.current.find((r) => r.id === id);
+      if (!target) return;
+      const nextSaved = !target.saved;
+      setReels((list) =>
+        list.map((r) => (r.id === id ? { ...r, saved: nextSaved, saveCount: r.saveCount + (nextSaved ? 1 : -1) } : r))
+      );
+      videosRepository.toggleSave(id, userId, target.saved).catch(() => {
+        setReels((list) =>
+          list.map((r) => (r.id === id ? { ...r, saved: target.saved, saveCount: target.saveCount } : r))
+        );
+      });
+    },
+    [userId]
+  );
+
+  const share = useCallback((id: string) => {
     setReels((list) => list.map((r) => (r.id === id ? { ...r, shareCount: r.shareCount + 1 } : r)));
     videosRepository.incrementShare(id).catch(() => {});
-  };
+  }, []);
+
+  const openComments = useCallback((id: string) => setCommentsFor(id), []);
+  const openReport = useCallback((id: string) => setReportTarget(id), []);
 
   const addComment = async () => {
     if (!draft.trim() || !commentsFor || !userId) return;
@@ -334,14 +367,17 @@ export default function Reels() {
         item={item}
         height={viewportHeight}
         isActive={item.id === activeId && isFocused}
-        onLike={() => toggleLike(item.id)}
-        onSave={() => toggleSave(item.id)}
-        onShare={() => share(item.id)}
-        onOpenComments={() => setCommentsFor(item.id)}
-        onReport={item.creatorId !== userId ? () => setReportTarget(item.id) : undefined}
+        viewerId={userId}
+        onLike={toggleLike}
+        onSave={toggleSave}
+        onShare={share}
+        onOpenComments={openComments}
+        onReport={openReport}
       />
     ),
-    [viewportHeight, activeId, reels, isFocused, userId]
+    // No `reels` here any more -- every handler is a stable useCallback and
+    // ReelItem is memoized, so a like/save no longer invalidates this.
+    [viewportHeight, activeId, isFocused, userId, toggleLike, toggleSave, share, openComments, openReport]
   );
 
   return (
@@ -354,7 +390,7 @@ export default function Reels() {
         </View>
       )}
       {viewportHeight > 0 && !isLoading && !error && (
-        <FlatList
+        <FlashList
           data={reels}
           keyExtractor={(r) => r.id}
           renderItem={renderItem}
@@ -362,7 +398,6 @@ export default function Reels() {
           showsVerticalScrollIndicator={false}
           snapToInterval={viewportHeight}
           decelerationRate="fast"
-          getItemLayout={(_, index) => ({ length: viewportHeight, offset: viewportHeight * index, index })}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.white]} tintColor={colors.white} />}
@@ -391,7 +426,7 @@ export default function Reels() {
           <Pressable style={{ flex: 1 }} onPress={() => setCommentsFor(null)} />
           <View style={styles.commentsSheet}>
             <Text style={styles.commentsTitle}>Comments</Text>
-            <FlatList
+            <FlashList
               data={comments}
               keyExtractor={(c) => c.id}
               style={{ maxHeight: 320 }}
@@ -401,7 +436,10 @@ export default function Reels() {
               ListEmptyComponent={<Text style={styles.noComments}>No comments yet — be the first.</Text>}
               renderItem={({ item }: { item: CommentWithAuthor }) => (
                 <View style={styles.commentRow}>
-                  <Image source={{ uri: item.profiles?.avatar_url ?? images.avatarMale }} style={styles.commentAvatarFallback} />
+                  <Image source={{ uri: item.profiles?.avatar_url ?? images.avatarMale }} style={styles.commentAvatarFallback}
+          cachePolicy="memory-disk"
+          transition={200}
+        />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.commentAuthor}>{item.profiles?.full_name || 'Player'}</Text>
                     <Text style={styles.commentText}>{item.body}</Text>

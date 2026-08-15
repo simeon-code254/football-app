@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -104,13 +105,11 @@ export default function PlayerTrials() {
           emptyIcon="calendar"
           emptyMessage="No open trials right now."
         >
-          <FlatList
+          <FlashList
             data={openTrials}
             keyExtractor={(trial) => trial.id}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
-            initialNumToRender={10}
-            windowSize={7}
             onEndReached={() => hasMoreOpenTrials && !isFetchingOpenTrials && fetchMoreOpenTrials()}
             onEndReachedThreshold={0.4}
             ListFooterComponent={isFetchingOpenTrials ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
@@ -154,13 +153,11 @@ export default function PlayerTrials() {
           emptyIcon="clipboard"
           emptyMessage="No applications yet. Browse open trials and apply to get started."
         >
-          <FlatList
+          <FlashList
             data={myApplications}
             keyExtractor={(app) => app.id}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
-            initialNumToRender={10}
-            windowSize={7}
             onEndReached={() => hasMoreApplications && !isFetchingApplications && fetchMoreApplications()}
             onEndReachedThreshold={0.4}
             ListFooterComponent={isFetchingApplications ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
