@@ -13,6 +13,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 import { QueryState } from '../../src/components/QueryState';
 import { FirstWinCard } from '../../src/components/FirstWinCard';
+import { PlayerRatingCard } from '../../src/components/PlayerRatingCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
 
 function getGreeting() {
@@ -85,9 +86,11 @@ export default function Home() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
       >
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerText}>
             <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.name}>{data?.profile.full_name || 'Welcome'}</Text>
+            <Text style={styles.name} numberOfLines={1}>
+              {data?.profile.full_name || 'Welcome'}
+            </Text>
           </View>
           <View style={styles.headerActions}>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/leaderboard')} accessibilityRole="button" accessibilityLabel="Leaderboard">
@@ -117,40 +120,16 @@ export default function Home() {
           <FirstWinCard primaryPosition={data.player.primary_position} />
         )}
 
-        {/* The hero. A player opens this app to see one number, so it now
-            behaves like one thing rather than a card of equal parts: the
-            rating dominates, the label sits under it as a caption, and the
-            whole card lifts off the page instead of sitting flat in it. */}
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.ratingCard, elevation('floating', isDark)]}
-        >
-          <View style={styles.ratingCardTop}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.ratingValue}>{data?.player.overall_rating != null ? data.player.overall_rating : '—'}</Text>
-              <Text style={styles.ratingLabel}>Overall rating</Text>
-            </View>
-            <Pressable style={styles.viewReportBtn} onPress={() => router.push('/ai-ratings')} accessibilityRole="button" accessibilityLabel="View full report">
-              <Text style={styles.viewReportText}>Report</Text>
-              <Feather name="arrow-right" size={14} color={colors.white} />
-            </Pressable>
-          </View>
-          <View style={styles.statRow}>
-            {(data?.attributes ?? []).slice(0, 3).map((attr) => (
-              <View key={attr.key} style={styles.statChip}>
-                <Text style={styles.statVal}>{attr.value ?? '—'}</Text>
-                <Text style={styles.statKey}>{attr.displayName.slice(0, 3).toUpperCase()}</Text>
-              </View>
-            ))}
-            {!data?.attributes.length && (
-              <Text style={{ fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.7)' }}>
-                Ratings appear once your highlights are analyzed.
-              </Text>
-            )}
-          </View>
-        </LinearGradient>
+        <PlayerRatingCard
+          name={data?.profile.full_name || 'Player'}
+          rating={data?.player.overall_rating ?? null}
+          position={data?.player.primary_position}
+          countryCode={data?.player.nationality_code}
+          attributes={data?.attributes ?? []}
+          assessedCount={(data?.attributes ?? []).filter((a) => a.value != null).length}
+          totalCount={data?.attributes.length ?? 0}
+          onPressReport={() => router.push('/ai-ratings')}
+        />
 
         {/* Uploading is the entire point of the product, and it used to be
             one of three identical tiles. It now leads: full width, its own
@@ -258,6 +237,7 @@ export default function Home() {
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surfaceMuted },
+  headerText: { flex: 1, minWidth: 0, marginRight: spacing.md },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -269,7 +249,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   // The name is the largest thing in the header and the greeting is a
   // caption above it, rather than the two competing at similar weight.
   greeting: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 0.3 },
-  name: { fontFamily: fontFamily.extraBold, fontSize: fontSize.displayLg, color: colors.textPrimary, letterSpacing: -0.5, marginTop: 1 },
+  name: { fontFamily: fontFamily.extraBold, fontSize: fontSize.headingLg, color: colors.textPrimary, letterSpacing: -0.4, marginTop: 1 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   iconBtn: {
     width: 34,
@@ -285,18 +265,6 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   dot: { position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.notificationDot, borderWidth: 1.5, borderColor: colors.surface },
   avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.primary },
-  ratingCard: { marginHorizontal: spacing.xl, borderRadius: radii.xxl, padding: spacing.xxl, marginTop: spacing.md },
-  ratingCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  // Caption UNDER the number, not above it -- the number is the headline,
-  // the label only explains it.
-  ratingLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.75)', marginTop: -2, letterSpacing: 0.2 },
-  ratingValue: { fontFamily: fontFamily.extraBold, fontSize: 56, lineHeight: 60, color: colors.white, letterSpacing: -2 },
-  viewReportBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.pill },
-  viewReportText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.white },
-  statRow: { flexDirection: 'row', gap: 10, marginTop: 20 },
-  statChip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: radii.md, paddingVertical: 10, alignItems: 'center' },
-  statVal: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.white },
-  statKey: { fontFamily: fontFamily.medium, fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   primaryAction: {
     flexDirection: 'row',
     alignItems: 'center',
