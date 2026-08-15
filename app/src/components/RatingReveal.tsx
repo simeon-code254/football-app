@@ -92,7 +92,7 @@ export function RatingReveal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <View accessibilityViewIsModal style={styles.backdrop}>
         <View style={styles.sheet}>
           <Animated.View style={badgeStyle}>
             <LinearGradient colors={gradients.primaryButton} style={styles.badge}>

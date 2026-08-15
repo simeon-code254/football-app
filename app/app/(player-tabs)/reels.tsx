@@ -434,7 +434,7 @@ export default function Reels() {
       )}
 
       <Modal visible={!!commentsFor} transparent animationType="slide" onRequestClose={() => setCommentsFor(null)}>
-        <KeyboardAvoidingView
+        <KeyboardAvoidingView accessibilityViewIsModal
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.commentsBackdrop}
         >

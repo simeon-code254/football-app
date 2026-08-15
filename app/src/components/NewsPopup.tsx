@@ -53,7 +53,7 @@ export function NewsPopup() {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
-      <Pressable style={styles.backdrop} onPress={dismiss} accessibilityRole="button" accessibilityLabel="Dismiss announcement">
+      <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={dismiss} accessibilityRole="button" accessibilityLabel="Dismiss announcement">
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()} accessible={false}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="contain" />}
           <View style={styles.body}>

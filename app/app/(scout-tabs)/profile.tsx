@@ -194,7 +194,7 @@ export default function ScoutProfile() {
       </QueryState>
 
       <Modal visible={prefsOpen} animationType="slide" onRequestClose={() => setPrefsOpen(false)}>
-        <KeyboardAvoidingView style={styles.prefsRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView accessibilityViewIsModal style={styles.prefsRoot} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.prefsHeader}>
             <Pressable onPress={() => setPrefsOpen(false)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close">
               <Feather name="x" size={22} color={colors.textPrimary} />

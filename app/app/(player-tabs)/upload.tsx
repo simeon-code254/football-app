@@ -450,7 +450,7 @@ export default function Upload() {
       </ScrollView>
 
       <Modal visible={tagModalOpen} animationType="slide" onRequestClose={() => setTagModalOpen(false)}>
-        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <SafeAreaView accessibilityViewIsModal style={styles.root} edges={['top', 'bottom']}>
           <View style={styles.tagModalHeader}>
             <Pressable onPress={() => setTagModalOpen(false)} accessibilityRole="button" accessibilityLabel="Close">
               <Feather name="x" size={22} color={colors.textPrimary} />

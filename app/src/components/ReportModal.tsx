@@ -82,7 +82,7 @@ export function ReportModal({ visible, title, targetType, targetId, reporterId, 
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close report dialog">
+      <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close report dialog">
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()} accessible={false}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.hint}>Tell us what's wrong. Reports are reviewed by our team, not shown publicly.</Text>

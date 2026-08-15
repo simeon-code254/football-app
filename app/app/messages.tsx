@@ -305,7 +305,7 @@ export default function Messages() {
       </QueryState>
 
       <Modal visible={!!activeConversationId} animationType="slide" onRequestClose={() => setActiveConversationId(null)}>
-        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <SafeAreaView accessibilityViewIsModal style={styles.root} edges={['top', 'bottom']}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
             <View style={styles.threadHeader}>
               <Pressable onPress={() => setActiveConversationId(null)} accessibilityRole="button" accessibilityLabel="Back to conversations">

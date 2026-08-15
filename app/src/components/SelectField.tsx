@@ -33,7 +33,7 @@ export function SelectField({ label, value, options, onChange, placeholder = 'Se
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+        <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>{label}</Text>
             <FlatList

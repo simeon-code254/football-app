@@ -52,7 +52,7 @@ export function PushPrimer({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => onDone(false)}>
-      <View style={styles.backdrop}>
+      <View accessibilityViewIsModal style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.iconWrap}>
             <Feather name="bell" size={22} color={colors.primary} />

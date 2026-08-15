@@ -359,7 +359,7 @@ export default function PlayerDetail() {
 
       {/* Save to folder (spec §21) */}
       <Modal visible={saveOpen} transparent animationType="fade" onRequestClose={() => setSaveOpen(false)}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView accessibilityViewIsModal style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setSaveOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Save Player</Text>
@@ -394,7 +394,7 @@ export default function PlayerDetail() {
 
       {/* Scout Notes (spec §22) — private to the scout */}
       <Modal visible={notesOpen} transparent animationType="fade" onRequestClose={() => setNotesOpen(false)}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView accessibilityViewIsModal style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setNotesOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Scout Notes</Text>
@@ -420,7 +420,7 @@ export default function PlayerDetail() {
       {/* Invite to Trial — scout-initiated, distinct from a player browsing
           and applying themselves (trial_applications.source='invited') */}
       <Modal visible={inviteOpen} transparent animationType="fade" onRequestClose={() => setInviteOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setInviteOpen(false)}>
+        <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={() => setInviteOpen(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Invite to Trial</Text>
             <Text style={styles.notesHint}>Choose one of your open trials to invite {player.full_name} to.</Text>

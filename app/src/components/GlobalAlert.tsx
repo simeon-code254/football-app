@@ -17,7 +17,7 @@ export function GlobalAlert() {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => handlePress()}>
-      <View style={styles.backdrop}>
+      <View accessibilityViewIsModal style={styles.backdrop}>
         <View style={styles.card}>
           <Text style={styles.title}>{title}</Text>
           {message ? <Text style={styles.message}>{message}</Text> : null}

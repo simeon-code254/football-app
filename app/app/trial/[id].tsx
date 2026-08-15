@@ -433,7 +433,7 @@ export default function TrialDetail() {
       />
 
       <Modal visible={editOpen} animationType="slide" onRequestClose={() => setEditOpen(false)}>
-        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <SafeAreaView accessibilityViewIsModal style={styles.root} edges={['top', 'bottom']}>
           <View style={styles.header}>
             <Pressable onPress={() => setEditOpen(false)} accessibilityRole="button" accessibilityLabel="Close">
               <Feather name="x" size={22} color={colors.textPrimary} />
