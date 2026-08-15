@@ -22,7 +22,7 @@ export default function Settings() {
   const rows: SettingsRow[] = [
     { title: 'Account', icon: 'user', onPress: () => router.push('/account-settings') },
     { title: 'Security', icon: 'shield', onPress: () => router.push('/security-settings') },
-    { title: 'Notifications', icon: 'bell', onPress: () => router.push('/notifications') },
+    { title: 'Notifications', icon: 'bell', onPress: () => router.push('/notification-settings') },
     { title: 'Privacy', icon: 'eye-off', onPress: () => router.push('/privacy-settings') },
     { title: 'Blocked accounts', icon: 'slash', onPress: () => router.push('/blocked-accounts') },
     { title: 'Language', icon: 'globe', onPress: () => router.push('/language-settings') },
