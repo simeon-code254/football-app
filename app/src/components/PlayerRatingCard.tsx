@@ -49,10 +49,32 @@ import {
 // should be. A typeset country code is legible on every platform and reads
 // as a deliberate card element rather than a failed glyph.
 
+// Confidence is marked, never hidden.
+//
+// The engine earns a confidence per attribute (ai-service confidence.py) and
+// the database has always stored it -- player_attribute_scores.confidence is
+// `not null check (confidence in ('High','Medium','Low'))`. Until now every
+// layer above the database threw it away, so the card printed a bare number
+// on what is visually a trophy.
+//
+// That matters because these values are on the 0-99 scale (the DB CHECK says
+// so) -- the same scale a player already reads fluently from FIFA, where 99
+// is world class. A "1" for pace in that grammar says a teenager cannot run.
+// What it usually means is that the analysis could not see them move, which
+// is a statement about our footage and our detector, not about the player.
+//
+// So a low-confidence value is shown at full honesty but visibly qualified:
+// the number stays, rendered in the muted tone with a marker, and the card
+// says plainly what the marker means. Nothing is suppressed -- a scout still
+// sees every number the engine produced -- but nobody is told they are a 1
+// out of 99 as though we were sure.
+export type AttributeConfidence = "High" | "Medium" | "Low";
+
 export type RatingAttribute = {
   key: string;
   displayName: string;
   value: number | null;
+  confidence?: AttributeConfidence | null;
 };
 
 export function PlayerRatingCard({
@@ -80,6 +102,16 @@ export function PlayerRatingCard({
   const rated = attributes.filter((a) => a.value != null).slice(0, 4);
   const provisional = assessedCount > 0 && assessedCount < totalCount;
 
+  // The overall is a flat average over whatever has been scored
+  // (recalc_player_overall), so a single Low-confidence attribute drags the
+  // headline number down just as hard as a confident one. If any contributing
+  // attribute is Low, the headline inherits the qualification -- otherwise
+  // the card would qualify "1 PAC" while presenting the 16 it produced as
+  // settled fact.
+  const anyLow = attributes.some(
+    (a) => a.value != null && a.confidence === "Low",
+  );
+
   return (
     <LinearGradient
       colors={c.ground}
@@ -97,9 +129,21 @@ export function PlayerRatingCard({
 
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.rating}>
-            {rating != null ? Math.round(rating) : "–"}
-          </Text>
+          <View style={styles.ratingRow}>
+            <Text style={styles.rating}>
+              {rating != null ? Math.round(rating) : "–"}
+            </Text>
+            {anyLow && (
+              // Spoken as part of the rating rather than left as a bare
+              // glyph a screen reader would read as punctuation or skip.
+              <Text
+                style={styles.ratingMark}
+                accessibilityLabel="based partly on low-confidence analysis"
+              >
+                ·
+              </Text>
+            )}
+          </View>
           {!!position && <Text style={styles.position}>{position}</Text>}
         </View>
 
@@ -131,14 +175,30 @@ export function PlayerRatingCard({
 
       {rated.length > 0 ? (
         <View style={styles.attrRow}>
-          {rated.map((a) => (
-            <View key={a.key} style={styles.attr}>
-              <Text style={styles.attrValue}>{a.value}</Text>
-              <Text style={styles.attrKey}>
-                {a.displayName.slice(0, 3).toUpperCase()}
-              </Text>
-            </View>
-          ))}
+          {rated.map((a) => {
+            const low = a.confidence === "Low";
+            return (
+              <View
+                key={a.key}
+                style={styles.attr}
+                // One label for the pair, so a screen reader says
+                // "Pace 1, low confidence" instead of reading a loose
+                // number and an abbreviation it cannot expand.
+                accessible
+                accessibilityLabel={`${a.displayName} ${a.value}${low ? ", low confidence" : ""}`}
+              >
+                <View style={styles.attrValueRow}>
+                  <Text style={[styles.attrValue, low && styles.attrValueLow]}>
+                    {a.value}
+                  </Text>
+                  {low && <Text style={styles.attrMark}>·</Text>}
+                </View>
+                <Text style={styles.attrKey}>
+                  {a.displayName.slice(0, 3).toUpperCase()}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       ) : (
         <Text style={styles.pending}>
@@ -151,6 +211,17 @@ export function PlayerRatingCard({
         // a scout later finds hollow costs more than the swagger gains.
         <Text style={styles.provisional}>
           Provisional · {assessedCount} of {totalCount} attributes rated
+        </Text>
+      )}
+
+      {anyLow && (
+        // The marker is meaningless without this, and the wording matters:
+        // it says the footage was hard to read, not that the player scored
+        // badly. Those are genuinely different claims and only one of them
+        // is something we actually know.
+        <Text style={styles.legend}>
+          · Marked values were hard to measure in your footage — clearer video
+          improves them
         </Text>
       )}
     </LinearGradient>
@@ -257,13 +328,46 @@ function makeStyles(c: Palette) {
     // Left-aligned with a fixed gap: space-between pushed two values to
     // opposite edges of the card, which looked like a layout error rather
     // than a design.
+    // A fixed four-column grid rather than a flow. space-between pushed two
+    // values to opposite edges of the card; a plain gap bunched them against
+    // the left with dead space beside them. Fixed 25% columns mean an
+    // attribute sits in the same place whether the engine has rated two of
+    // them or all four, which is what makes it read as a card face instead
+    // of a paragraph of numbers.
     attrRow: {
       flexDirection: "row",
-      gap: spacing.huge,
       marginTop: spacing.md,
       paddingLeft: spacing.xs,
     },
-    attr: { alignItems: "flex-start" },
+    attr: { alignItems: "flex-start", width: "25%" },
+    ratingRow: { flexDirection: "row", alignItems: "flex-start" },
+    ratingMark: {
+      fontFamily: fontFamily.extraBold,
+      fontSize: 30,
+      lineHeight: 34,
+      color: c.muted,
+      marginLeft: 3,
+    },
+    attrValueRow: { flexDirection: "row", alignItems: "flex-start" },
+    // The number is never removed, only de-emphasised to the muted tone --
+    // which is contrast-checked to AA in both palettes, so "qualified" never
+    // means "hard to read".
+    attrValueLow: { color: c.muted },
+    attrMark: {
+      fontFamily: fontFamily.extraBold,
+      fontSize: fontSize.bodySm,
+      color: c.muted,
+      marginLeft: 1,
+    },
+    legend: {
+      fontFamily: fontFamily.regular,
+      fontSize: 10,
+      color: c.muted,
+      textAlign: "center",
+      marginTop: spacing.xs,
+      lineHeight: 14,
+      paddingHorizontal: spacing.sm,
+    },
     attrValue: {
       fontFamily: fontFamily.extraBold,
       fontSize: fontSize.headingLg,
