@@ -8,12 +8,16 @@ type Props = {
   positionLine: string; // e.g. "CAM · Lagos, Nigeria"
   avatar: string;
   rating: number;
+  // From player_public_view.rating_has_low_confidence. Undefined until the
+  // caller supplies it, which reads as "not low confidence" -- the safe
+  // degradation, since an unmarked badge is the existing behaviour.
+  lowConfidence?: boolean;
   onPress?: () => void;
 };
 
 // Matches the Discover tab's "Trending Players" row: avatar, name, position/
 // city, rating badge.
-export function PlayerCard({ name, positionLine, avatar, rating, onPress }: Props) {
+export function PlayerCard({ name, positionLine, avatar, rating, lowConfidence, onPress }: Props) {
   const colors = useThemeColors();
   const isDark = useIsDark();
   const styles = makeStyles(colors);
@@ -22,7 +26,7 @@ export function PlayerCard({ name, positionLine, avatar, rating, onPress }: Prop
       onPress={onPress}
       style={({ pressed }) => [styles.card, elevation('raised', isDark), pressed && styles.cardPressed]}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={`${name}, ${positionLine}, rating ${rating}`}
+      accessibilityLabel={`${name}, ${positionLine}, rating ${rating}${lowConfidence ? ', low confidence' : ''}`}
     >
       {/* cachePolicy keeps avatars off the network on every scroll -- they're
           signed/remote URLs that otherwise refetch. recyclingKey tells
@@ -40,7 +44,7 @@ export function PlayerCard({ name, positionLine, avatar, rating, onPress }: Prop
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.meta}>{positionLine}</Text>
       </View>
-      <RatingBadge rating={rating} size="sm" />
+      <RatingBadge rating={rating} size="sm" lowConfidence={lowConfidence} />
     </Pressable>
   );
 }
