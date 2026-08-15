@@ -7,11 +7,13 @@ import { fontFamily, fontSize, spacing, useThemeColors } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { SecondaryButton } from '../src/components/SecondaryButton';
 import { localImages } from '../src/constants/images';
+import { useTranslation } from '../src/i18n';
 import { Logo } from '../src/components/Logo';
 
 // Matches Matobev v4.dc.html's WELCOME block.
 export default function Welcome() {
   const colors = useThemeColors();
+  const { t } = useTranslation();
   const styles = makeStyles(colors);
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
@@ -30,12 +32,12 @@ export default function Welcome() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Welcome to Matobev</Text>
+        <Text style={styles.title}>{t('welcome.title')}</Text>
         <Text style={styles.sub}>Discover. Analyze. Connect.{'\n'}Where football talent meets opportunity.</Text>
 
         <View style={styles.actions}>
-          <PrimaryButton label="Create Account" onPress={() => router.push('/role-select')} />
-          <SecondaryButton label="Login" onPress={() => router.push('/login')} />
+          <PrimaryButton label={t('common.createAccount')} onPress={() => router.push('/role-select')} />
+          <SecondaryButton label={t('common.login')} onPress={() => router.push('/login')} />
         </View>
 
         {/* This screen -- not onboarding -- is where signed-out users
@@ -46,7 +48,7 @@ export default function Welcome() {
             browse-first entry point has to exist here or most people never
             see it. */}
         <Pressable onPress={() => router.push('/browse')} hitSlop={10} style={styles.browseWrap}>
-          <Text style={styles.browseText}>See who's getting rated — no account needed</Text>
+          <Text style={styles.browseText}>{t('welcome.browseFirst')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

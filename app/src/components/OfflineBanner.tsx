@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, spacing, useThemeColors, type ThemeColors } from '../theme';
 import { useIsOnline } from '../lib/network';
+import { useTranslation } from '../i18n';
 
 // Renders nothing while online. Deliberately a thin strip rather than a
 // blocking screen: cached content is still readable offline (see
@@ -11,6 +12,7 @@ import { useIsOnline } from '../lib/network';
 // screen may be stale and that writes won't go through yet.
 export function OfflineBanner() {
   const online = useIsOnline();
+  const { t } = useTranslation();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
 
@@ -24,7 +26,7 @@ export function OfflineBanner() {
       accessibilityLabel="You are offline. Showing saved content."
     >
       <Feather name="wifi-off" size={13} color={colors.white} />
-      <Text style={styles.text}>No connection — showing saved content</Text>
+      <Text style={styles.text}>{t('offline.banner')}</Text>
     </View>
   );
 }

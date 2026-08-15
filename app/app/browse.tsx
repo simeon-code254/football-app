@@ -15,6 +15,7 @@ import * as profileRepository from '../src/repositories/profileRepository';
 import type { PlayerPublicView } from '../src/repositories/profileRepository';
 import { images } from '../src/constants/images';
 import { showAlert } from '../src/lib/alert';
+import { useTranslation } from '../src/i18n';
 
 const PAGE_SIZE = 20;
 
@@ -34,6 +35,7 @@ const PAGE_SIZE = 20;
 // tries to do one of those things -- rather than at the door.
 export default function Browse() {
   const colors = useThemeColors();
+  const { t } = useTranslation();
   const styles = makeStyles(colors);
 
   const { data, isLoading, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -72,8 +74,8 @@ export default function Browse() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" onPress={() => router.back()} accessibilityLabel="Go back" />
-        <Text style={styles.headerTitle}>Players on Matobev</Text>
+        <IconButton icon="chevron-left" onPress={() => router.back()} accessibilityLabel={t('common.back')} />
+        <Text style={styles.headerTitle}>{t('browse.title')}</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -90,24 +92,23 @@ export default function Browse() {
           onEndReachedThreshold={0.4}
           ListHeaderComponent={
             <Text style={styles.lede}>
-              Real players. Real ratings. Verified scouts are already here — add your highlights and get
-              rated too.
+              {t('browse.lede')}
             </Text>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Feather name="users" size={26} color={colors.textPlaceholder} />
-              <Text style={styles.emptyText}>No players to show yet.</Text>
+              <Text style={styles.emptyText}>{t('browse.empty')}</Text>
             </View>
           }
         />
       </QueryState>
 
       <View style={styles.cta}>
-        <PrimaryButton label="Get Rated — It's Free" onPress={() => router.push('/role-select')} />
+        <PrimaryButton label={t('browse.cta')} onPress={() => router.push('/role-select')} />
         <Pressable onPress={() => router.push('/login')} hitSlop={10} style={styles.loginWrap}>
           <Text style={styles.loginText}>
-            Already have an account? <Text style={styles.loginLink}>Log in</Text>
+            {t('browse.haveAccount')} <Text style={styles.loginLink}>{t('common.login')}</Text>
           </Text>
         </Pressable>
       </View>

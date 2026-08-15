@@ -25,6 +25,7 @@ export default function Settings() {
     { title: 'Notifications', icon: 'bell', onPress: () => router.push('/notifications') },
     { title: 'Privacy', icon: 'eye-off', onPress: () => router.push('/privacy-settings') },
     { title: 'Blocked accounts', icon: 'slash', onPress: () => router.push('/blocked-accounts') },
+    { title: 'Language', icon: 'globe', onPress: () => router.push('/language-settings') },
     { title: 'Theme', icon: 'moon', onPress: () => router.push('/theme-settings') },
     { title: 'Help', icon: 'help-circle', onPress: () => router.push('/help-settings') },
   ];
