@@ -220,9 +220,26 @@ export async function incrementShare(videoId: string) {
   if (error) throw error;
 }
 
-export async function uploadVideoSource(playerId: string, videoId: string, fileUri: string) {
-  const path = `${playerId}/${videoId}/source.mp4`;
-  await uploadFileToStorage('videos', path, fileUri, 'video/mp4');
+// The bucket only allows video/mp4 and video/quicktime
+// (20260808190000_storage_upload_limits.sql). Previously every upload was
+// labelled video/mp4 and stored as `source.mp4` regardless of what was
+// actually picked, so a QuickTime .mov -- the default for iOS-recorded
+// footage -- was stored under a mismatched extension and content type.
+function videoMimeFor(fileUri: string, fileName?: string | null): { mime: string; ext: string } {
+  const source = (fileName || fileUri).toLowerCase();
+  if (source.endsWith('.mov')) return { mime: 'video/quicktime', ext: 'mov' };
+  return { mime: 'video/mp4', ext: 'mp4' };
+}
+
+export async function uploadVideoSource(
+  playerId: string,
+  videoId: string,
+  fileUri: string,
+  fileName?: string | null
+) {
+  const { mime, ext } = videoMimeFor(fileUri, fileName);
+  const path = `${playerId}/${videoId}/source.${ext}`;
+  await uploadFileToStorage('videos', path, fileUri, mime);
   return path;
 }
 
@@ -230,6 +247,18 @@ export async function uploadVideoThumbnail(playerId: string, videoId: string, fi
   const path = `${playerId}/${videoId}/thumb.jpg`;
   await uploadFileToStorage('videos', path, fileUri, 'image/jpeg');
   return path;
+}
+
+// Cleanup for a partially-completed upload: the source and/or thumbnail
+// made it into storage but the `videos` row insert failed, leaving objects
+// nothing references. Removes both known paths for the id; `remove()` does
+// not error on paths that were never written.
+export async function deleteVideoObjects(playerId: string, videoId: string) {
+  const prefix = `${playerId}/${videoId}`;
+  const { error } = await supabase.storage
+    .from('videos')
+    .remove([`${prefix}/source.mp4`, `${prefix}/source.mov`, `${prefix}/thumb.jpg`]);
+  if (error) throw error;
 }
 
 // The `videos` bucket is private — no public URL, always sign.

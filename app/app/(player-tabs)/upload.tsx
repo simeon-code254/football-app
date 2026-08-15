@@ -16,9 +16,26 @@ import * as videosRepository from '../../src/repositories/videosRepository';
 import { showAlert } from '../../src/lib/alert';
 
 type UploadMode = 'reel' | 'ai';
-type PickedVideo = { uri: string; fileName?: string | null; thumbnailUri?: string; durationMs?: number | null };
+type PickedVideo = {
+  uri: string;
+  fileName?: string | null;
+  thumbnailUri?: string;
+  durationMs?: number | null;
+  fileSize?: number | null;
+};
 type TagFrame = { uri: string; width: number; height: number };
 type SubjectHint = { x: number; y: number }; // normalized 0-1, relative to TagFrame
+
+// Matches the `videos` bucket's own file_size_limit
+// (supabase/migrations/20260808190000_storage_upload_limits.sql). Kept in
+// sync deliberately: the server is the real enforcer, this is only so the
+// user finds out before spending data rather than after.
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 
 // The frame the "tag yourself" step shows is taken at this fixed offset —
 // the AI service needs to know it too (subjectHintTimeMs), since the same
@@ -138,15 +155,41 @@ export default function Upload() {
       );
       return;
     }
+    // `quality` is deliberately NOT passed: despite appearances it is an
+    // IMAGE option ("if the selected image has been compressed before...")
+    // and does nothing for a library-picked video on either platform. The
+    // previous `quality: 1` here read as "max quality, no compression" but
+    // was in fact a no-op. Real video transcoding needs a native module
+    // (react-native-compressor) and a dev build -- until then the honest
+    // control is the size guard below, which refuses an oversized file
+    // BEFORE any of the user's data is spent on it.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['videos'],
-      quality: 1,
     });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
+
+    // Supabase enforces the 100MB bucket limit only after the whole file has
+    // been uploaded, so without this check a user on a metered connection
+    // pays for the entire transfer and then gets an error. `fileSize` was
+    // already available on the asset and simply never read.
+    if (asset.fileSize && asset.fileSize > MAX_VIDEO_BYTES) {
+      showAlert(
+        'Video too large',
+        `This clip is ${formatBytes(asset.fileSize)}, and the limit is ${formatBytes(MAX_VIDEO_BYTES)}. ` +
+          'Trim it or record a shorter highlight, then try again.'
+      );
+      return;
+    }
+
     setTagFrame(null);
     setSubjectHint(null);
-    setVideo({ uri: asset.uri, fileName: asset.fileName, durationMs: asset.duration });
+    setVideo({
+      uri: asset.uri,
+      fileName: asset.fileName,
+      durationMs: asset.duration,
+      fileSize: asset.fileSize,
+    });
   };
 
   const openTagModal = async () => {
@@ -182,27 +225,38 @@ export default function Upload() {
         // upload itself should still succeed, just without a thumbnail.
       }
 
-      const storagePath = await videosRepository.uploadVideoSource(userId, videoId, video.uri);
+      const storagePath = await videosRepository.uploadVideoSource(userId, videoId, video.uri, video.fileName);
 
-      await videosRepository.createVideo({
-        id: videoId,
-        playerId: userId,
-        storagePath,
-        thumbnailPath,
-        title: title.trim() || undefined,
-        description: description.trim() || undefined,
-        matchName: matchName.trim() || undefined,
-        opponent: opponent.trim() || undefined,
-        tags: tags
-          .split(/[\s,]+/)
-          .map((t) => t.replace(/^#/, '').trim())
-          .filter(Boolean),
-        uploadIntent: mode === 'ai' ? 'ai_analysis' : 'highlight_only',
-        durationSeconds: video.durationMs ? Math.round(video.durationMs / 1000) : undefined,
-        subjectHintX: mode === 'ai' ? subjectHint?.x : undefined,
-        subjectHintY: mode === 'ai' ? subjectHint?.y : undefined,
-        subjectHintTimeMs: mode === 'ai' && subjectHint ? TAG_FRAME_TIME_MS : undefined,
-      });
+      try {
+        await videosRepository.createVideo({
+          id: videoId,
+          playerId: userId,
+          storagePath,
+          thumbnailPath,
+          title: title.trim() || undefined,
+          description: description.trim() || undefined,
+          matchName: matchName.trim() || undefined,
+          opponent: opponent.trim() || undefined,
+          tags: tags
+            .split(/[\s,]+/)
+            .map((t) => t.replace(/^#/, '').trim())
+            .filter(Boolean),
+          uploadIntent: mode === 'ai' ? 'ai_analysis' : 'highlight_only',
+          durationSeconds: video.durationMs ? Math.round(video.durationMs / 1000) : undefined,
+          subjectHintX: mode === 'ai' ? subjectHint?.x : undefined,
+          subjectHintY: mode === 'ai' ? subjectHint?.y : undefined,
+          subjectHintTimeMs: mode === 'ai' && subjectHint ? TAG_FRAME_TIME_MS : undefined,
+        });
+      } catch (rowError) {
+        // The bytes are already in storage at this point. Without this, a
+        // failed row insert leaves an orphaned object that nothing
+        // references and nothing will ever clean up -- it just silently
+        // consumes the player's storage quota forever. Best-effort: if the
+        // cleanup itself fails there's nothing further to do, and the
+        // original error is what the user needs to hear about.
+        await videosRepository.deleteVideoObjects(userId, videoId).catch(() => {});
+        throw rowError;
+      }
 
       // Previously this always force-navigated to Profile on OK, regardless
       // of mode -- for a highlight-only upload nothing new shows up there
@@ -249,6 +303,15 @@ export default function Upload() {
               // video, when really a different file was picked.
               <Text style={styles.pickedFileName} numberOfLines={1}>
                 Selected: {video.fileName}
+              </Text>
+            )}
+            {!!video.fileSize && (
+              // Mobile data is a real cost for this app's users -- roughly
+              // 5.8% of average monthly income per GB across Sub-Saharan
+              // Africa. Showing the size before they commit lets them decide
+              // to wait for Wi-Fi instead of finding out from their balance.
+              <Text style={styles.pickedFileSize}>
+                {formatBytes(video.fileSize)} will be uploaded
               </Text>
             )}
             <View style={styles.videoPreview}>
@@ -430,7 +493,8 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   dropIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   dropTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   dropSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
-  pickedFileName: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginBottom: 8 },
+  pickedFileName: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginBottom: 2 },
+  pickedFileSize: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, textAlign: 'center', marginBottom: 8 },
   videoPreview: {
     width: '70%',
     alignSelf: 'center',
