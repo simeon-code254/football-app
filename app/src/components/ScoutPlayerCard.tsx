@@ -4,7 +4,18 @@ import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
 import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../theme';
 
-export type ScoutPlayerCardAttribute = { key: string; displayName: string; value: number | null };
+// Confidence is marked here for the same reason it is on the player's own
+// card (see PlayerRatingCard), but the stakes are different: this is the
+// surface a scout makes decisions on. An unqualified "PAC 1" here is not
+// just discouraging, it is misinformation acted upon -- the engine's Low
+// confidence usually means it could not track the player in that clip, which
+// says something about our footage, not about them.
+export type ScoutPlayerCardAttribute = {
+  key: string;
+  displayName: string;
+  value: number | null;
+  confidence?: 'High' | 'Medium' | 'Low' | null;
+};
 
 type Props = {
   id: string;
@@ -15,6 +26,9 @@ type Props = {
   country: string | null;
   age: number | null;
   topAttributes: ScoutPlayerCardAttribute[];
+  // Derived from every scored attribute, not just the four shown -- see the
+  // caller in (scout-tabs)/home.tsx.
+  anyLowConfidence?: boolean;
   matchReasons?: string[];
   saved: boolean;
   onToggleSave: () => void;
@@ -24,7 +38,7 @@ type Props = {
 // name, country, age, four key attributes, Save + View Profile actions, and
 // an optional recommendation-reason strip built from real signals (preferred
 // position match, recent activity) — never a fabricated explanation.
-export function ScoutPlayerCard({ id, name, avatar, overall, position, country, age, topAttributes, matchReasons, saved, onToggleSave }: Props) {
+export function ScoutPlayerCard({ id, name, avatar, overall, position, country, age, topAttributes, anyLowConfidence, matchReasons, saved, onToggleSave }: Props) {
   const colors = useThemeColors();
   const isDark = useIsDark();
   const styles = makeStyles(colors);
@@ -39,8 +53,15 @@ export function ScoutPlayerCard({ id, name, avatar, overall, position, country, 
           recyclingKey={avatar}
           transition={200}
         />
-        <View style={styles.ovrBadge}>
-          <Text style={styles.ovrValue}>{overall ?? '—'}</Text>
+        <View
+          style={styles.ovrBadge}
+          accessible
+          accessibilityLabel={`Overall ${overall ?? 'not rated'}${anyLowConfidence ? ', based partly on low-confidence analysis' : ''}`}
+        >
+          <Text style={styles.ovrValue}>
+            {overall ?? '—'}
+            {anyLowConfidence ? '·' : ''}
+          </Text>
           <Text style={styles.ovrLabel}>OVR</Text>
         </View>
         {!!position && (
@@ -57,13 +78,30 @@ export function ScoutPlayerCard({ id, name, avatar, overall, position, country, 
         </Text>
 
         <View style={styles.attrGrid}>
-          {topAttributes.map((a) => (
-            <Text key={a.key} style={styles.attrText}>
-              <Text style={styles.attrKey}>{a.displayName.slice(0, 3).toUpperCase()} </Text>
-              {a.value ?? '—'}
-            </Text>
-          ))}
+          {topAttributes.map((a) => {
+            const low = a.confidence === 'Low';
+            return (
+              <Text
+                key={a.key}
+                style={styles.attrText}
+                accessibilityLabel={`${a.displayName} ${a.value ?? 'not rated'}${low ? ', low confidence' : ''}`}
+              >
+                <Text style={styles.attrKey}>{a.displayName.slice(0, 3).toUpperCase()} </Text>
+                {/* Value shown in full either way -- a scout should see every
+                    number the engine produced -- but de-emphasised and marked
+                    when the analysis was not confident in it. */}
+                <Text style={low ? styles.attrValueLow : undefined}>
+                  {a.value ?? '—'}
+                  {low ? '·' : ''}
+                </Text>
+              </Text>
+            );
+          })}
         </View>
+
+        {anyLowConfidence && (
+          <Text style={styles.confidenceNote}>· Some values are low-confidence — footage was hard to measure</Text>
+        )}
 
         {!!matchReasons?.length && (
           <View style={styles.reasonBox}>
@@ -115,6 +153,14 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     attrGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
     attrText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary, width: '45%' },
     attrKey: { fontFamily: fontFamily.medium, color: colors.textMuted },
+    attrValueLow: { color: colors.textMuted },
+    confidenceNote: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
+      marginBottom: 10,
+      lineHeight: 15,
+    },
     reasonBox: { backgroundColor: colors.successTint, borderRadius: radii.md, padding: 10, marginBottom: 10, gap: 2 },
     reasonTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textPrimary, marginBottom: 2 },
     reasonLine: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.success },

@@ -111,7 +111,19 @@ export default function ScoutDashboard() {
           const reasons: string[] = [];
           if (prefs?.positions?.includes(p.primary_position as never)) reasons.push('Matches your preferred position');
           if (p.recently_active) reasons.push('Recently active');
-          return { player: p, attrs: attrs.filter((a) => a.value != null).slice(0, 4), saved: !!savedRow, reasons };
+          // Computed over ALL scored attributes, not the four the card shows.
+          // The overall is a weighted average of everything the engine
+          // scored, so an attribute that never makes the top four can still
+          // be dragging it -- deriving this from the sliced list would mark
+          // the headline only when the uncertainty happened to be visible.
+          const anyLowConfidence = attrs.some((a) => a.value != null && a.confidence === 'Low');
+          return {
+            player: p,
+            attrs: attrs.filter((a) => a.value != null).slice(0, 4),
+            anyLowConfidence,
+            saved: !!savedRow,
+            reasons,
+          };
         })
       );
     },
@@ -323,6 +335,7 @@ export default function ScoutDashboard() {
                   country={r.player.nationality_name}
                   age={r.player.age}
                   topAttributes={r.attrs}
+                  anyLowConfidence={r.anyLowConfidence}
                   matchReasons={r.reasons.length ? r.reasons : undefined}
                   saved={r.saved}
                   onToggleSave={() => toggleSave(r.player.id ?? '', r.saved)}
