@@ -14,6 +14,7 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { ProfileStrength } from '../../src/components/ProfileStrength';
 import { SkeletonProfile } from '../../src/components/Skeleton';
 import { showAlert } from '../../src/lib/alert';
 
@@ -135,6 +136,26 @@ export default function Profile() {
         <Text style={styles.provisionalNote}>
           Provisional — {presentAttrCount}/{totalAttrCount} attributes assessed
         </Text>
+      )}
+
+      {/* Sits directly under the stats so it's the first thing a player
+          sees about their OWN profile. Only shown while there's something
+          left to do -- a permanent 100% bar is just clutter. */}
+      {data && (
+        <ProfileStrength
+          avatarUrl={data.profile.avatar_url}
+          bio={data.player.bio}
+          club={data.player.club}
+          heightCm={data.player.height_cm}
+          secondaryPosition={data.player.secondary_position}
+          videoCount={data.videoCount}
+          socials={{
+            instagram: data.player.instagram_handle,
+            youtube: data.player.youtube_url,
+            tiktok: data.player.tiktok_handle,
+            facebook: data.player.facebook_url,
+          }}
+        />
       )}
 
       <View style={styles.tabRow}>
