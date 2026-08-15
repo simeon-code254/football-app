@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,6 +37,17 @@ export default function Welcome() {
           <PrimaryButton label="Create Account" onPress={() => router.push('/role-select')} />
           <SecondaryButton label="Login" onPress={() => router.push('/login')} />
         </View>
+
+        {/* This screen -- not onboarding -- is where signed-out users
+            actually land: every sign-out path routes here
+            (settings.tsx, security-settings.tsx, suspended.tsx), and
+            onboarding's own Skip lands here too. Onboarding is only ever
+            reached on a cold start from the splash screen, so the
+            browse-first entry point has to exist here or most people never
+            see it. */}
+        <Pressable onPress={() => router.push('/browse')} hitSlop={10} style={styles.browseWrap}>
+          <Text style={styles.browseText}>Just looking? Browse players first</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -92,5 +103,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     marginBottom: 32,
   },
   actions: { width: '100%', gap: spacing.sm, marginTop: 'auto' },
+  browseWrap: { alignItems: 'center', marginTop: spacing.lg },
+  browseText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   });
 }
