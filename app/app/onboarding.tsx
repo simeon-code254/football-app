@@ -63,9 +63,16 @@ export default function Onboarding() {
         </View>
 
         {isLast ? (
-          <View style={styles.authRow}>
-            <SecondaryButton label="Login" style={styles.authBtn} onPress={() => router.push('/login')} />
-            <PrimaryButton label="Create Account" style={styles.authBtn} onPress={() => router.push('/welcome')} />
+          <View>
+            <View style={styles.authRow}>
+              <SecondaryButton label="Login" style={styles.authBtn} onPress={() => router.push('/login')} />
+              <PrimaryButton label="Create Account" style={styles.authBtn} onPress={() => router.push('/welcome')} />
+            </View>
+            {/* The whole point of activation work: let someone see real
+                players before being asked for anything. */}
+            <Pressable onPress={() => router.push('/browse')} hitSlop={10} style={styles.browseWrap}>
+              <Text style={styles.browseText}>Just looking? Browse players first</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.navRow}>
@@ -146,6 +153,8 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     justifyContent: 'center',
   },
   authRow: { width: '100%', flexDirection: 'row', gap: spacing.sm },
+  browseWrap: { alignItems: 'center', marginTop: spacing.lg },
+  browseText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   authBtn: { flex: 1 },
   });
 }

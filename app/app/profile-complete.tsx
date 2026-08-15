@@ -387,6 +387,22 @@ export default function ProfileComplete() {
             style={{ flex: 1 }}
           />
         </View>
+
+        {/* Steps 3 (bio) and 4 (social links) are entirely optional -- the
+            database invariant only requires full_name, date_of_birth,
+            nationality_code and primary_position, all of which are captured
+            by the end of step 2. Forcing all four steps before the app
+            became usable was pure drop-off: every extra field between
+            signing up and seeing value loses people who would otherwise
+            have stayed. They can still finish later from Edit Profile, and
+            the remaining steps stay right here for anyone who wants them. */}
+        {!isEdit && step === 2 && step2Valid && !saving && (
+          <Pressable onPress={save} hitSlop={10} style={styles.finishLaterWrap}>
+            <Text style={styles.finishLaterText}>
+              Finish later — <Text style={styles.finishLaterLink}>start using Matobev now</Text>
+            </Text>
+          </Pressable>
+        )}
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -396,6 +412,9 @@ export default function ProfileComplete() {
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
+  finishLaterWrap: { alignItems: 'center', marginTop: 16 },
+  finishLaterText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
+  finishLaterLink: { fontFamily: fontFamily.semiBold, color: colors.primary },
   header: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 },
   headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stepLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted, marginBottom: 2 },
