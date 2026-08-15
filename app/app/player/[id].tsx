@@ -14,6 +14,7 @@ import * as videosRepository from '../../src/repositories/videosRepository';
 import * as scoutingRepository from '../../src/repositories/scoutingRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
+import { tapFeedback } from '../../src/lib/haptics';
 import { QueryState } from '../../src/components/QueryState';
 import { ReportModal } from '../../src/components/ReportModal';
 
@@ -117,10 +118,16 @@ export default function PlayerDetail() {
 
   const saveToFolder = async (folderId: string) => {
     if (!viewerId) return;
+    // Close and confirm immediately rather than holding the sheet open for
+    // the round-trip plus a refetch. On a slow connection that delay read
+    // as the tap not registering, so scouts tapped again. The refetch still
+    // happens, just not in the user's way; a genuine failure surfaces as an
+    // alert rather than being swallowed.
+    setSaveOpen(false);
+    tapFeedback();
     try {
       await scoutingRepository.savePlayerToFolder(viewerId, id, folderId);
-      await refetchScoutData();
-      setSaveOpen(false);
+      refetchScoutData();
     } catch (err) {
       showAlert('Could not save player', err instanceof Error ? err.message : 'Please try again.');
     }

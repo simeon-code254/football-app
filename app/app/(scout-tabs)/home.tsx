@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Refre
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { images } from '../../src/constants/images';
@@ -11,6 +11,8 @@ import { ScoutPlayerCard } from '../../src/components/ScoutPlayerCard';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as scoutingRepository from '../../src/repositories/scoutingRepository';
+import { showAlert } from '../../src/lib/alert';
+import { tapFeedback } from '../../src/lib/haptics';
 import * as messagesRepository from '../../src/repositories/messagesRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
@@ -39,6 +41,7 @@ export default function ScoutDashboard() {
   const [topFilter, setTopFilter] = useState<(typeof TOP_FILTERS)[number]>('All');
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
   const userId = useSessionStore((s) => s.session?.user.id);
+  const queryClient = useQueryClient();
 
   const { data: profile, isLoading: profileLoading, isRefetching: profileRefetching, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ['scoutHomeProfile', userId],
@@ -113,16 +116,36 @@ export default function ScoutDashboard() {
     },
   });
 
+  // Optimistic: flip the saved flag in the cache immediately, then reconcile.
+  // Previously this awaited the write AND a full refetch of the recommended
+  // list before anything moved on screen, so tapping Save felt broken on a
+  // slow connection -- which is the normal connection for this app's users.
+  // On failure the cache is rolled back to exactly what it was and the
+  // scout is told, rather than silently leaving a wrong state on screen.
   const toggleSave = async (playerId: string, saved: boolean) => {
     if (!userId) return;
-    if (saved) {
-      await scoutingRepository.unsavePlayer(userId, playerId);
-    } else {
-      const folders = await scoutingRepository.listFolders(userId);
-      const defaultFolder = folders.find((f) => f.is_default) ?? folders[0];
-      if (defaultFolder) await scoutingRepository.savePlayerToFolder(userId, playerId, defaultFolder.id);
+
+    const key = ['scoutRecommended', userId, prefs];
+    const previous = queryClient.getQueryData<typeof recommended>(key);
+    queryClient.setQueryData<typeof recommended>(key, (rows) =>
+      rows?.map((r) => (r.player.id === playerId ? { ...r, saved: !saved } : r))
+    );
+    tapFeedback();
+
+    try {
+      if (saved) {
+        await scoutingRepository.unsavePlayer(userId, playerId);
+      } else {
+        const folders = await scoutingRepository.listFolders(userId);
+        const defaultFolder = folders.find((f) => f.is_default) ?? folders[0];
+        if (defaultFolder) await scoutingRepository.savePlayerToFolder(userId, playerId, defaultFolder.id);
+      }
+      // Keep the saved-count tile and any other derived view honest.
+      queryClient.invalidateQueries({ queryKey: ['scoutOverview'] });
+    } catch (err) {
+      queryClient.setQueryData(key, previous);
+      showAlert('Could not update', err instanceof Error ? err.message : 'Please try again.');
     }
-    refetchRecommended();
   };
 
   const { data: recentUploads } = useQuery({

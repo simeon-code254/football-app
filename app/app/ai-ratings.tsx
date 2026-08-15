@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +12,10 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
 import * as videosRepository from '../src/repositories/videosRepository';
 import { QueryState } from '../src/components/QueryState';
+import { RatingReveal } from '../src/components/RatingReveal';
+
+// Key holds the last job id whose reveal was shown, so it fires once.
+const SEEN_REVEAL_KEY = 'matobev-last-rating-reveal-job';
 
 // result_summary is a free-form jsonb column written by the AI pipeline --
 // recommendations is rule-based text derived from real computed metrics
@@ -66,6 +72,27 @@ export default function AiRatings() {
   const jobStatusInfo = latestJob ? JOB_STATUS_COPY[latestJob.status] : undefined;
   const recommendations =
     latestJob?.status === 'completed' ? ((latestJob.result_summary as ResultSummary | null)?.recommendations ?? []) : [];
+
+  // Celebrate a rating exactly once per analysed video. The job id is the
+  // natural key -- storing the last one seen means re-opening this screen,
+  // or the poll above refetching, never re-fires it. AsyncStorage rather
+  // than component state so it survives an app restart too.
+  const [revealJobId, setRevealJobId] = useState<string | null>(null);
+  useEffect(() => {
+    if (latestJob?.status !== 'completed' || !latestJob.id) return;
+    let cancelled = false;
+    AsyncStorage.getItem(SEEN_REVEAL_KEY).then((seen) => {
+      if (!cancelled && seen !== latestJob.id) setRevealJobId(latestJob.id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [latestJob?.id, latestJob?.status]);
+
+  const dismissReveal = () => {
+    if (latestJob?.id) AsyncStorage.setItem(SEEN_REVEAL_KEY, latestJob.id).catch(() => {});
+    setRevealJobId(null);
+  };
 
   const presentAttrCount = data?.attributes.filter((a) => a.value != null).length ?? 0;
   const totalAttrCount = data?.attributes.length ?? 0;
@@ -153,6 +180,14 @@ export default function AiRatings() {
           )}
         </ScrollView>
       </QueryState>
+
+      <RatingReveal
+        visible={!!revealJobId && hasAnyRatings}
+        rating={Math.round(data?.publicView.overall_rating ?? 0)}
+        attributesAssessed={presentAttrCount}
+        attributesTotal={totalAttrCount}
+        onClose={dismissReveal}
+      />
     </SafeAreaView>
   );
 }
