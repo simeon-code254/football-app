@@ -12,6 +12,7 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { FirstWinCard } from '../../src/components/FirstWinCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
 
 function getGreeting() {
@@ -98,6 +99,14 @@ export default function Home() {
             <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
           </View>
         </View>
+
+        {/* Only while there is genuinely nothing to show yet. Once any
+            attribute has a real value the player has been rated, and the
+            rating card below is the better headline -- keeping this around
+            after that would just be clutter. */}
+        {data && !data.attributes.some((a) => a.value != null) && (
+          <FirstWinCard primaryPosition={data.player.primary_position} />
+        )}
 
         <LinearGradient colors={[colors.primary, colors.primaryDark]} style={styles.ratingCard}>
           <View style={styles.ratingCardTop}>
