@@ -77,7 +77,7 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 
 ## 3. Backend — everything built
 
-**40 migrations** (28 from earlier phases + 4 security-hardening ones from Phase 6 + 6 from Phase 7, see §6c/§6d), all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
+**67 migrations** (28 from the original build, then security hardening in Phases 6/7, the admin webapp, position-weighted ratings, and the blocking/push work in §7), all written and **pushed live** to the Supabase project (confirmed via `supabase migration list --linked` — local/remote history match exactly, zero drift). Full list in `supabase/migrations/`, roughly in this order:
 
 1. Extensions/enums (`position_code`)
 2. `countries` (Africa-only, 54 seeded rows)
@@ -114,8 +114,11 @@ App icon, favicon, Android adaptive icon (foreground/background/monochrome), and
 
 ### Credentials on file (do not re-request these)
 - Anon key: in `app/.env` (gitignored)
-- Service role key: known, never written to any file — treat as a secret, use only via env var when actually needed
-- Supabase Personal Access Token: used once for CLI auth this session (not stored anywhere persistent — `supabase link` state is what persists, in `supabase/.temp` locally, gitignored)
+- Service role key: in `ai-service/.env` (gitignored) — treat as a secret, never let it reach the app bundle
+- Supabase Personal Access Token: used for CLI auth (not stored persistently — `supabase link` state is what persists, in `supabase/.temp` locally, gitignored)
+- **Sentry DSN**: in `app/.env` as `EXPO_PUBLIC_SENTRY_DSN`. Not a secret (write-only, ships in the bundle by design) — don't confuse it with the Sentry *auth token*, which is secret and only used for source-map upload at build time. Org `simeon-n4`, project `react-native`, EU (`.de`) ingest region.
+- **EAS project**: `@simeonanyal/matobev`, id `20ee1c4b-9800-4006-adde-42a973d7beae`, written into `app.json` under `extra.eas.projectId`. Required by `getExpoPushTokenAsync` — without it push registration fails closed.
+- **Push webhook secret**: stored in **Supabase Vault** under the name `push_webhook_secret`, and separately as the `PUSH_WEBHOOK_SECRET` env var on the `send-push` Edge Function. Deliberately not in git. Both ends must match; rotating means updating both.
 
 ---
 
@@ -263,7 +266,61 @@ Requested after Phase 6, with an explicit ask for a *thorough* re-audit across U
 
 **Verified live** (real spoofed accounts via the Admin API, cleaned up after — see the Phase 6 incident note above for why never raw-SQL): all 6 new RLS/constraint fixes, both new notification triggers (invite + AI complete + AI failed), tappable-notification deep-linking, and the Saved Players flow, all through the real running app in a browser, not just direct API calls.
 
-## 7. Verification commands (for whoever resumes)
+## 6e. AI engine — Phases B/C/D built, and honestly validated
+
+Phase A (Pace + Physical) was extended to cover 16 of the 18 seeded attributes. Every score is still a transparent formula over real detected data — the standing "no mocked ratings, ever" rule held throughout, and it was verified rather than assumed.
+
+- **Phase B** — `pose.py` (frozen MediaPipe), `positioning.py` (movement-economy proxy + foot-to-ball Ball Control).
+- **Phase C** — a real trained classifier. `features.py` extracts engineered kinematics shared by training *and* live inference (structurally preventing train/serve skew); `train_event_classifier.py` produced `pass_drive_classifier.joblib` from 2,067 real SoccerNet clips. Held-out accuracy **62%** (pass precision 0.65, drive 0.60), recorded in `training/reports/event_classifier_metrics.json` and not rounded up anywhere.
+- **Phase D** — `vision.py` (scanning frequency, a published methodology), `decision_making.py` (touches-to-release), `defending.py` (ball-recovery frequency, permanently capped at Low confidence by design), plus `goalkeeper.py` covering 7 of 8 GK attributes.
+- **Deliberately NOT built**: Shooting (no shot-labelled training data at the time) and GK Sweeping/Rushing Out (needs pitch/goal calibration, which this app deliberately does not do — African grassroots pitches often have no visible markings).
+
+**Validation against real mined amateur clips found real bugs**, all documented in `ai-service/README.md`:
+
+- Vision maxed at 99 from a single sample on short clips (unstable per-minute extrapolation). Fixed with a 30s duration floor; scores went from 99/99/99/99 to a differentiated 13/13/53/40.
+- Subject selection picked the wrong person. `select_subject()` had no access to ball position at all — ball detection ran *after* it. Reordered, and ball-proximity added as a fourth signal weighted 0.45 (0.30 was measured to be insufficient on a real clip).
+- Three separate too-tight touch radii found across `positioning.py`, `events.py` and `goalkeeper.py`; ball-detector confidence lowered 0.15 → 0.05 after checking the extra detections were coherent rather than noise.
+- **Tracking was not deterministic across jobs.** `get_model()` returns a process-lifetime singleton and nothing reset BoT-SORT state between videos, so each job continued from whatever ran before it — three identical calls produced three different track-id sets. Fixed with a per-video reset. A real correctness bug affecting every job after the first.
+- The documented "single-worker" assumption was never enforced; three independent entry points could reach `process_job()` concurrently against shared mutable models. Now serialized with an `asyncio.Lock` around the pipeline call only.
+
+**Still true**: the AI service runs **locally only** — no Dockerfile, no deployment. On 7 real clips only 3 produce event-based scores. Pace and Physical are dependable; everything else is provisional and the UI should keep saying so.
+
+---
+
+## 7. Production-readiness audit + the fixes that followed
+
+A full audit (UI, UX, security, accessibility, performance, sessions, auth) benchmarked against competitors and 2026 store/compliance rules rated the app **5.5/10** for production readiness. Engineering quality was strong; product completeness, observability and compliance were not. Work since then, all committed:
+
+**Observability** — Sentry wired (`app/_layout.tsx`), configured deliberately tighter than Sentry's own default snippet because this app handles minors' data: `sendDefaultPii: false`, **no Session Replay** (it records the screen), `tracesSampleRate: 0.2`. `ErrorBoundary` now calls `captureException` — it was catching render crashes and silently swallowing them.
+
+**Performance** — 16 lists migrated to FlashList v2 (which drops `estimatedItemSize` / `windowSize` / `getItemLayout`; v2 sizes automatically). Fixed a real reels defect: `toggleLike` / `toggleSave` closed over `reels`, forcing it into `renderItem`'s dependency list, so a single like re-rendered every mounted video row. `expo-image` caching props added — none were used anywhere.
+
+**Upload** — size is now checked **before** transfer. Supabase only enforced the 100MB cap after the whole file had uploaded, so an oversized clip cost the user their entire data spend and then failed. `quality: 1` was removed: it is an *image* option and a no-op for video, so keeping it implied a compression control that does not exist. Real video compression needs a native module and is not done. `.mov` now keeps its true content type, and a failed row insert cleans up its orphaned storage object.
+
+**Offline** — React Query's online detection uses browser events that do not exist in React Native, so the client believed it was permanently online. `onlineManager` is now driven by NetInfo, keyed on `isInternetReachable` since mobile networks routinely hold a connection that routes nowhere. The query cache is persisted with a **deny-list**: messages, conversations, notifications and verification documents are never written to unencrypted AsyncStorage.
+
+**Activation** — the path to first value was 10–20 minutes against a ~90 second target. Added signed-out browse (`app/browse.tsx`), which needed **no migration** because `player_public_view` was already anon-readable. Anonymous *video* access was in the plan and deliberately dropped: much of this user base is minors. The wizard now offers "Finish later" once step 2 is valid, since the DB invariant only requires four fields, and `ProfileStrength` supplies the pull that replaced the removed push.
+
+**Safety + compliance** — user blocking shipped (an App Store launch blocker), enforced in RLS so a blocked scout can neither open a thread nor send into an existing one, with no policy letting the blocked party discover it. Anti-fraud guidance now appears at the top of scout message threads. An iOS privacy manifest was added with reason codes read from the dependencies' own `PrivacyInfo.xcprivacy` files. Age gate: under-13 refused outright, 13–17 told to involve a guardian.
+
+**Push** — full pipeline, verified end to end. `push_tokens` + `notification_preferences` tables, a `send-push` Edge Function, and a **pg_net trigger** rather than a dashboard webhook, because Supabase's Webhooks UI cannot create hooks on this project (`supabase_functions` schema does not exist — error 3F000). `net.http_post` queues rather than awaits, so push can never delay or roll back a notification insert. Deployed with `--no-verify-jwt` because the gateway otherwise rejects pg_net's call before the function runs; the function does its own auth via the Vault-stored secret.
+
+**Languages** — French, Swahili and Portuguese (`src/i18n/`), chosen by where African football talent actually is. Arabic deliberately excluded until right-to-left layout is supported properly. Applied to the signed-out funnel first; everything else falls back to English per key.
+
+**Two live data bugs found by verification, not code review**: `recalc_player_overall()` was replaced with a position-weighted version but existing `overall_rating` values were never recomputed (a real RB stored 17.50, the flat average, where the weighted formula gives 16.40); and trials-as-news created rows only for *new* trials, leaving both existing trials invisible in the news feed permanently. Both backfilled.
+
+### Known-open, honestly
+
+- AI service still local-only; Shooting and GK Sweeping unbuilt; only 3 of 7 real clips produce event scores.
+- Upload progress/cancel deferred — needs a device before rewriting a path five repositories share.
+- Leaderboards not built: with one player in the database they would render as a list of one.
+- Guardian-consent flow not invented — needs legal input, not just code.
+- `player_public_view` is anonymously readable, exposing minors' names, photos, ages and clubs. This predates the current work; flagged as a safeguarding decision for the owner and a lawyer.
+- **Nothing is device-verified.** Typecheck and web bundles pass, which proves it compiles — not that it feels right on a phone.
+
+---
+
+## 8. Verification commands (for whoever resumes)
 
 ```bash
 # Confirm migrations are still in sync
@@ -280,4 +337,24 @@ cd ai-service && .venv\Scripts\Activate.ps1 && uvicorn main:app --reload
 
 # Redeploy the delete-account Edge Function after any change to it
 cd matobev && SUPABASE_ACCESS_TOKEN=<pat> supabase functions deploy delete-account --project-ref qefovzbhnmdhbqldtptc
+
+# Redeploy the push sender. --no-verify-jwt is REQUIRED: without it the
+# Supabase gateway rejects the pg_net trigger call with
+# UNAUTHORIZED_NO_AUTH_HEADER before the function ever runs. The function
+# authenticates itself via the Vault-stored x-webhook-secret.
+cd matobev && SUPABASE_ACCESS_TOKEN=<pat> supabase functions deploy send-push --project-ref qefovzbhnmdhbqldtptc --no-verify-jwt
+
+# Prove the whole push chain works without a phone: insert a real
+# notification, then read pg_net's own response table. Expect HTTP 200 and
+# {"skipped":"no registered devices"} until a device registers.
+#   insert into public.notifications (profile_id, type, title, body)
+#     values (<profile-uuid>, 'test', 'Test', 'body');
+#   select status_code, content from net._http_response order by created desc limit 1;
+
+# Build an installable dev APK (needed for push and any real device test)
+cd app && npx eas-cli build --profile development --platform android
+
+# If Metro reports a module it can demonstrably resolve, the file-map cache
+# is stale after an install -- this is the fix, not a code change:
+cd app && npx expo start --clear
 ```
