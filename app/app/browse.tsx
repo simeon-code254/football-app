@@ -63,7 +63,7 @@ export default function Browse() {
         positionLine={[item.primary_position, item.nationality_name].filter(Boolean).join(' · ')}
         avatar={item.avatar_url ?? images.avatarMale}
         rating={Math.round(item.overall_rating ?? 0)}
-        onPress={() => promptSignUp(`See ${item.full_name ?? 'this player'}'s highlights and full profile.`)}
+        onPress={() => promptSignUp(`Watch ${item.full_name ?? 'this player'}'s highlights, see their full breakdown, and get rated yourself.`)}
       />
     ),
     [promptSignUp]
@@ -90,8 +90,8 @@ export default function Browse() {
           onEndReachedThreshold={0.4}
           ListHeaderComponent={
             <Text style={styles.lede}>
-              Real players, rated by Matobev's analysis engine. Create a free account to watch highlights, apply
-              for trials, and be seen by verified scouts.
+              Real players. Real ratings. Verified scouts are already here — add your highlights and get
+              rated too.
             </Text>
           }
           ListEmptyComponent={
@@ -104,7 +104,7 @@ export default function Browse() {
       </QueryState>
 
       <View style={styles.cta}>
-        <PrimaryButton label="Create Free Account" onPress={() => router.push('/role-select')} />
+        <PrimaryButton label="Get Rated — It's Free" onPress={() => router.push('/role-select')} />
         <Pressable onPress={() => router.push('/login')} hitSlop={10} style={styles.loginWrap}>
           <Text style={styles.loginText}>
             Already have an account? <Text style={styles.loginLink}>Log in</Text>

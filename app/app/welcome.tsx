@@ -46,7 +46,7 @@ export default function Welcome() {
             browse-first entry point has to exist here or most people never
             see it. */}
         <Pressable onPress={() => router.push('/browse')} hitSlop={10} style={styles.browseWrap}>
-          <Text style={styles.browseText}>Just looking? Browse players first</Text>
+          <Text style={styles.browseText}>See who's getting rated — no account needed</Text>
         </Pressable>
       </View>
     </SafeAreaView>

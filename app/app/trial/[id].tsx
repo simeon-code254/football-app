@@ -17,6 +17,7 @@ import { PrimaryButton } from '../../src/components/PrimaryButton';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import type { ApplicantStatus } from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
+import { successFeedback } from '../../src/lib/haptics';
 import { QueryState } from '../../src/components/QueryState';
 import { getPublicStorageUrl } from '../../src/lib/publicUrl';
 
@@ -210,6 +211,7 @@ export default function TrialDetail() {
     setApplying(true);
     try {
       await trialsRepository.applyToTrial(userId, trial.id);
+      successFeedback();
       await refetchMyApplication();
     } catch (err) {
       showAlert('Could not apply', err instanceof Error ? err.message : 'Please try again.');

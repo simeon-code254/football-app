@@ -26,6 +26,7 @@ import * as videosRepository from '../../src/repositories/videosRepository';
 import type { CommentWithAuthor } from '../../src/repositories/videosRepository';
 import { QueryState } from '../../src/components/QueryState';
 import { ReportModal } from '../../src/components/ReportModal';
+import { tapFeedback } from '../../src/lib/haptics';
 
 type ReelState = {
   id: string;
@@ -307,6 +308,7 @@ export default function Reels() {
       if (!userId) return;
       const target = reelsRef.current.find((r) => r.id === id);
       if (!target) return;
+      tapFeedback();
       const nextLiked = !target.liked;
       setReels((list) =>
         list.map((r) => (r.id === id ? { ...r, liked: nextLiked, likeCount: r.likeCount + (nextLiked ? 1 : -1) } : r))
@@ -325,6 +327,7 @@ export default function Reels() {
       if (!userId) return;
       const target = reelsRef.current.find((r) => r.id === id);
       if (!target) return;
+      tapFeedback();
       const nextSaved = !target.saved;
       setReels((list) =>
         list.map((r) => (r.id === id ? { ...r, saved: nextSaved, saveCount: r.saveCount + (nextSaved ? 1 : -1) } : r))

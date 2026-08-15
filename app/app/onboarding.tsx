@@ -71,7 +71,7 @@ export default function Onboarding() {
             {/* The whole point of activation work: let someone see real
                 players before being asked for anything. */}
             <Pressable onPress={() => router.push('/browse')} hitSlop={10} style={styles.browseWrap}>
-              <Text style={styles.browseText}>Just looking? Browse players first</Text>
+              <Text style={styles.browseText}>See who's getting rated — no account needed</Text>
             </Pressable>
           </View>
         ) : (

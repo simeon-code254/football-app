@@ -14,6 +14,7 @@ import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import { showAlert } from '../../src/lib/alert';
+import { successFeedback, errorFeedback } from '../../src/lib/haptics';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = {
@@ -258,6 +259,8 @@ export default function Upload() {
         throw rowError;
       }
 
+      successFeedback();
+
       // Previously this always force-navigated to Profile on OK, regardless
       // of mode -- for a highlight-only upload nothing new shows up there
       // (it's on Reels), and even for AI mode the analysis hasn't finished
@@ -271,6 +274,7 @@ export default function Upload() {
         [{ text: 'OK', onPress: resetForm }]
       );
     } catch (err) {
+      errorFeedback();
       showAlert('Upload Failed', err instanceof Error ? err.message : 'Something went wrong submitting your video. Please try again.');
     } finally {
       setPublishing(false);
