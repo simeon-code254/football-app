@@ -6,6 +6,8 @@
 <title>{{ page.title }} &middot; Matobev</title>
 <meta name="description" content="{{ site.description }}">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" type="image/png" href="{{ '/assets/logo.png' | relative_url }}">
+<link rel="apple-touch-icon" href="{{ '/assets/logo.png' | relative_url }}">
 
 <!--
   Custom layout rather than a stock Jekyll theme.
@@ -16,9 +18,12 @@
   meet: a measure short enough to track across lines, headings that let you scan
   to a clause, and a callout that cannot be mistaken for body text.
 
-  Design follows the app rather than inventing a second identity - the same navy
-  and blue, Poppins for headings as the app uses, and the same instinct that a
-  surface should lift off its background.
+  Design follows the brand rather than inventing a second identity. The palette
+  is sampled from the logo itself rather than guessed: its two dominant colours
+  are teal #00A0B0 and navy #002040. Neither is used raw for text - #00A0B0 on
+  white is only 3.16:1 - so links darken to #00707F in light (5.79:1) and
+  lighten to #3FC7D6 in dark (8.58:1), and the navy carries headings at
+  16.40:1. Poppins for headings, as the app uses.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,11 +35,11 @@
   :root {
     --bg: #EEF1F6;
     --surface: #FFFFFF;
-    --ink: #0B1220;
+    --ink: #002040;
     --body: #2C3648;
     --muted: #6B7488;
     --rule: #E1E6EE;
-    --primary: #1A6DFF;
+    --primary: #00707F;
     --accent: #B8860B;
     --callout-bg: #FFF9E8;
     --callout-edge: #E8A33D;
@@ -49,7 +54,7 @@
       --body: #C3CBD9;
       --muted: #8792A6;
       --rule: #22304A;
-      --primary: #6BA5FF;
+      --primary: #3FC7D6;
       --accent: #FFD54F;
       --callout-bg: #241D08;
       --callout-edge: #C99A2E;
@@ -82,7 +87,12 @@
   .wordmark {
     font-family: Poppins, sans-serif; font-weight: 700; font-size: 21px;
     letter-spacing: -.3px; color: var(--ink); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 10px;
   }
+  /* alt="" on the img: the wordmark beside it already says "Matobev", and a
+     screen reader announcing the name twice is worse than not describing a
+     decorative mark. */
+  .wordmark img { display: block; width: 34px; height: 34px; }
   .wordmark span { color: var(--primary); }
   .tagline { color: var(--muted); font-size: 14px; }
 
@@ -176,7 +186,10 @@
 
 <header class="masthead">
   <div class="masthead-inner">
-    <a class="wordmark" href="{{ '/privacy-policy' | relative_url }}">Mato<span>bev</span></a>
+    <a class="wordmark" href="{{ '/privacy-policy' | relative_url }}">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="" width="34" height="34">
+      Mato<span>bev</span>
+    </a>
     <span class="tagline">{{ site.description }}</span>
   </div>
   <nav>
