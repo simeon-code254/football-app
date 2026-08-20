@@ -25,6 +25,7 @@ const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = 
   analysis_failed: 'alert-circle',
   profile_view: 'eye',
   rating_improved: 'trending-up',
+  weekly_digest: 'calendar',
 };
 
 // Every notification carries enough in `data` to know where it's actually
@@ -45,6 +46,10 @@ function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | 
       return '/ai-ratings';
     case 'scout_verification':
       return '/(scout-tabs)/home';
+    case 'weekly_digest':
+      // The digest is about movement and attention, both of which live on the
+      // player's own profile.
+      return '/(player-tabs)/profile';
     case 'profile_view':
       // Their own profile: the notification says to keep highlights current,
       // so it should land where they can see what the scout just saw and act

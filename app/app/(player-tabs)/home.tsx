@@ -78,6 +78,7 @@ export default function Home() {
     new_message: 'message-circle',
     profile_view: 'eye',
     rating_improved: 'trending-up',
+    weekly_digest: 'calendar',
   };
 
   return (

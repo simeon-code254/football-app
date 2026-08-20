@@ -18,6 +18,12 @@ import { images } from '../src/constants/images';
 import type { LeaderboardScope } from '../src/repositories/communityRepository';
 
 const SCOPES: { key: LeaderboardScope; label: string }[] = [
+  // 'Most improved' first, deliberately. The other three all sort by rating,
+  // so the same handful of players top all of them and everyone else opens
+  // this screen to be told they are nowhere. Improvement is the board where a
+  // week of work outranks a head start, so it is the one most users should
+  // land on.
+  { key: 'improved', label: 'Most improved' },
   { key: 'region', label: 'My region' },
   { key: 'position', label: 'My position' },
   { key: 'age', label: 'My age group' },
@@ -40,7 +46,7 @@ export default function Leaderboard() {
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const player = useSessionStore((s) => s.player);
-  const [scope, setScope] = useState<LeaderboardScope>('region');
+  const [scope, setScope] = useState<LeaderboardScope>('improved');
 
   // The viewer's own segment values. Region comes from their country, which
   // the leaderboard view already resolves.
@@ -100,11 +106,18 @@ export default function Leaderboard() {
             // segment is the truth, and pretending otherwise would be
             // obvious to the one person standing in it.
             <View style={styles.empty}>
-              <Feather name="users" size={26} color={colors.textPlaceholder} />
-              <Text style={styles.emptyTitle}>Not enough players here yet</Text>
+              <Feather name={scope === 'improved' ? 'trending-up' : 'users'} size={26} color={colors.textPlaceholder} />
+              {/* The improvement board being empty means something different
+                  from a thin segment: nobody's rating moved this week. Reusing
+                  "not enough players here yet" would be inaccurate and would
+                  read as a bug on a board that clearly has players. */}
+              <Text style={styles.emptyTitle}>
+                {scope === 'improved' ? 'No movement yet this week' : 'Not enough players here yet'}
+              </Text>
               <Text style={styles.emptyText}>
-                As more players in {scopeLabel} get rated, this fills up. Upload a highlight to make sure you're on
-                it.
+                {scope === 'improved'
+                  ? 'Ratings are compared against last week. Upload a new highlight and any gain shows up here.'
+                  : `As more players in ${scopeLabel} get rated, this fills up. Upload a highlight to make sure you're on it.`}
               </Text>
             </View>
           }
@@ -132,7 +145,17 @@ export default function Leaderboard() {
                   {item.endorsement_count ? ` · ${item.endorsement_count} endorsements` : ''}
                 </Text>
               </View>
-              <RatingBadge rating={Math.round(item.overall_rating ?? 0)} size="sm" />
+              {/* On the improvement board the ranking is by movement, so the
+                  gain has to be visible -- otherwise the order looks arbitrary
+                  next to a column of ratings. */}
+              {scope === 'improved' && item.rating_delta != null && (
+                <Text style={styles.delta}>+{Math.round(item.rating_delta)}</Text>
+              )}
+              <RatingBadge
+                rating={Math.round(item.overall_rating ?? 0)}
+                size="sm"
+                lowConfidence={item.rating_has_low_confidence ?? false}
+              />
             </Pressable>
           )}
         />
@@ -188,6 +211,12 @@ function makeStyles(colors: ThemeColors) {
     avatar: { width: 40, height: 40, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted },
     name: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
     meta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+    delta: {
+      fontFamily: fontFamily.bold,
+      fontSize: fontSize.bodySm,
+      color: colors.success,
+      marginRight: spacing.sm,
+    },
     empty: { alignItems: 'center', paddingVertical: spacing.huge, paddingHorizontal: spacing.xxl, gap: spacing.sm },
     emptyTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
     emptyText: {

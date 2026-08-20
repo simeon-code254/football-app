@@ -37,6 +37,15 @@ export const MUTABLE_GROUPS = [
     description: 'When a scout views your profile — at most one a day',
     types: ['profile_view'],
   },
+  {
+    key: 'weekly',
+    label: 'Weekly summary',
+    // Only sent when something actually happened -- see migration
+    // 20260820120000 -- so the description does not promise a Monday ping
+    // regardless.
+    description: 'A Monday recap, only when there is something to report',
+    types: ['weekly_digest'],
+  },
 ] as const;
 
 // Never offered as mutable -- listed explicitly so the reason is visible in

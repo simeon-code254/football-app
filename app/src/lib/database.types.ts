@@ -656,6 +656,46 @@ export type Database = {
           },
         ]
       }
+      player_rating_snapshots: {
+        Row: {
+          overall_rating: number | null
+          player_id: string
+          week_start: string
+        }
+        Insert: {
+          overall_rating?: number | null
+          player_id: string
+          week_start: string
+        }
+        Update: {
+          overall_rating?: number | null
+          player_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_rating_snapshots_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_rating_snapshots_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_public_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_rating_snapshots_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           bio: string | null
@@ -1636,6 +1676,8 @@ export type Database = {
           nationality_code: string | null
           overall_rating: number | null
           primary_position: Database["public"]["Enums"]["position_code"] | null
+          rating_delta: number | null
+          rating_has_low_confidence: boolean | null
           region: string | null
           video_count: number | null
         }
@@ -1730,6 +1772,7 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: undefined
       }
+      run_weekly_digest: { Args: never; Returns: number }
       sync_trial_news_post_for: {
         Args: { t: Database["public"]["Tables"]["trials"]["Row"] }
         Returns: undefined

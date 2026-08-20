@@ -11,9 +11,15 @@ export type LeaderboardRow = {
   video_count: number | null;
   follower_count: number | null;
   endorsement_count: number | null;
+  // Points gained since the last weekly snapshot. Null means no snapshot
+  // exists yet (a player new this week), which is deliberately distinct from
+  // a delta of 0 -- one says "we have no history", the other says "no
+  // improvement", and they should never be conflated on a board about effort.
+  rating_delta: number | null;
+  rating_has_low_confidence: boolean | null;
 };
 
-export type LeaderboardScope = 'region' | 'position' | 'age';
+export type LeaderboardScope = 'region' | 'position' | 'age' | 'improved';
 
 /**
  * Segmented leaderboard. A global board produces a small competitive
@@ -31,6 +37,21 @@ export async function getLeaderboard(
   if (scope === 'region' && viewer.region) query = query.eq('region', viewer.region);
   if (scope === 'position' && viewer.position) query = query.eq('primary_position', viewer.position);
   if (scope === 'age' && viewer.ageBand) query = query.eq('age_band', viewer.ageBand);
+
+  // 'improved' is the one scope not sorted by rating. Every other board puts
+  // the same people on top, so a player rated 18 can never place; ranking by
+  // movement is where a week of work beats a head start. Rows with no prior
+  // snapshot have a null delta and are excluded rather than shown as zero --
+  // "no history yet" is not the same claim as "did not improve".
+  if (scope === 'improved') {
+    const { data, error } = await query
+      .not('rating_delta', 'is', null)
+      .gt('rating_delta', 0)
+      .order('rating_delta', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []) as LeaderboardRow[];
+  }
 
   const { data, error } = await query.order('overall_rating', { ascending: false }).limit(limit);
   if (error) throw error;
