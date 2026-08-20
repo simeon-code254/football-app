@@ -49,11 +49,16 @@ export async function listConversations(
 
   let query = supabase
     .from('conversations')
-    // profiles!scouts_id_fkey disambiguates the nested embed -- scouts also
-    // has scouts.verified_by referencing profiles, so an unhinted profiles(...)
-    // here PGRST201's the entire query (confirmed live), breaking the inbox
-    // for both roles.
-    .select('*, scouts(id, organization, verification_status, profiles!scouts_id_fkey(full_name, avatar_url)), players(id, profiles(full_name, avatar_url))')
+    // Both nested profiles embeds are FK-hinted, and for two separate
+    // reasons. scouts also has scouts.verified_by referencing profiles; and
+    // players is now linked to profiles a second way through endorsements
+    // (20260815110000), which has FKs to both. Either one alone makes an
+    // unhinted profiles(...) PGRST201 and breaks the inbox for both roles.
+    //
+    // The players half of this query was left unhinted when the scouts half
+    // was fixed, and it broke later when endorsements shipped -- so treat any
+    // unhinted embed as a latent break, not a working one.
+    .select('*, scouts(id, organization, verification_status, profiles!scouts_id_fkey(full_name, avatar_url)), players(id, profiles!players_id_fkey(full_name, avatar_url))')
     .or(`scout_id.eq.${profileId},player_id.eq.${profileId}`)
     .order('last_message_at', { ascending: false })
     .limit(pageSize);

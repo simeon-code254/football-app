@@ -220,7 +220,14 @@ export async function listApplicants(
 
   let query = supabase
     .from('trial_applications')
-    .select('*, players(date_of_birth, primary_position, overall_rating, profiles(full_name, avatar_url), countries(name))')
+    // profiles!players_id_fkey, not a bare profiles(...): the endorsements
+    // table added in 20260815110000 has foreign keys to BOTH players and
+    // profiles, which makes PostgREST infer a second, many-to-many
+    // relationship between them and reject the embed as ambiguous
+    // (PGRST201). Same class of breakage already documented in
+    // messagesRepository for scouts.verified_by. Naming the FK pins it to
+    // the real one-to-one link.
+    .select('*, players(date_of_birth, primary_position, overall_rating, profiles!players_id_fkey(full_name, avatar_url), countries(name))')
     .eq('trial_id', trialId);
   if (opts.status) query = query.eq('status', opts.status);
   query = query.order('applied_at', { ascending: false }).range(from, to);

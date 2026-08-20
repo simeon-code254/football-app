@@ -86,7 +86,14 @@ export async function getMyVideos(playerId: string, limit = 60): Promise<VideoRo
 export async function getFeed(cursor?: string, limit = 10): Promise<FeedVideo[]> {
   let query = supabase
     .from('videos')
-    .select('*, players(primary_position, is_goalkeeper, overall_rating, profiles(full_name, avatar_url))')
+    // profiles!players_id_fkey, not a bare profiles(...): the endorsements
+    // table added in 20260815110000 has foreign keys to BOTH players and
+    // profiles, which makes PostgREST infer a second, many-to-many
+    // relationship between them and reject the embed as ambiguous
+    // (PGRST201). Same class of breakage already documented in
+    // messagesRepository for scouts.verified_by. Naming the FK pins it to
+    // the real one-to-one link.
+    .select('*, players(primary_position, is_goalkeeper, overall_rating, profiles!players_id_fkey(full_name, avatar_url))')
     .eq('status', 'ready')
     .order('created_at', { ascending: false })
     .limit(limit);
