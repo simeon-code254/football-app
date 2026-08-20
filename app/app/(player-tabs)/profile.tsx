@@ -74,9 +74,19 @@ export default function Profile() {
   const presentAttrCount = data?.attributes.filter((a) => a.value != null).length ?? 0;
   const totalAttrCount = data?.attributes.length ?? 0;
   const isProvisionalRating = presentAttrCount > 0 && presentAttrCount < totalAttrCount;
+  const anyLowConfidence = data?.attributes.some((a) => a.value != null && a.confidence === 'Low') ?? false;
 
   const statTiles = [
-    { label: 'OVR', value: data?.publicView.overall_rating != null ? String(data.publicView.overall_rating) : '—' },
+    {
+      label: 'OVR',
+      // The marker rides along in the string because these tiles are rendered
+      // generically; keeping OVR in the same list avoids special-casing one
+      // tile's markup just to append a dot.
+      value:
+        data?.publicView.overall_rating != null
+          ? `${data.publicView.overall_rating}${anyLowConfidence ? '·' : ''}`
+          : '—',
+    },
     { label: 'Reels', value: data ? String(data.videoCount) : '—' },
     { label: 'Views', value: data ? formatCompact(data.videoViews30d) : '—' },
     { label: 'Invites', value: data ? String(data.trialInvitations) : '—' },
@@ -136,6 +146,14 @@ export default function Profile() {
       {isProvisionalRating && (
         <Text style={styles.provisionalNote}>
           Provisional — {presentAttrCount}/{totalAttrCount} attributes assessed
+        </Text>
+      )}
+      {anyLowConfidence && (
+        // Worded as a fact about the footage, not a judgement of the player.
+        // This is their own profile -- the one place the difference between
+        // "we could not measure you" and "you scored badly" matters most.
+        <Text style={styles.provisionalNote}>
+          · Some values were hard to measure — clearer footage improves them
         </Text>
       )}
 

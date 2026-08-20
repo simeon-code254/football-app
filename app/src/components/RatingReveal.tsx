@@ -32,12 +32,18 @@ export function RatingReveal({
   rating,
   attributesAssessed,
   attributesTotal,
+  lowConfidence = false,
   onClose,
 }: {
   visible: boolean;
   rating: number;
   attributesAssessed: number;
   attributesTotal: number;
+  // True when at least one contributing attribute was scored at Low
+  // confidence. This is the app's most celebratory moment, which is exactly
+  // why it has to be honest: a number delivered with fanfare is the one a
+  // player remembers and repeats.
+  lowConfidence?: boolean;
   onClose: () => void;
 }) {
   const colors = useThemeColors();
@@ -75,9 +81,11 @@ export function RatingReveal({
     // Screen readers get the result announced directly -- the animation
     // conveys nothing to them, so the substance has to be spoken.
     AccessibilityInfo.announceForAccessibility(
-      `Your rating is ready. Overall ${rating}, based on ${attributesAssessed} of ${attributesTotal} attributes.`
+      `Your rating is ready. Overall ${rating}, based on ${attributesAssessed} of ${attributesTotal} attributes.${
+        lowConfidence ? ' Some values were low confidence because the footage was hard to measure.' : ''
+      }`
     );
-  }, [visible, rating, attributesAssessed, attributesTotal, badgeScale, badgeOpacity, detailY, detailOpacity]);
+  }, [visible, rating, attributesAssessed, attributesTotal, lowConfidence, badgeScale, badgeOpacity, detailY, detailOpacity]);
 
   const badgeStyle = useAnimatedStyle(() => ({
     opacity: badgeOpacity.value,
@@ -111,6 +119,15 @@ export function RatingReveal({
                 ? `Provisional — ${attributesAssessed} of ${attributesTotal} attributes assessed so far.`
                 : `All ${attributesTotal} attributes assessed.`}
             </Text>
+            {lowConfidence && (
+              // Deliberately not softened away at the celebration. Telling
+              // someone their footage was hard to read costs a little of the
+              // moment; letting them believe a shaky number is a verdict on
+              // them costs more.
+              <Text style={styles.sub}>
+                Some values were hard to measure in your footage — clearer video will improve them.
+              </Text>
+            )}
 
             <PrimaryButton label="See the breakdown" onPress={onClose} style={{ width: '100%', marginTop: spacing.lg }} />
             <Pressable onPress={onClose} hitSlop={10} style={styles.later} accessibilityRole="button" accessibilityLabel="Close">
