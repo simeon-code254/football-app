@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as trialsRepository from '../src/repositories/trialsRepository';
@@ -21,6 +21,7 @@ const SEGMENTS = ['Open Trials', 'My Applications'] as const;
 // Reachable from Home's "Trials Near You" section.
 export default function PlayerTrials() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> = {
     pending: { bg: colors.warningTint, text: colors.goldDark, label: 'Pending' },
@@ -118,7 +119,7 @@ export default function PlayerTrials() {
               const mine = applicationByTrialId.get(trial.id);
               const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
               return (
-                <Pressable style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+                <Pressable style={[styles.card, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                   <View style={styles.cardRow}>
                     {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardThumb} contentFit="contain" />}
                     <View style={{ flex: 1 }}>
@@ -167,7 +168,7 @@ export default function PlayerTrials() {
               if (!trial) return null;
               const s = STATUS_STYLE[app.status] ?? STATUS_STYLE.pending;
               return (
-                <Pressable style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+                <Pressable style={[styles.card, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                   <View style={styles.cardTop}>
                     <Text style={styles.cardTitle}>{trial.title}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>

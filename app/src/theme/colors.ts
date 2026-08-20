@@ -72,7 +72,21 @@ export const darkColors: typeof lightColors = {
   // rather than inventing an unrelated dark gray.
   background: '#0A1628',
   surface: '#131B2E',
-  surfaceMuted: '#182036',
+  // Darker than `surface`, not lighter. These three are an elevation ladder
+  // and the dark palette had two of them inverted: surfaceMuted (0.0149) sat
+  // ABOVE surface (0.0112), so every card drawn on a surfaceMuted page
+  // receded into it instead of lifting off it, and every "muted" chip inside
+  // a card floated above the card. Light mode always had the order right
+  // (background < surfaceMuted < surface); dark did not, which is most of why
+  // the dark UI read flat.
+  //
+  // Fixed by lowering surfaceMuted rather than raising surface, deliberately:
+  // raising surface would have dragged every foreground colour's contrast
+  // down with it (primary-as-text was already only 3.82:1 there), whereas
+  // this leaves every existing text pairing untouched. Measured ascending:
+  // background 0.0079 < surfaceMuted 0.0087 < surface 0.0112 < raised 0.0136
+  // < floating 0.0183 < overlay 0.0230.
+  surfaceMuted: '#0F1729',
   inputBackground: '#101827',
 
   border: '#2A3346',

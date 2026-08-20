@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
 import { images } from '../../src/constants/images';
@@ -43,6 +43,7 @@ const EMPTY_SHEET_FILTERS: SheetFilters = { positions: [], countries: [] };
 // "For You" recommended mode, same discipline as the scout-side filters.
 export default function Discover() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const player = useSessionStore((s) => s.player);
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('All');
@@ -158,7 +159,7 @@ export default function Discover() {
       </View>
 
       <View style={styles.searchRow}>
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, elevation('raised', isDark)]}>
           <Feather name="search" size={16} color={colors.textPlaceholder} />
           <TextInput
             placeholder="Search players, teams..."
@@ -252,7 +253,7 @@ export default function Discover() {
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
         <KeyboardAvoidingView accessibilityViewIsModal style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)}>
-            <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <Pressable style={[styles.sheet, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()}>
               <Text style={styles.sheetTitle}>Filters</Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.filterLabel}>Position</Text>
