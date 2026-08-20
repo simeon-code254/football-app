@@ -143,6 +143,7 @@ export default function Discover() {
         name={item.full_name || 'Unnamed player'}
         positionLine={[item.primary_position, item.nationality_name].filter(Boolean).join(' · ')}
         rating={item.overall_rating ?? 0}
+        lowConfidence={item.rating_has_low_confidence ?? false}
         avatar={item.avatar_url ?? images.avatarMale}
         onPress={() => router.push({ pathname: '/player/[id]', params: { id: item.id ?? '' } })}
       />

@@ -188,6 +188,7 @@ export default function DiscoverPlayers() {
               name={item.full_name || 'Unnamed player'}
               positionLine={`${item.primary_position ?? '—'} · ${item.nationality_name ?? '—'}`}
               rating={item.overall_rating ?? 0}
+              lowConfidence={item.rating_has_low_confidence ?? false}
               avatar={item.avatar_url ?? images.avatarMale}
             />
           </View>

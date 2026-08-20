@@ -115,6 +115,39 @@ export type Database = {
           },
         ]
       }
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_users_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_users_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
@@ -138,6 +171,13 @@ export type Database = {
           scout_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_player_id_fkey"
             columns: ["player_id"]
@@ -181,6 +221,162 @@ export type Database = {
           region?: string
         }
         Relationships: []
+      }
+      endorsements: {
+        Row: {
+          attribute_key: string
+          created_at: string
+          endorser_id: string
+          player_id: string
+        }
+        Insert: {
+          attribute_key: string
+          created_at?: string
+          endorser_id: string
+          player_id: string
+        }
+        Update: {
+          attribute_key?: string
+          created_at?: string
+          endorser_id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "endorsements_endorser_id_fkey"
+            columns: ["endorser_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "endorsements_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "endorsements_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_public_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "endorsements_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          followed_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followed_id?: string
+          follower_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_followed_id_fkey"
+            columns: ["followed_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardian_consents: {
+        Row: {
+          confirmation_token: string
+          confirmed_at: string | null
+          consents_to_account: boolean
+          consents_to_ai_analysis: boolean
+          consents_to_scout_contact: boolean
+          created_at: string
+          guardian_email: string
+          guardian_name: string
+          guardian_relationship: string | null
+          id: string
+          method: string
+          player_id: string
+          requested_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          confirmation_token?: string
+          confirmed_at?: string | null
+          consents_to_account?: boolean
+          consents_to_ai_analysis?: boolean
+          consents_to_scout_contact?: boolean
+          created_at?: string
+          guardian_email: string
+          guardian_name: string
+          guardian_relationship?: string | null
+          id?: string
+          method?: string
+          player_id: string
+          requested_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          confirmation_token?: string
+          confirmed_at?: string | null
+          consents_to_account?: boolean
+          consents_to_ai_analysis?: boolean
+          consents_to_scout_contact?: boolean
+          created_at?: string
+          guardian_email?: string
+          guardian_name?: string
+          guardian_relationship?: string | null
+          id?: string
+          method?: string
+          player_id?: string
+          requested_at?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_consents_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_consents_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_public_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_consents_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -277,6 +473,38 @@ export type Database = {
             columns: ["trial_id"]
             isOneToOne: false
             referencedRelation: "trials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          muted_types: string[]
+          profile_id: string
+          quiet_from_minute: number | null
+          quiet_to_minute: number | null
+          updated_at: string
+        }
+        Insert: {
+          muted_types?: string[]
+          profile_id: string
+          quiet_from_minute?: number | null
+          quiet_to_minute?: number | null
+          updated_at?: string
+        }
+        Update: {
+          muted_types?: string[]
+          profile_id?: string
+          quiet_from_minute?: number | null
+          quiet_to_minute?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -402,6 +630,13 @@ export type Database = {
             foreignKeyName: "player_attribute_scores_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_attribute_scores_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "player_public_view"
             referencedColumns: ["id"]
           },
@@ -439,6 +674,7 @@ export type Database = {
           preferred_foot: string | null
           primary_position: Database["public"]["Enums"]["position_code"] | null
           profile_completed: boolean
+          rating_has_low_confidence: boolean
           secondary_position:
             | Database["public"]["Enums"]["position_code"]
             | null
@@ -465,6 +701,7 @@ export type Database = {
           preferred_foot?: string | null
           primary_position?: Database["public"]["Enums"]["position_code"] | null
           profile_completed?: boolean
+          rating_has_low_confidence?: boolean
           secondary_position?:
             | Database["public"]["Enums"]["position_code"]
             | null
@@ -491,6 +728,7 @@ export type Database = {
           preferred_foot?: string | null
           primary_position?: Database["public"]["Enums"]["position_code"] | null
           profile_completed?: boolean
+          rating_has_low_confidence?: boolean
           secondary_position?:
             | Database["public"]["Enums"]["position_code"]
             | null
@@ -600,6 +838,38 @@ export type Database = {
           {
             foreignKeyName: "profiles_suspended_by_fkey"
             columns: ["suspended_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          platform: string
+          profile_id: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          platform: string
+          profile_id: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          platform?: string
+          profile_id?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -726,6 +996,13 @@ export type Database = {
             foreignKeyName: "saved_players_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "player_public_view"
             referencedColumns: ["id"]
           },
@@ -765,6 +1042,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scout_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scout_notes_player_id_fkey"
             columns: ["player_id"]
@@ -968,6 +1252,13 @@ export type Database = {
             foreignKeyName: "trial_applications_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trial_applications_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "player_public_view"
             referencedColumns: ["id"]
           },
@@ -1084,6 +1375,13 @@ export type Database = {
           video_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "video_analysis_jobs_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "video_analysis_jobs_player_id_fkey"
             columns: ["player_id"]
@@ -1299,6 +1597,13 @@ export type Database = {
             foreignKeyName: "videos_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "player_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
             referencedRelation: "player_public_view"
             referencedColumns: ["id"]
           },
@@ -1320,6 +1625,37 @@ export type Database = {
       }
     }
     Views: {
+      player_leaderboard: {
+        Row: {
+          age_band: string | null
+          avatar_url: string | null
+          endorsement_count: number | null
+          follower_count: number | null
+          full_name: string | null
+          id: string | null
+          nationality_code: string | null
+          overall_rating: number | null
+          primary_position: Database["public"]["Enums"]["position_code"] | null
+          region: string | null
+          video_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_nationality_code_fkey"
+            columns: ["nationality_code"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       player_public_view: {
         Row: {
           age: number | null
@@ -1334,6 +1670,7 @@ export type Database = {
           overall_rating: number | null
           preferred_foot: string | null
           primary_position: Database["public"]["Enums"]["position_code"] | null
+          rating_has_low_confidence: boolean | null
           recently_active: boolean | null
           secondary_position:
             | Database["public"]["Enums"]["position_code"]
@@ -1360,6 +1697,8 @@ export type Database = {
       }
     }
     Functions: {
+      confidence_weight: { Args: { p_confidence: string }; Returns: number }
+      confirm_guardian_consent: { Args: { p_token: string }; Returns: boolean }
       conversation_previews: {
         Args: { p_conversation_ids: string[] }
         Returns: {
@@ -1370,17 +1709,32 @@ export type Database = {
         }[]
       }
       delete_stale_notifications: { Args: never; Returns: undefined }
+      has_ai_consent: { Args: { p_player_id: string }; Returns: boolean }
       increment_video_share: {
         Args: { p_video_id: string }
         Returns: undefined
       }
       increment_video_view: { Args: { p_video_id: string }; Returns: undefined }
       is_admin: { Args: { uid?: string }; Returns: boolean }
+      is_blocked_between: { Args: { a: string; b: string }; Returns: boolean }
       is_verified_scout: { Args: { uid?: string }; Returns: boolean }
       match_score: {
         Args: { p_player_id: string; p_scout_id: string }
         Returns: number
       }
+      rating_has_low_confidence: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      recalc_player_overall_for: {
+        Args: { p_player_id: string }
+        Returns: undefined
+      }
+      sync_trial_news_post_for: {
+        Args: { t: Database["public"]["Tables"]["trials"]["Row"] }
+        Returns: undefined
+      }
+      weighted_overall: { Args: { p_player_id: string }; Returns: number }
     }
     Enums: {
       position_code:

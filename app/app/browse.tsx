@@ -65,6 +65,7 @@ export default function Browse() {
         positionLine={[item.primary_position, item.nationality_name].filter(Boolean).join(' · ')}
         avatar={item.avatar_url ?? images.avatarMale}
         rating={Math.round(item.overall_rating ?? 0)}
+        lowConfidence={item.rating_has_low_confidence ?? false}
         onPress={() => promptSignUp(`Watch ${item.full_name ?? 'this player'}'s highlights, see their full breakdown, and get rated yourself.`)}
       />
     ),
