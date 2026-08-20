@@ -2,692 +2,824 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Matobev — Product &amp; Design Document</title>
+<title>Matobev — Product, Screens &amp; Design</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 18mm 16mm 20mm; }
-
-  :root {
-    --navy:#002040; --navy-2:#0A3252; --teal:#00808F; --teal-dk:#00606E;
-    --teal-lt:#3FC7D6; --gold:#B8860B; --gold-lt:#FFD54F;
-    --ink:#0E1726; --body:#33405A; --muted:#6B7791; --rule:#DDE4EE;
-    --wash:#F4F7FA; --wash-2:#EAF3F5;
+  @page { size:A4; margin:17mm 15mm 18mm; }
+  :root{
+    --navy:#0A1B33; --navy-2:#123A6B; --gold:#8A5A00; --gold-lt:#FFC53D;
+    --ink:#0E1726; --body:#333E52; --muted:#6C7789; --rule:#DCE2EA;
+    --wash:#F5F7FA; --tint:#EDF2F9; --warn:#FFF7E6; --warnEdge:#D99A20;
+    --bad:#C0392B; --good:#1E8449;
   }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Source Serif 4",Georgia,serif;font-size:10.2pt;
+       line-height:1.6;color:var(--body);background:#fff}
+  h1,h2,h3,h4,th,.ui,figcaption,.k,.nm,.path,.tag{font-family:Poppins,sans-serif}
 
-  * { box-sizing:border-box; }
-  body {
-    margin:0; font-family:"Source Serif 4", Georgia, serif;
-    font-size:10.5pt; line-height:1.62; color:var(--body); background:#fff;
-  }
-  h1,h2,h3,h4,.ui,.num,figcaption,th,.label { font-family:Poppins,sans-serif; }
+  .cover{height:246mm;display:flex;flex-direction:column;justify-content:center;
+         break-after:page;position:relative}
+  .cover::before{content:"";position:absolute;left:0;right:0;top:0;height:5mm;
+                 background:linear-gradient(90deg,var(--navy),var(--navy-2) 55%,var(--gold-lt))}
+  .cover h1{font-size:38pt;line-height:1.03;margin:0 0 5mm;color:var(--navy);
+            font-weight:800;letter-spacing:-1.1px}
+  .cover .sub{font-size:13pt;color:var(--navy-2);font-family:Poppins,sans-serif;
+              font-weight:500;margin-bottom:10mm}
+  .cover .rule{width:24mm;height:3px;background:var(--gold-lt);margin:0 0 7mm}
+  .cover .meta{font-family:Poppins,sans-serif;font-size:9pt;color:var(--muted);line-height:1.85}
 
-  /* ---------- cover ---------- */
-  .cover { height:245mm; display:flex; flex-direction:column; justify-content:center;
-           break-after:page; position:relative; }
-  .cover::before{ content:""; position:absolute; left:0; right:0; top:0; height:6mm;
-                  background:linear-gradient(90deg,var(--navy),var(--teal)); }
-  .cover h1 { font-size:40pt; line-height:1.04; margin:0 0 6mm; color:var(--navy);
-              font-weight:800; letter-spacing:-1.2px; }
-  .cover .sub { font-size:14pt; color:var(--teal-dk); font-family:Poppins,sans-serif;
-                font-weight:500; margin-bottom:14mm; }
-  .cover .meta { font-family:Poppins,sans-serif; font-size:9.5pt; color:var(--muted); line-height:1.9; }
-  .cover .rule { width:26mm; height:3px; background:var(--gold); margin:0 0 8mm; }
+  .part{break-before:page;padding-top:1mm}
+  .kicker{font-family:Poppins,sans-serif;font-size:8pt;letter-spacing:2.2px;
+          text-transform:uppercase;color:var(--navy-2);font-weight:600;margin-bottom:1.5mm}
+  h2{font-size:18pt;color:var(--navy);font-weight:700;letter-spacing:-.4px;margin:0 0 3mm;
+     padding-bottom:2.5mm;border-bottom:2px solid var(--navy);break-after:avoid}
+  h3{font-size:12pt;color:var(--navy);font-weight:600;margin:7mm 0 2mm;break-after:avoid}
+  h4{font-size:10pt;color:var(--navy-2);font-weight:600;margin:4.5mm 0 1.5mm;break-after:avoid}
+  p{margin:0 0 3.2mm}
+  ul,ol{margin:0 0 3.2mm;padding-left:5mm} li{margin-bottom:1.4mm}
+  strong{color:var(--ink);font-weight:600}
+  em{color:var(--navy-2);font-style:italic}
 
-  /* ---------- structure ---------- */
-  h2 { font-size:19pt; color:var(--navy); font-weight:700; letter-spacing:-.4px;
-       margin:0 0 2mm; break-after:avoid; }
-  .part { break-before:page; padding-top:2mm; }
-  .part .kicker { font-family:Poppins,sans-serif; font-size:8.5pt; letter-spacing:2.2px;
-                  text-transform:uppercase; color:var(--teal); font-weight:600; margin-bottom:1.5mm; }
-  .part > h2 { padding-bottom:3mm; border-bottom:2px solid var(--navy); margin-bottom:6mm; }
-  h3 { font-size:12.5pt; color:var(--navy); font-weight:600; margin:8mm 0 2mm; break-after:avoid; }
-  h4 { font-size:10.5pt; color:var(--teal-dk); font-weight:600; margin:5mm 0 1.5mm; break-after:avoid; }
-  p { margin:0 0 3.4mm; }
-  ul,ol { margin:0 0 3.4mm; padding-left:5mm; }
-  li { margin-bottom:1.6mm; }
-  strong { color:var(--ink); font-weight:600; }
-  em { color:var(--teal-dk); font-style:italic; }
-  a { color:var(--teal-dk); text-decoration:none; }
+  .lede{font-size:11.5pt;line-height:1.5;color:var(--navy);font-family:Poppins,sans-serif;
+        font-weight:400;margin-bottom:5mm}
+  .callout{background:var(--tint);border-left:3px solid var(--navy-2);padding:3.5mm 4.5mm;
+           margin:4mm 0;break-inside:avoid}
+  .callout.warn{background:var(--warn);border-left-color:var(--warnEdge)}
+  .callout p:last-child{margin-bottom:0}
+  .callout .label{font-family:Poppins,sans-serif;font-size:7.5pt;letter-spacing:1.5px;
+        text-transform:uppercase;color:var(--navy-2);font-weight:600;display:block;margin-bottom:1.2mm}
+  .callout.warn .label{color:#8A6100}
 
-  /* ---------- components ---------- */
-  .lede { font-size:12pt; line-height:1.55; color:var(--navy); font-family:Poppins,sans-serif;
-          font-weight:400; margin-bottom:6mm; }
-  .callout { background:var(--wash-2); border-left:3px solid var(--teal);
-             padding:4mm 5mm; margin:5mm 0; break-inside:avoid; }
-  .callout.warn { background:#FFF8E8; border-left-color:var(--gold); }
-  .callout p:last-child { margin-bottom:0; }
-  .callout .label { font-size:8pt; letter-spacing:1.6px; text-transform:uppercase;
-                    color:var(--teal-dk); font-weight:600; display:block; margin-bottom:1.5mm; }
-  .callout.warn .label { color:#8A6100; }
+  table{width:100%;border-collapse:collapse;margin:3.5mm 0;font-size:8.6pt;
+        break-inside:avoid;font-family:Poppins,sans-serif}
+  th{text-align:left;background:var(--navy);color:#fff;font-weight:600;padding:2.2mm 2.6mm;font-size:8.2pt}
+  td{padding:2.2mm 2.6mm;border-bottom:1px solid var(--rule);vertical-align:top}
+  tr:nth-child(even) td{background:var(--wash)}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:8.2pt;background:var(--wash);
+       padding:.3mm 1.1mm;border-radius:2px;color:var(--navy)}
 
-  table { width:100%; border-collapse:collapse; margin:4mm 0; font-size:9pt;
-          break-inside:avoid; font-family:Poppins,sans-serif; }
-  th { text-align:left; background:var(--navy); color:#fff; font-weight:600;
-       padding:2.4mm 3mm; font-size:8.5pt; }
-  td { padding:2.4mm 3mm; border-bottom:1px solid var(--rule); vertical-align:top; }
-  tr:nth-child(even) td { background:var(--wash); }
-  td code, p code { font-family:ui-monospace,Consolas,monospace; font-size:8.5pt;
-                    background:var(--wash); padding:.4mm 1.2mm; border-radius:2px; color:var(--navy); }
+  /* screen specification block */
+  .spec{break-inside:avoid;margin:0 0 3.5mm;border:1px solid var(--rule);border-radius:2mm;overflow:hidden}
+  .spec-head{background:var(--wash);padding:2mm 3mm;border-bottom:1px solid var(--rule);
+             display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
+  .spec-head .nm{font-weight:600;color:var(--navy);font-size:9.6pt}
+  .spec-head .path{font-family:ui-monospace,Consolas,monospace;font-size:7.2pt;color:var(--muted)}
+  .spec-body{padding:2.5mm 3mm}
+  .spec .purpose{font-size:9.2pt;margin:0 0 2mm}
+  .spec dl{display:grid;grid-template-columns:26mm 1fr;gap:1mm 3mm;margin:0;
+           font-family:Poppins,sans-serif;font-size:8.2pt}
+  .spec dt{color:var(--muted);font-weight:500}
+  .spec dd{margin:0;color:var(--body)}
+  .spec dd.risk{color:#8A3A18}
 
-  /* screen catalogue entries */
-  .screen { break-inside:avoid; margin:0 0 4mm; padding:3mm 0 0; border-top:1px solid var(--rule); }
-  .screen .nm { font-family:Poppins,sans-serif; font-weight:600; color:var(--navy); font-size:10pt; }
-  .screen .path { font-family:ui-monospace,Consolas,monospace; font-size:7.5pt; color:var(--muted); }
-  .screen p { margin:1mm 0 0; font-size:9.5pt; }
+  .swatches{display:flex;flex-wrap:wrap;gap:2.6mm;margin:3.5mm 0;break-inside:avoid}
+  .sw{width:28mm}
+  .sw .chip{height:14mm;border-radius:1.6mm;border:1px solid rgba(0,0,0,.08)}
+  .sw .nm{font-size:8pt;font-weight:600;color:var(--navy);margin-top:1mm}
+  .sw .hex{font-family:ui-monospace,Consolas,monospace;font-size:7pt;color:var(--muted)}
+  .sw .use{font-size:7pt;color:var(--muted);line-height:1.3;font-family:Poppins,sans-serif}
 
-  /* swatches */
-  .swatches { display:flex; flex-wrap:wrap; gap:3mm; margin:4mm 0; break-inside:avoid; }
-  .sw { width:30mm; }
-  .sw .chip { height:16mm; border-radius:2mm; border:1px solid rgba(0,0,0,.08); }
-  .sw .nm { font-family:Poppins,sans-serif; font-size:8.5pt; font-weight:600;
-            color:var(--navy); margin-top:1.2mm; }
-  .sw .hex { font-family:ui-monospace,Consolas,monospace; font-size:7.5pt; color:var(--muted); }
-  .sw .use { font-family:Poppins,sans-serif; font-size:7.5pt; color:var(--muted); line-height:1.35; }
-
-  figure { margin:5mm 0; break-inside:avoid; }
-  figcaption { font-size:8.5pt; color:var(--muted); margin-top:2mm; line-height:1.45; }
-  .mocks { display:flex; gap:5mm; justify-content:center; }
-
-  .foot { margin-top:10mm; padding-top:3mm; border-top:1px solid var(--rule);
-          font-family:Poppins,sans-serif; font-size:8pt; color:var(--muted); }
+  figure{margin:4mm 0;break-inside:avoid}
+  figcaption{font-size:8.2pt;color:var(--muted);margin-top:2mm;line-height:1.45}
+  .mocks{display:flex;gap:4mm;justify-content:center}
+  .foot{margin-top:8mm;padding-top:2.5mm;border-top:1px solid var(--rule);
+        font-family:Poppins,sans-serif;font-size:7.6pt;color:var(--muted);line-height:1.6}
 </style>
 </head>
 <body>
 
-<!-- ============================ COVER ============================ -->
+<!-- ======================= COVER ======================= -->
 <section class="cover">
-  <img src="assets/logo.png" alt="" style="width:26mm;height:26mm;margin-bottom:9mm">
+  <img src="assets/logo.png" alt="" style="width:24mm;height:24mm;margin-bottom:8mm">
   <div class="rule"></div>
   <h1>Matobev</h1>
-  <div class="sub">Product &amp; Design Document</div>
-  <p style="max-width:120mm; font-size:11pt; color:var(--body); margin-bottom:14mm;">
-    What the product is, every screen it contains, an honest assessment of its
-    current design, and a proposed visual system built from the logo outward.
+  <div class="sub">Product, Screens &amp; Design</div>
+  <p style="max-width:118mm;font-size:10.5pt;margin-bottom:12mm">
+    What the product is, the market it is entering, every screen from splash to
+    logout, an honest assessment of what people will and will not like, and a
+    design direction argued from first principles.
   </p>
   <div class="meta">
     <strong style="color:var(--navy)">Prepared for</strong> Simeon Odhiambo<br>
-    <strong style="color:var(--navy)">Scope</strong> 42 screens · player and scout roles<br>
+    <strong style="color:var(--navy)">Scope</strong> 44 screens · player and scout roles<br>
     <strong style="color:var(--navy)">Date</strong> 20 August 2026<br>
-    <strong style="color:var(--navy)">Status</strong> Pre-launch, Android build passing
+    <strong style="color:var(--navy)">Status</strong> Pre-launch · Android build passing · not yet used end to end
   </div>
 </section>
 
-<!-- ============================ PART 1 ============================ -->
+<!-- ======================= SUMMARY ======================= -->
+<section class="part">
+  <div class="kicker">Read this first</div>
+  <h2>The four findings that matter</h2>
+
+  <p class="lede">
+    If you read nothing else, read these. Two of them are uncomfortable.
+  </p>
+
+  <h3>1. The concept is not novel, and the AI is not the differentiator</h3>
+  <p>
+    Matobev is entering a market with at least six direct competitors, several
+    better funded. <strong>Scout Me Pro</strong> is nearly identical in
+    positioning — "TikTok for football", AI video analysis, computer-vision
+    performance scores, players aged 13+ with parental-consent support, scouts
+    with advanced filters, free to start. <strong>Afriskaut</strong> relaunched
+    in 2025 at the Viareggio Cup and is in talks with the NBA.
+    <strong>SOCALOCA</strong> has a partnership with the Ghana Football
+    Association. ScoutMe, Scoutfutbol and Afriq Foot Scout all occupy the same
+    sentence.
+  </p>
+  <p>
+    Every one of them claims AI analysis. Matobev's engine currently scores four
+    attributes and is <em>uncertain about all of them</em>. As a differentiator,
+    "we have AI" is already table stakes and Matobev is behind on it.
+  </p>
+
+  <h3>2. The real opening is trust, and it is enormous</h3>
+  <p>
+    The documented problem in African football is not that talent goes unseen.
+    It is that <strong>tens of thousands of young players a year are defrauded
+    and trafficked</strong> by people posing as agents. Families pay for trials
+    that do not exist. Players arrive abroad, have documents and phones seized,
+    and are forced to extract more money from home. This is reported by ISS
+    Africa, ENACT, VICE and others, and the recommended remedies are
+    consistently about <em>verification and publishing who is genuine</em>.
+  </p>
+  <div class="callout">
+    <span class="label">Where Matobev is genuinely ahead</span>
+    <p>
+      Not one competitor positions on safety. Matobev already enforces guardian
+      consent in the database, hides under-18 profiles from the open internet,
+      enforces blocking in row-level security, and states in its terms that
+      <strong>nobody may ever ask a player for money</strong>. That is a real
+      position in a market defined by confident AI claims and a documented
+      trafficking problem — and most of it is already built.
+    </p>
+  </div>
+
+  <h3>3. The honesty about uncertainty is the product's best idea</h3>
+  <p>
+    Every competitor sells a confident "performance score". Matobev marks
+    confidence, mutes low-confidence values, and refuses to declare a winner in
+    a comparison it cannot support. That is unusual, defensible, and impossible
+    to copy without admitting your own numbers are soft.
+  </p>
+  <p>
+    It is also the harder sell. A scout skimming a store listing wants a number.
+    Matobev's pitch has to be <em>"the ratings you can trust because we tell you
+    when not to"</em> — which is a better long-term position and a worse
+    screenshot.
+  </p>
+
+  <h3>4. It has not been used, and it shows</h3>
+  <p>
+    In one ninety-second review, three defects surfaced: a scout could not play
+    a player's video at all, the back button was invisible on a light photo, and
+    the leaderboard offered scouts a filter on a position scouts do not have.
+    None are subtle. All three survived because the app was verified by
+    typechecks and bundles rather than by a person using it as a scout.
+  </p>
+</section>
+
+<!-- ======================= PART 1 ======================= -->
 <section class="part">
   <div class="kicker">Part One</div>
   <h2>What Matobev is</h2>
 
   <p class="lede">
-    Matobev is a talent-discovery platform for African footballers. A player
-    uploads a highlight video from their phone; software analyses how they move
-    and produces a rating; scouts search, watch, shortlist and make contact.
+    A talent-discovery platform for African footballers. A player uploads a
+    highlight from their phone; software analyses how they move and produces a
+    rating with a confidence attached; scouts search, watch, shortlist and make
+    contact.
   </p>
 
-  <h3>The problem it addresses</h3>
+  <h3>The problem</h3>
   <p>
-    Talent in African football is abundant and badly distributed. A gifted
-    seventeen-year-old in Kisumu is not short of ability — they are short of
-    <em>anyone credible seeing them play</em>. Discovery runs on physical
-    presence and personal networks: being at the right academy, knowing someone,
-    being able to travel to a trial. Each of those is a filter on circumstance
-    rather than on ability.
+    Discovery in African football runs on physical presence and personal
+    networks — being at the right academy, knowing someone, being able to travel.
+    Each is a filter on circumstance rather than ability. Into that gap steps a
+    large, organised fraud industry selling the one thing families will pay for:
+    hope.
   </p>
-  <p>
-    That vacuum is filled by exploitation. Fake agents charge families for
-    trials that do not exist, for "registration fees", for travel that never
-    happens. It is one of the most reliable ways to take money from a family
-    that has very little, because the thing being sold — hope — is the one
-    thing they will pay for.
-  </p>
-
-  <div class="callout">
-    <span class="label">The product's core bet</span>
-    <p>
-      If a player can be seen and assessed from a phone video, then discovery
-      stops depending on geography and connections. The rating is not the
-      product. <strong>Being visible to someone real is the product.</strong>
-      The rating is the mechanism that makes a stranger worth a scout's
-      attention.
-    </p>
-  </div>
 
   <h3>Who it serves</h3>
   <table>
-    <tr><th style="width:22%">Role</th><th style="width:39%">Wants</th><th>Gets</th></tr>
-    <tr>
-      <td><strong>Player</strong><br><span style="color:var(--muted)">13+, mostly 15–21</span></td>
-      <td>To be seen by someone who can change their situation</td>
-      <td>A profile, a rating, a route to scouts and open trials, and evidence anyone is looking</td>
-    </tr>
-    <tr>
-      <td><strong>Scout</strong><br><span style="color:var(--muted)">clubs, academies, agents</span></td>
-      <td>To find players worth a journey, without watching a thousand videos</td>
-      <td>Filtered search, ratings as a first pass, shortlists, notes, direct contact, trial posting</td>
-    </tr>
+    <tr><th style="width:20%">Role</th><th style="width:38%">Actually wants</th><th>Gets</th></tr>
+    <tr><td><strong>Player</strong><br><span style="color:var(--muted)">13+, mostly 15–21</span></td>
+        <td>Proof that someone real is looking</td>
+        <td>Profile, rating, scout visibility, open trials, and evidence of attention</td></tr>
+    <tr><td><strong>Scout</strong><br><span style="color:var(--muted)">clubs, academies, agents</span></td>
+        <td>To avoid wasting a journey</td>
+        <td>Filtered search, ratings as a first pass, footage, shortlists, notes, contact, trials</td></tr>
+    <tr><td><strong>Guardian</strong><br><span style="color:var(--muted)">of an under-18</span></td>
+        <td>To know their child is not being exploited</td>
+        <td>A consent decision they make themselves, and the ability to withdraw it</td></tr>
   </table>
-
-  <h3>What makes it different</h3>
-  <p>
-    Not the analysis — the honesty about it. The engine currently measures a
-    handful of attributes and is frequently unsure. Rather than hiding that
-    behind a confident number, the app states it: every score carries a
-    confidence, low-confidence values are visibly marked, and the overall rating
-    is weighted so an uncertain measurement counts for less.
+  <p style="font-size:9.4pt">
+    The guardian is a genuine third user, not an afterthought. They never install
+    the app — they receive a link. That is the only screen in the product built
+    for someone who is not a user.
   </p>
-  <div class="callout warn">
-    <span class="label">Why this is the whole strategy</span>
-    <p>
-      Ratings drive real decisions about young people who have very little.
-      A confident number that is wrong sends a scout on a wasted journey and
-      tells a teenager something false about themselves. On a scale users read
-      fluently from football games — where 99 is world class — an unqualified
-      <strong>16</strong> is not a statistic, it is a verdict. The platform's
-      long-term credibility with scouts rests entirely on never having
-      overstated what it knows.
-    </p>
-  </div>
 
-  <h3>How a player moves through it</h3>
-  <ol>
-    <li><strong>Arrive</strong> — browse real players before signing up; no wall in front of the value.</li>
-    <li><strong>Register</strong> — four required fields only: name, date of birth, nationality, position.</li>
-    <li><strong>Upload</strong> — a highlight from the camera roll, tagging themselves in one frame.</li>
-    <li><strong>Get rated</strong> — analysis runs; the result arrives with its confidence attached.</li>
-    <li><strong>Be seen</strong> — appear in scout search and on the improvement leaderboard.</li>
-    <li><strong>Return</strong> — because a scout viewed the profile, the rating moved, or the week had something in it.</li>
-  </ol>
-
-  <h3>How a scout moves through it</h3>
-  <ol>
-    <li><strong>Verify</strong> — submit credentials; unverified accounts see less.</li>
-    <li><strong>Set preferences</strong> — positions, countries, age range, minimum rating.</li>
-    <li><strong>Discover</strong> — recommendations built from those preferences and real activity, never a fabricated reason.</li>
-    <li><strong>Assess</strong> — open a profile, watch the footage, read the attribute breakdown and its confidence.</li>
-    <li><strong>Shortlist</strong> — save to folders, add private notes, compare side by side.</li>
-    <li><strong>Act</strong> — message the player, or post a trial and receive applications.</li>
-  </ol>
+  <h3>The two loops the product depends on</h3>
+  <p>
+    <strong>Player loop:</strong> upload → get rated → be seen → be told someone
+    looked → upload again. It breaks if nothing ever comes back. That is why
+    "a scout viewed your profile", "your rating went up" and the weekly summary
+    exist, and why the improvement leaderboard is the default board — a
+    rating-sorted list tells the bottom 90% they are nowhere.
+  </p>
+  <p>
+    <strong>Scout loop:</strong> filter → skim → watch → shortlist → contact.
+    It breaks at <em>watch</em> if footage is slow, unplayable, or not worth the
+    data. For a scout on mobile data, every video that turns out to be useless
+    is money.
+  </p>
 </section>
 
-<!-- ============================ PART 2 ============================ -->
+<!-- ======================= PART 2 ======================= -->
 <section class="part">
   <div class="kicker">Part Two</div>
-  <h2>Every screen</h2>
+  <h2>What people will like, and what they will not</h2>
   <p class="lede">
-    Forty-two screens across five groups. Entry and onboarding, the player's
-    five tabs, the scout's five tabs, shared destinations both roles reach, and
-    settings.
+    Written as bluntly as I can. The second column is the one worth arguing with.
   </p>
 
-  <h3>Entry &amp; onboarding — 9 screens</h3>
-  <div class="screen"><span class="nm">Index</span> <span class="path">index</span>
-    <p>Routing gate. Decides between welcome, onboarding, profile completion, or the correct tab set based on session and role.</p></div>
-  <div class="screen"><span class="nm">Welcome</span> <span class="path">welcome</span>
-    <p>First screen for a signed-out visitor. Sign in, create an account, or browse without an account.</p></div>
-  <div class="screen"><span class="nm">Onboarding</span> <span class="path">onboarding</span>
-    <p>Three slides explaining upload → analysis → scouts. Ends with the same signed-out browse route.</p></div>
-  <div class="screen"><span class="nm">Browse</span> <span class="path">browse</span>
-    <p>Signed-out player list. Adults only — under-18 profiles are excluded at the database level, not merely hidden in the UI. Any action prompts sign-up with a reason naming the action.</p></div>
-  <div class="screen"><span class="nm">Role select</span> <span class="path">role-select</span>
-    <p>Player or scout. Deliberately irreversible — the role is immutable in the database, because switching would expose the other side of the platform.</p></div>
-  <div class="screen"><span class="nm">Sign up</span> <span class="path">signup</span>
-    <p>Email, password, and acceptance of the Terms and Privacy Policy — both of which open in an in-app browser so reading them does not interrupt registration.</p></div>
-  <div class="screen"><span class="nm">Log in</span> <span class="path">login</span> <p>Email and password, with a route to recovery.</p></div>
-  <div class="screen"><span class="nm">Forgot password</span> <span class="path">forgot-password</span> <p>Email-based reset.</p></div>
-  <div class="screen"><span class="nm">Verify email</span> <span class="path">verify-email</span> <p>Post-registration hold with a resend option.</p></div>
-  <div class="screen"><span class="nm">Profile completion</span> <span class="path">profile-complete</span>
-    <p>The four required fields plus optional detail. Enforces the minimum age of 13 and flags under-18 accounts for guardian consent.</p></div>
+  <h3>Players</h3>
+  <table>
+    <tr><th style="width:50%">Will like</th><th>Will not</th></tr>
+    <tr>
+      <td><strong>Being told a scout looked at them.</strong> This is the single most emotionally valuable thing the app does, and it is already built.</td>
+      <td><strong>A low rating.</strong> A 16 out of 99 on a scale they read fluently from FIFA reads as a verdict on them as a person. The confidence marker helps, but a teenager will remember the number.</td>
+    </tr>
+    <tr>
+      <td><strong>Free, with nobody asking for money.</strong> In this market that is not a feature, it is a relief.</td>
+      <td><strong>Uploading a video on mobile data and getting nothing back.</strong> The upload is the single most expensive action in the app, in real money.</td>
+    </tr>
+    <tr>
+      <td><strong>The improvement board.</strong> A category they can actually top.</td>
+      <td><strong>Being asked for a guardian.</strong> Correct, necessary, and a real drop-off point. Some will lie about their age instead.</td>
+    </tr>
+    <tr>
+      <td><strong>The rating reveal moment.</strong> The one orchestrated moment; it is what gets screenshotted and shared.</td>
+      <td><strong>Waiting.</strong> Analysis is not instant, and "processing" with no estimate feels broken on a slow connection.</td>
+    </tr>
+  </table>
 
-  <h3>Player tabs — 5 screens</h3>
-  <div class="screen"><span class="nm">Home</span> <span class="path">(player-tabs)/home</span>
-    <p>The rating card as hero, an upload prompt, three quick actions, upcoming trials and recent activity. The first screen on every launch.</p></div>
-  <div class="screen"><span class="nm">Reels</span> <span class="path">(player-tabs)/reels</span>
-    <p>Full-screen vertical video feed of other players' highlights, with like, save, comment and share.</p></div>
-  <div class="screen"><span class="nm">Upload</span> <span class="path">(player-tabs)/upload</span>
-    <p>Pick a clip, choose highlight-only or AI analysis, tag yourself in one frame, add metadata. Size is checked before transfer, and under-18s without guardian consent are stopped before a byte is uploaded.</p></div>
-  <div class="screen"><span class="nm">Discover</span> <span class="path">(player-tabs)/discover</span>
-    <p>Search and filter other players; trending list; news.</p></div>
-  <div class="screen"><span class="nm">Profile</span> <span class="path">(player-tabs)/profile</span>
-    <p>Own profile with About, Videos, AI Ratings and Stats tabs, plus a profile-strength meter.</p></div>
+  <h3>Scouts</h3>
+  <table>
+    <tr><th style="width:50%">Will like</th><th>Will not</th></tr>
+    <tr>
+      <td><strong>Filters that match how they think</strong> — position, age band, region, minimum rating.</td>
+      <td><strong>Ratings they cannot interrogate.</strong> A scout will not trust a number without knowing what produced it. The breakdown exists; it must be one tap away, not three.</td>
+    </tr>
+    <tr>
+      <td><strong>Notes and folders.</strong> Unglamorous and the reason a scout returns.</td>
+      <td><strong>Thin inventory.</strong> A scouting app with 40 players is not worth opening twice. This is the hardest problem the product has.</td>
+    </tr>
+    <tr>
+      <td><strong>Confidence markers</strong> — once explained. It tells them which numbers to ignore, which saves journeys.</td>
+      <td><strong>Verification friction</strong> before they can see anything of value.</td>
+    </tr>
+  </table>
 
-  <h3>Scout tabs — 5 screens</h3>
-  <div class="screen"><span class="nm">Dashboard</span> <span class="path">(scout-tabs)/home</span>
-    <p>Verification state, search, scouting overview, and four rails: Recommended, Recently Uploaded, Top Performers, Active Trials. Recommendations carry a real reason drawn from preferences and activity.</p></div>
-  <div class="screen"><span class="nm">Players</span> <span class="path">(scout-tabs)/players</span>
-    <p>The main search surface — filters, sorting, compare mode.</p></div>
-  <div class="screen"><span class="nm">Trials</span> <span class="path">(scout-tabs)/trials</span>
-    <p>Create and manage trials; review applicants.</p></div>
-  <div class="screen"><span class="nm">Messages</span> <span class="path">(scout-tabs)/messages</span>
-    <p>Conversations with players, carrying the anti-solicitation safety notice.</p></div>
-  <div class="screen"><span class="nm">Profile</span> <span class="path">(scout-tabs)/profile</span>
-    <p>Organisation, bio, verification status, saved-player statistics.</p></div>
-
-  <h3>Shared destinations — 11 screens</h3>
-  <div class="screen"><span class="nm">Player detail</span> <span class="path">player/[id]</span>
-    <p>The scout's assessment surface: cover, overall rating with confidence, attribute bars, playable videos, save-to-folder, private notes, follow, message, report.</p></div>
-  <div class="screen"><span class="nm">Compare</span> <span class="path">compare</span>
-    <p>Two or more players side by side. The per-attribute "best" highlight is withheld when the winning value is low-confidence — the app declines to assert a comparison it cannot support.</p></div>
-  <div class="screen"><span class="nm">AI ratings</span> <span class="path">ai-ratings</span>
-    <p>Full breakdown: every attribute, its value, its confidence, and analysis-job status.</p></div>
-  <div class="screen"><span class="nm">Leaderboard</span> <span class="path">leaderboard</span>
-    <p>Segmented so most users can place. Players see Most improved, region, position, age band; scouts see Most improved, Top rated, and matches for their own filters.</p></div>
-  <div class="screen"><span class="nm">Trials list / Trial detail</span> <span class="path">trials · trial/[id]</span>
-    <p>Open trials, requirements, deadlines, and application flow.</p></div>
-  <div class="screen"><span class="nm">Messages / Notifications</span> <span class="path">messages · notifications</span>
-    <p>Player-side inbox, and the notification feed — every entry routes to what it is about.</p></div>
-  <div class="screen"><span class="nm">News</span> <span class="path">news</span> <p>Announcements and platform updates.</p></div>
-  <div class="screen"><span class="nm">Guardian consent</span> <span class="path">guardian-consent</span>
-    <p>Where an under-18 sends a parent a link to approve AI analysis. Confirmation happens on a web page the guardian opens — never with a checkbox inside the child's own app.</p></div>
-  <div class="screen"><span class="nm">Scout verification</span> <span class="path">scout-verification</span> <p>Document upload and review status.</p></div>
-  <div class="screen"><span class="nm">Suspended</span> <span class="path">suspended</span> <p>Terminal state with the reason and an appeal route.</p></div>
-
-  <h3>Settings — 9 screens</h3>
-  <div class="screen"><span class="nm">Settings hub</span> <span class="path">settings</span>
-    <p>Account, security, notifications, privacy, blocked accounts, language, theme, help — and, for under-18 players, the guardian screen.</p></div>
-  <div class="screen"><span class="nm">Account · Security · Privacy</span> <span class="path">account- · security- · privacy-settings</span>
-    <p>Details, password, visibility, and immediate account deletion.</p></div>
-  <div class="screen"><span class="nm">Notifications</span> <span class="path">notification-settings</span>
-    <p>Per-category mutes and quiet hours in local time.</p></div>
-  <div class="screen"><span class="nm">Blocked accounts</span> <span class="path">blocked-accounts</span>
-    <p>Blocking is enforced in row-level security, so a blocked party cannot read the other's rows at all.</p></div>
-  <div class="screen"><span class="nm">Language · Theme · Help</span> <span class="path">language- · theme- · help-settings</span>
-    <p>English, French, Swahili, Portuguese; light/dark/system; FAQ, safety notice, support, and the legal documents.</p></div>
+  <div class="callout warn">
+    <span class="label">The thing nobody will say out loud</span>
+    <p>
+      The cold-start problem is the real risk, not the design. Players join
+      because scouts are there; scouts join because players are there. Every
+      competitor listed in this document is fighting the same fight, and two of
+      them have federation partnerships. <strong>A design document cannot solve
+      this.</strong> Seeding one region, one age group, or one academy
+      relationship properly matters more than any screen in Part Four.
+    </p>
+  </div>
 </section>
 
-<!-- ============================ PART 3 ============================ -->
+<!-- ======================= PART 3 : SCREENS ======================= -->
 <section class="part">
   <div class="kicker">Part Three</div>
-  <h2>How I would design it</h2>
+  <h2>Every screen, splash to logout</h2>
+  <p class="lede">
+    Forty-four screens. Each entry gives its purpose, how it is reached, where it
+    leads, what is on it, its empty and error states, and what to watch for.
+  </p>
+
+  <h3>A · Cold start</h3>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Splash</span><span class="path">native · expo-splash-screen</span></div>
+    <div class="spec-body"><p class="purpose">Holds the first frame while fonts, session and theme resolve, so the app never flashes an unstyled screen.</p>
+      <dl>
+        <dt>Shows</dt><dd>Logo at 220px on white; <code>#0A1628</code> in dark mode</dd>
+        <dt>Leads to</dt><dd>Index, once ready</dd>
+        <dt>Watch out</dt><dd class="risk">On a 1–2 GB device this is where a slow cold start is felt. It is dismissed manually, so any error before <code>hideAsync()</code> leaves the user staring at a logo.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Index — routing gate</span><span class="path">index</span></div>
+    <div class="spec-body"><p class="purpose">Decides where a launch lands. No UI of its own.</p>
+      <dl>
+        <dt>Decides between</dt><dd>Welcome · onboarding · verify-email · profile completion · player tabs · scout tabs · suspended</dd>
+        <dt>Inputs</dt><dd>Session, email-verified flag, role, profile-completed flag, suspension state</dd>
+        <dt>Watch out</dt><dd class="risk">Every routing bug in the app lands here. It is also the only place that can trap a user in a loop.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Welcome</span><span class="path">welcome</span></div>
+    <div class="spec-body"><p class="purpose">First screen a signed-out visitor sees.</p>
+      <dl>
+        <dt>Elements</dt><dd>Brand, one-line proposition, <em>Create account</em>, <em>Sign in</em>, <em>Browse without an account</em></dd>
+        <dt>Leads to</dt><dd>Signup · login · browse</dd>
+        <dt>Watch out</dt><dd class="risk">This screen carries the entire first impression and currently sells features rather than the outcome. "Get seen by scouts" beats "AI-powered analysis".</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Onboarding</span><span class="path">onboarding</span></div>
+    <div class="spec-body"><p class="purpose">Three slides: upload → analysis → scouts.</p>
+      <dl>
+        <dt>Elements</dt><dd>Full-bleed imagery, headline per slide, skip, final CTA</dd>
+        <dt>Leads to</dt><dd>Browse or signup</dd>
+        <dt>Watch out</dt><dd class="risk">Skippable and skipped. Anything load-bearing must not live only here.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Browse (signed out)</span><span class="path">browse</span></div>
+    <div class="spec-body"><p class="purpose">Shows real players before asking for anything — the strongest argument the app can make.</p>
+      <dl>
+        <dt>Elements</dt><dd>Player cards with name, position, country, rating badge</dd>
+        <dt>Empty</dt><dd>Nothing to show yet — falls back to a sign-up prompt</dd>
+        <dt>Any action</dt><dd>Prompts sign-up with a reason naming the action</dd>
+        <dt>Safety</dt><dd><strong>Adults only.</strong> Under-18 profiles are excluded in the database view, not hidden in the UI</dd>
+      </dl></div></div>
+
+  <h3>B · Account creation</h3>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Role select</span><span class="path">role-select</span></div>
+    <div class="spec-body"><p class="purpose">Player or scout. Irreversible.</p>
+      <dl>
+        <dt>Watch out</dt><dd class="risk">The role is immutable in the database. The screen must say so before the tap, not after — a scout who meant to be a player currently needs a new account.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Sign up</span><span class="path">signup</span></div>
+    <div class="spec-body"><p class="purpose">Email, password, and acceptance of both legal documents.</p>
+      <dl>
+        <dt>Elements</dt><dd>Email, password, confirm, two acceptance checkboxes with in-app links to the Terms and Privacy Policy</dd>
+        <dt>Errors</dt><dd>Duplicate email, weak password, network failure</dd>
+        <dt>Watch out</dt><dd class="risk">Until this week the two document links were styled as links and did nothing — people accepted documents they could not open.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Log in · Forgot password · Verify email</span><span class="path">login · forgot-password · verify-email</span></div>
+    <div class="spec-body"><p class="purpose">Return, recover, and confirm.</p>
+      <dl>
+        <dt>Elements</dt><dd>Credentials; reset by email; a hold screen with resend</dd>
+        <dt>Watch out</dt><dd class="risk">Verification email deliverability to Gmail on mobile is the most common silent drop-off in this flow.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Profile completion</span><span class="path">profile-complete</span></div>
+    <div class="spec-body"><p class="purpose">The four fields the database actually requires, plus optional depth.</p>
+      <dl>
+        <dt>Required</dt><dd>Full name · date of birth · nationality · primary position</dd>
+        <dt>Optional</dt><dd>Height, weight, club, foot, jersey, bio, socials, photo</dd>
+        <dt>Age logic</dt><dd>Under 13 blocked outright; 13–17 flagged for guardian consent</dd>
+        <dt>Watch out</dt><dd class="risk">The longest form in the app and the last thing between a user and value. Every optional field here costs completions.</dd>
+      </dl></div></div>
+
+  <h3>C · Player tabs</h3>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Home</span><span class="path">(player-tabs)/home</span></div>
+    <div class="spec-body"><p class="purpose">The player's standing, and the one thing to do next.</p>
+      <dl>
+        <dt>Elements</dt><dd>Greeting, header actions, <strong>rating card</strong>, upload prompt, three quick actions, upcoming trials, recent activity</dd>
+        <dt>Loading</dt><dd>Screen-shaped skeleton matching the real layout</dd>
+        <dt>Empty</dt><dd>No rating yet → the card invites a first upload rather than showing a zero</dd>
+        <dt>Watch out</dt><dd class="risk">The rating card is the emotional centre of the product. It is also where a low number does the most damage.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Reels</span><span class="path">(player-tabs)/reels</span></div>
+    <div class="spec-body"><p class="purpose">Vertical highlight feed — the habit surface.</p>
+      <dl>
+        <dt>Elements</dt><dd>Full-bleed video, player overlay, like · save · comment · share</dd>
+        <dt>Loading</dt><dd>Spinner, deliberately not a skeleton — grey blocks on black interrupt more than they help</dd>
+        <dt>Watch out</dt><dd class="risk">The most data-hungry screen in the app. Autoplay on mobile data is a real cost decision, not a UX preference.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Upload</span><span class="path">(player-tabs)/upload</span></div>
+    <div class="spec-body"><p class="purpose">The core contribution. Also the most expensive action a player takes.</p>
+      <dl>
+        <dt>Steps</dt><dd>Pick clip → choose <em>highlight</em> or <em>AI analysis</em> → tag yourself in one frame → title, match, opponent, tags → publish</dd>
+        <dt>Guards</dt><dd>Size checked before transfer; guardian consent checked before a byte is uploaded; failed row insert deletes the orphaned file</dd>
+        <dt>Watch out</dt><dd class="risk">Self-tagging is the least obvious step and the one the analysis depends on most. If it is skipped or wrong, the rating is wrong and the player blames themselves.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Discover</span><span class="path">(player-tabs)/discover</span></div>
+    <div class="spec-body"><p class="purpose">Other players, search, trending, news.</p>
+      <dl>
+        <dt>Elements</dt><dd>Search bar, filter chips, sort, player rows, news strip</dd>
+        <dt>Empty</dt><dd>No matches → widen-filters prompt</dd>
+        <dt>Watch out</dt><dd class="risk">Player-to-player browsing is social, not functional. It competes with Reels for the same attention and may not deserve a tab.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Profile (own)</span><span class="path">(player-tabs)/profile</span></div>
+    <div class="spec-body"><p class="purpose">What a scout sees, plus what is still missing.</p>
+      <dl>
+        <dt>Tabs</dt><dd>About · Videos · AI Ratings · Stats</dd>
+        <dt>Elements</dt><dd>Cover, avatar, stat tiles (OVR, reels, views, invites), profile-strength meter, playable videos</dd>
+        <dt>Watch out</dt><dd class="risk">Views and invites are the numbers players check obsessively. If they are zero for weeks, this screen becomes discouraging rather than motivating.</dd>
+      </dl></div></div>
+
+  <h3>D · Scout tabs</h3>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Dashboard</span><span class="path">(scout-tabs)/home</span></div>
+    <div class="spec-body"><p class="purpose">A working surface, not a feed.</p>
+      <dl>
+        <dt>Elements</dt><dd>Verification state, search, overview counts, and four rails — Recommended, Recently Uploaded, Top Performers, Active Trials</dd>
+        <dt>Recommendations</dt><dd>Carry a real reason ("matches your preferred position", "recently active"), never a fabricated one</dd>
+        <dt>Watch out</dt><dd class="risk">Four rails of the same card is a lot of scrolling for little differentiation. Two would probably outperform four.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Players</span><span class="path">(scout-tabs)/players</span></div>
+    <div class="spec-body"><p class="purpose">The main search surface — where a scout actually works.</p>
+      <dl>
+        <dt>Elements</dt><dd>Search, filter sheet (position, age, country, foot, height, weight, minimum rating), sort, compare mode</dd>
+        <dt>Empty</dt><dd>No matches → widen filters</dd>
+        <dt>Watch out</dt><dd class="risk">With thin inventory, filters return nothing and the app looks broken rather than empty. Show near-misses instead.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Trials</span><span class="path">(scout-tabs)/trials</span></div>
+    <div class="spec-body"><p class="purpose">Post an opportunity and manage who applies.</p>
+      <dl>
+        <dt>Elements</dt><dd>Trial list, create form (title, club, location, positions, age range, deadline), applicant review</dd>
+        <dt>Watch out</dt><dd class="risk">This is where the platform's safety promise is tested hardest — a trial post is exactly the shape a fraudster wants.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Messages (scout) · Profile (scout)</span><span class="path">(scout-tabs)/messages · profile</span></div>
+    <div class="spec-body"><p class="purpose">Contact, and the scout's own record.</p>
+      <dl>
+        <dt>Elements</dt><dd>Conversations with the anti-solicitation notice; organisation, bio, verification badge, saved-player counts</dd>
+        <dt>Watch out</dt><dd class="risk">Messaging between an adult and a minor is the highest-risk surface in the product. It deserves more friction than it has.</dd>
+      </dl></div></div>
+
+  <h3>E · Shared destinations</h3>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Player detail</span><span class="path">player/[id]</span></div>
+    <div class="spec-body"><p class="purpose">The assessment screen. Everything the scout decides on is here.</p>
+      <dl>
+        <dt>Elements</dt><dd>Cover, name, position/country/age, decision-support disclaimer, overall rating with confidence, attribute bars, <strong>playable videos</strong>, save-to-folder, private notes, follow, message, report</dd>
+        <dt>Empty</dt><dd>No videos → stated plainly; no ratings → "not analysed yet"</dd>
+        <dt>Watch out</dt><dd class="risk">Until this week the videos were not tappable. This screen is the product for a scout; it deserves the most testing.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Compare</span><span class="path">compare</span></div>
+    <div class="spec-body"><p class="purpose">Two or more players, attribute by attribute.</p>
+      <dl>
+        <dt>Rule</dt><dd>A "best" highlight is withheld when the winning value is low-confidence — the app declines to assert what it cannot support</dd>
+        <dt>Watch out</dt><dd class="risk">Comparison invites false precision. Two uncertain numbers side by side look authoritative purely because they are adjacent.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">AI ratings</span><span class="path">ai-ratings</span></div>
+    <div class="spec-body"><p class="purpose">The full breakdown, and the honest one.</p>
+      <dl>
+        <dt>Elements</dt><dd>Hero rating, every attribute with value and confidence, analysis-job status, recommendations from the real result summary</dd>
+        <dt>States</dt><dd>Queued · processing · completed · skipped · failed, each explained</dd>
+        <dt>Watch out</dt><dd class="risk">This is the screen that justifies the number. It should be reachable from the rating in one tap everywhere the rating appears.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Leaderboard</span><span class="path">leaderboard</span></div>
+    <div class="spec-body"><p class="purpose">Ranking someone can actually place in.</p>
+      <dl>
+        <dt>Player scopes</dt><dd><strong>Most improved</strong> (default) · my region · my position · my age group</dd>
+        <dt>Scout scopes</dt><dd>Most improved · top rated · matches my filters</dd>
+        <dt>Empty</dt><dd>Scope-aware — "no movement yet this week" is a different statement from "not enough players here"</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Trials list · Trial detail</span><span class="path">trials · trial/[id]</span></div>
+    <div class="spec-body"><p class="purpose">Find and apply for opportunities.</p>
+      <dl>
+        <dt>Elements</dt><dd>Open trials, club, location, positions, age range, deadline, requirements, apply, application status</dd>
+        <dt>Watch out</dt><dd class="risk">Every trial listing should carry the "never pay to attend" warning inline, not only in Help.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Messages · Notifications · News</span><span class="path">messages · notifications · news</span></div>
+    <div class="spec-body"><p class="purpose">Contact, signal, and announcements.</p>
+      <dl>
+        <dt>Notification types</dt><dd>Scout viewed your profile · rating went up · weekly summary · trial status · invitation · analysis result · message · moderation</dd>
+        <dt>Behaviour</dt><dd>Every notification routes to what it is about; per-category mutes and quiet hours apply</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Guardian consent</span><span class="path">guardian-consent + web page</span></div>
+    <div class="spec-body"><p class="purpose">Where an under-18 asks a parent to approve analysis.</p>
+      <dl>
+        <dt>In app</dt><dd>Guardian name, email, relationship → generates a link → shared by WhatsApp or SMS</dd>
+        <dt>On web</dt><dd>The guardian opens the link, sees the player's name and the exact scopes, and confirms. Single-use; the token rotates.</dd>
+        <dt>Principle</dt><dd>A child ticking "my parent agrees" is the child consenting to themselves</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Scout verification · Suspended</span><span class="path">scout-verification · suspended</span></div>
+    <div class="spec-body"><p class="purpose">Prove you are real; or find out you are no longer welcome.</p>
+      <dl>
+        <dt>Elements</dt><dd>Document upload, review status; suspension reason and appeal route</dd>
+        <dt>Watch out</dt><dd class="risk">Verification is the platform's core trust claim. If it is a rubber stamp, the badge is worse than no badge.</dd>
+      </dl></div></div>
+
+  <h3>F · Settings, and the way out</h3>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Settings hub</span><span class="path">settings</span></div>
+    <div class="spec-body"><p class="purpose">Everything about the account, and the exit.</p>
+      <dl>
+        <dt>Rows</dt><dd>Account · Security · Notifications · Privacy · Blocked accounts · Language · Theme · Help — plus <strong>Parent or guardian</strong> for under-18 players</dd>
+        <dt>Foot</dt><dd>Log out · Delete account</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Account · Security · Privacy</span><span class="path">account- · security- · privacy-settings</span></div>
+    <div class="spec-body"><p class="purpose">Details, password, visibility, and permanent deletion.</p>
+      <dl>
+        <dt>Delete account</dt><dd>Immediate and irreversible — files removed from storage, rows cascaded. No email, no waiting period.</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Notifications · Blocked · Language · Theme · Help</span><span class="path">notification- · blocked-accounts · language- · theme- · help-settings</span></div>
+    <div class="spec-body"><p class="purpose">Control, and the documents.</p>
+      <dl>
+        <dt>Notifications</dt><dd>Per-category mutes; quiet hours in local time</dd>
+        <dt>Blocked</dt><dd>Enforced in row-level security — a blocked party cannot read the other's rows at all</dd>
+        <dt>Language</dt><dd>English · French · Swahili · Portuguese</dd>
+        <dt>Help</dt><dd>FAQ, safety notice, support email, Privacy Policy and Terms in an in-app browser</dd>
+      </dl></div></div>
+
+  <div class="spec"><div class="spec-head"><span class="nm">Log out</span><span class="path">settings → logout</span></div>
+    <div class="spec-body"><p class="purpose">End the session cleanly on this device.</p>
+      <dl>
+        <dt>Sequence</dt><dd>Unregister this device's push token <strong>first</strong>, while the session still exists, then sign out, then clear local state, then route to Welcome</dd>
+        <dt>Why that order</dt><dd>The token delete is scoped to the signed-in profile. After sign-out it would be rejected and the phone would keep receiving the previous account's notifications.</dd>
+      </dl></div></div>
+</section>
+
+<!-- ======================= PART 4 : DESIGN ======================= -->
+<section class="part">
+  <div class="kicker">Part Four</div>
+  <h2>Design direction</h2>
 
   <p class="lede">
-    The architecture is strong. The visual identity is not yet an identity — it
-    is a set of reasonable defaults that do not agree with each other.
+    Argued from what the product is trying to be, not from what the logo
+    currently happens to be.
   </p>
 
-  <h3>The central problem: the logo and the app are different brands</h3>
-  <p>
-    The logo is a <strong>teal-to-navy</strong> mark. The app is built on
-    <strong>electric blue</strong> with a gold accent. Measured from the logo's
-    own pixels against the app's tokens:
-  </p>
-  <table>
-    <tr><th>Element</th><th>Colour</th><th>Hue</th><th>Where it lives</th></tr>
-    <tr><td>Logo — dominant</td><td><code>#00A0B0</code></td><td>185°</td><td>The mark, everywhere it appears</td></tr>
-    <tr><td>Logo — ground</td><td><code>#002040</code></td><td>210°</td><td>The mark's dark figures</td></tr>
-    <tr><td>App primary</td><td><code>#1A6DFF</code></td><td>218°</td><td>Every button, link and active state</td></tr>
-    <tr><td>App accent</td><td><code>#FFD54F</code></td><td>46°</td><td>Ratings, highlights</td></tr>
-  </table>
   <div class="callout warn">
-    <span class="label">Why 33 degrees is the worst possible distance</span>
+    <span class="label">Correcting my earlier advice</span>
     <p>
-      Teal at 185° and blue at 218° are <strong>close enough to read as a
-      mistake and far enough apart to clash</strong>. If they were identical
-      they would be coherent; if they were opposite they would be a deliberate
-      pairing. Sitting a third of the way between reads as two people who never
-      spoke. Every screen in the app currently argues with its own logo.
+      An earlier version of this document built its whole colour argument on
+      "the logo is the one asset that will not change". I assumed that; it was
+      never established. If the logo can change — and it can — then the right
+      question is not <em>what matches the mark</em> but <em>what should this
+      product look like</em>, and the mark follows.
     </p>
   </div>
 
-  <h3>The direction: build outward from the mark</h3>
-  <p>
-    The logo is the one asset that will not change, so it should decide the
-    palette rather than be decorated around. That gives three moves:
-  </p>
-  <ul>
-    <li><strong>Teal becomes primary.</strong> Buttons, links, active states, focus rings — everything currently electric blue.</li>
-    <li><strong>Navy becomes the dark ground and the ink.</strong> It already is in the logo; it should be the app's darkest surface and its heading colour.</li>
-    <li><strong>Gold stays, and gets a job.</strong> Teal at 186° and gold at 46° are near-complementary — they reinforce rather than compete. Gold should mean exactly one thing: <em>achievement</em>. Ratings, leaderboard positions, milestones. Nothing else.</li>
-  </ul>
+  <h3>What the visual identity has to do</h3>
+  <ol>
+    <li><strong>Read as trustworthy, not as hype.</strong> The competition is
+      dark, neon and TikTok-styled. In a category where the adjacent industry is
+      fraud, looking like a growth-hacked crypto app is an active liability.</li>
+    <li><strong>Be legible in sunlight on a cheap screen.</strong> Higher
+      contrast than a design-system default, larger body text, no thin weights.</li>
+    <li><strong>Make the rating feel earned but not final.</strong> It must feel
+      worth having and must not read as a verdict.</li>
+    <li><strong>Survive being one of nine icons</strong> in a crowded store
+      listing of blue football apps.</li>
+  </ol>
 
-  <h3>What each colour is allowed to mean</h3>
-  <p>
-    The current palette's real weakness is not the hues, it is that blue means
-    six different things — primary action, link, active tab, information,
-    selection, and brand. When one colour means everything it means nothing, and
-    users stop reading it as a signal.
-  </p>
+  <h3>Two credible directions</h3>
   <table>
-    <tr><th style="width:26%">Colour</th><th>Means exactly</th><th style="width:26%">Never used for</th></tr>
-    <tr><td><strong>Teal</strong></td><td>Something you can do, or where you are</td><td>Status, achievement, decoration</td></tr>
-    <tr><td><strong>Gold</strong></td><td>Something earned — a rating, a rank, a milestone</td><td>Buttons, warnings, links</td></tr>
-    <tr><td><strong>Navy</strong></td><td>Structure — headings, dark surfaces, the card ground</td><td>Interactive elements</td></tr>
-    <tr><td><strong>Green / Red</strong></td><td>Outcome — succeeded, failed, blocked</td><td>Anything not an outcome</td></tr>
-    <tr><td><strong>Grey</strong></td><td>Present but secondary, including low confidence</td><td>Disabled-only meaning</td></tr>
+    <tr><th style="width:16%">Direction</th><th style="width:30%">Argument for</th><th style="width:30%">Argument against</th><th>Verdict</th></tr>
+    <tr>
+      <td><strong>Pitch green + gold</strong><br><code>#0B6B3A</code> · <code>#FFC53D</code></td>
+      <td>Football's own colour. Instantly legible in a store listing. Warm, and differentiates hard from a market of dark blue apps. Strong resonance across African flags.</td>
+      <td><strong>Green already means "success" in every interface convention.</strong> Using it for primary actions collides with that meaning, and this app needs a clean success state for applications and consent.</td>
+      <td>Distinctive, but it spends a semantic colour the product needs</td>
+    </tr>
+    <tr>
+      <td><strong>Deep navy + gold</strong><br><code>#123A6B</code> · <code>#FFC53D</code></td>
+      <td>Institutional and calm — the register of a federation, not a startup. Leaves green and red free for outcomes. Gold on navy is the strongest pairing available at 10.93 : 1.</td>
+      <td>Navy is the most crowded palette in app stores. Without a distinctive mark it disappears.</td>
+      <td><strong>Recommended</strong>, on the condition that the logo carries the distinctiveness</td>
+    </tr>
   </table>
 
-  <h3>Four principles I would hold the design to</h3>
-  <h4>1. Depth must survive dark mode</h4>
+  <h3>Recommendation, and what it means for the logo</h3>
   <p>
-    Shadows are invisible on a dark ground, so hierarchy there has to come from
-    lighter surfaces. The rule is simple and must be verified numerically rather
-    than by eye: <strong>every level of the stack must be measurably lighter
-    than the one beneath it.</strong> Hex codes do not sort by perceived
-    lightness, and this exact ordering has been silently inverted twice in this
-    codebase already.
+    <strong>Deep navy as the ground, gold as the single accent, and the logo
+    redrawn in gold on navy.</strong> The reasoning:
   </p>
-  <h4>2. Uncertainty is a visual property, not a footnote</h4>
+  <ul>
+    <li>Navy is the colour of institutions people trust with children. That is
+      the exact register a platform positioned on safety should occupy.</li>
+    <li>Gold means <em>achievement</em> and nothing else — the rating, a rank, a
+      milestone. One colour, one meaning, never borrowed for a button.</li>
+    <li>It leaves green, red and amber entirely free for outcomes, which a
+      product with applications, consent states and moderation genuinely needs.</li>
+    <li>The current teal is not wrong, but it does two jobs at once — brand
+      <em>and</em> primary action — and it is the reason the app and the mark
+      currently disagree.</li>
+  </ul>
   <p>
-    A low-confidence rating should look different from a confident one at a
-    glance — muted, marked, and never eligible to win a comparison. This is the
-    product's differentiator and it belongs in the type and colour system, not
-    in help text nobody opens.
-  </p>
-  <h4>3. One celebratory moment, and only one</h4>
-  <p>
-    The arrival of a rating is the emotional peak. That is where motion,
-    haptics and gold belong. Everywhere else should be quiet, because an app
-    that celebrates constantly celebrates nothing — and because these users are
-    on budget Android hardware where animation costs frames.
-  </p>
-  <h4>4. Designed for the actual device and hand</h4>
-  <p>
-    Mid-range Android, outdoors, in sunlight, often one-handed, frequently on
-    metered data. That argues for higher contrast than a design system default,
-    a 17px body minimum, primary actions in the lower half of the screen, and
-    never spending a megabyte before telling the user what it will cost.
-  </p>
-</section>
-
-<!-- ============================ PART 4 ============================ -->
-<section class="part">
-  <div class="kicker">Part Four</div>
-  <h2>The colour system</h2>
-  <p class="lede">
-    Every value below is measured, not chosen by eye. Contrast ratios are
-    against the surface each colour actually sits on.
+    <strong>On the mark itself:</strong> the two figures and ball is a good
+    silhouette and works small. The gradient is the weak part — it renders muddy
+    at icon sizes and forces a light background. A single-colour version, gold
+    on navy, would survive a 48px launcher icon far better and finally give the
+    app and its logo the same palette.
   </p>
 
-  <h3>Brand — taken from the logo</h3>
+  <h3>Palette</h3>
   <div class="swatches">
-    <div class="sw"><div class="chip" style="background:#002040"></div>
-      <div class="nm">Navy</div><div class="hex">#002040</div>
-      <div class="use">Ink, headings, darkest surface, card ground</div></div>
-    <div class="sw"><div class="chip" style="background:#00808F"></div>
-      <div class="nm">Teal — primary</div><div class="hex">#00808F</div>
-      <div class="use">Buttons, links, active states</div></div>
-    <div class="sw"><div class="chip" style="background:#00A0B0"></div>
-      <div class="nm">Teal — logo</div><div class="hex">#00A0B0</div>
-      <div class="use">The mark only. Too light for text.</div></div>
-    <div class="sw"><div class="chip" style="background:#3FC7D6"></div>
-      <div class="nm">Teal — dark mode</div><div class="hex">#3FC7D6</div>
-      <div class="use">Primary on dark surfaces</div></div>
-    <div class="sw"><div class="chip" style="background:#FFD54F"></div>
-      <div class="nm">Gold</div><div class="hex">#FFD54F</div>
-      <div class="use">Ratings and rank, on dark only</div></div>
-    <div class="sw"><div class="chip" style="background:#8A5A00"></div>
-      <div class="nm">Gold — on light</div><div class="hex">#8A5A00</div>
-      <div class="use">Ratings on a light card</div></div>
+    <div class="sw"><div class="chip" style="background:#0A1B33"></div><div class="nm">Navy — ground</div><div class="hex">#0A1B33</div><div class="use">App bar, rating card, dark surfaces</div></div>
+    <div class="sw"><div class="chip" style="background:#123A6B"></div><div class="nm">Navy — primary</div><div class="hex">#123A6B</div><div class="use">Buttons, links, active states</div></div>
+    <div class="sw"><div class="chip" style="background:#7FB0F0"></div><div class="nm">Primary — dark mode</div><div class="hex">#7FB0F0</div><div class="use">Same role, dark surfaces</div></div>
+    <div class="sw"><div class="chip" style="background:#FFC53D"></div><div class="nm">Gold</div><div class="hex">#FFC53D</div><div class="use">Achievement, on dark only</div></div>
+    <div class="sw"><div class="chip" style="background:#8A5A00"></div><div class="nm">Gold — on light</div><div class="hex">#8A5A00</div><div class="use">Achievement on a light card</div></div>
+    <div class="sw"><div class="chip" style="background:#1E8449"></div><div class="nm">Success</div><div class="hex">#1E8449</div><div class="use">Confirmed, accepted, improved</div></div>
+    <div class="sw"><div class="chip" style="background:#C0392B"></div><div class="nm">Error</div><div class="hex">#C0392B</div><div class="use">Failed, blocked, removed</div></div>
+    <div class="sw"><div class="chip" style="background:#6C7789"></div><div class="nm">Muted</div><div class="hex">#6C7789</div><div class="use">Secondary text, low confidence</div></div>
   </div>
 
   <table>
     <tr><th>Pairing</th><th>Ratio</th><th>Verdict</th></tr>
-    <tr><td>Teal <code>#00808F</code> on white</td><td>4.68 : 1</td><td>Passes AA for text and as a button fill</td></tr>
-    <tr><td>Logo teal <code>#00A0B0</code> on white</td><td>3.16 : 1</td><td><strong>Fails.</strong> Use for the mark, never for text</td></tr>
-    <tr><td>Teal <code>#3FC7D6</code> on dark <code>#111A2B</code></td><td>8.58 : 1</td><td>Passes comfortably</td></tr>
-    <tr><td>Gold <code>#FFD54F</code> on navy <code>#002040</code></td><td>11.62 : 1</td><td>Excellent — the rating numeral pairing</td></tr>
-    <tr><td>Gold <code>#FFD54F</code> on white</td><td>1.23 : 1</td><td><strong>Invisible.</strong> Gold on light must darken to <code>#8A5A00</code></td></tr>
-    <tr><td>Navy <code>#002040</code> on white</td><td>16.40 : 1</td><td>The heading pairing</td></tr>
+    <tr><td>Primary <code>#123A6B</code> on white</td><td>11.39 : 1</td><td>Passes AA as text and as a fill under white text</td></tr>
+    <tr><td>Primary <code>#7FB0F0</code> on <code>#0B1220</code></td><td>8.35 : 1</td><td>Dark-mode equivalent</td></tr>
+    <tr><td>Gold <code>#FFC53D</code> on navy <code>#0A1B33</code></td><td>10.93 : 1</td><td>The rating numeral pairing</td></tr>
+    <tr><td>Gold <code>#FFC53D</code> on white</td><td>1.58 : 1</td><td><strong>Unusable.</strong> On light, gold must darken to <code>#8A5A00</code> (5.93 : 1)</td></tr>
+    <tr><td>Warning <code>#B8860B</code> on white</td><td>3.25 : 1</td><td><strong>Fails</strong> for body text — large text or icons only</td></tr>
   </table>
-
-  <div class="callout">
-    <span class="label">The trap worth naming</span>
-    <p>
-      Contrast is symmetric — white-on-teal and teal-on-white are necessarily
-      the same ratio. The distinction that actually matters is <em>which
-      surface</em>, not which is foreground: a colour that works on white will
-      usually fail on navy, and the reverse. Gold is the clearest case in this
-      palette — <strong>11.62 : 1 on navy and 1.23 : 1 on white</strong>, the
-      same colour, unusable in one of them.
-    </p>
-  </div>
-
-  <h3>Surfaces — an ordered stack</h3>
-  <table>
-    <tr><th>Level</th><th>Light</th><th>Dark</th><th>Used for</th></tr>
-    <tr><td>Page</td><td><code>#EEF1F6</code></td><td><code>#070E1B</code></td><td>Behind everything</td></tr>
-    <tr><td>Recessed</td><td><code>#F4F7FA</code></td><td><code>#0F1729</code></td><td>Chips, inputs, tracks</td></tr>
-    <tr><td>Surface</td><td><code>#FFFFFF</code></td><td><code>#131B2E</code></td><td>Default card</td></tr>
-    <tr><td>Raised</td><td>shadow</td><td><code>#161F30</code></td><td>List cards, quick actions</td></tr>
-    <tr><td>Floating</td><td>shadow</td><td><code>#1B2537</code></td><td>The rating card</td></tr>
-    <tr><td>Overlay</td><td>shadow</td><td><code>#1F2A3E</code></td><td>Sheets, modals, menus</td></tr>
-  </table>
-  <p style="font-size:9.5pt">
-    In light mode depth is a shadow; in dark mode it is a lighter surface plus a
-    hairline. Same API either way, so no screen branches on theme — and the
-    ordering is machine-checked, because it has been wrong before.
+  <p style="font-size:9.2pt">
+    Contrast is symmetric, so foreground and background give the same ratio. The
+    distinction that matters is <em>which surface</em>: gold is 10.93 : 1 on navy
+    and 1.58 : 1 on white — the same colour, unusable in one of them.
   </p>
 
-  <h3>Typography</h3>
+  <h3>Typography and depth</h3>
   <table>
-    <tr><th>Role</th><th>Face</th><th>Size</th><th>Notes</th></tr>
-    <tr><td>Rating numeral</td><td>Poppins ExtraBold</td><td>52</td><td>Tight tracking; the hero of the card</td></tr>
+    <tr><th>Role</th><th>Face</th><th>Size</th><th>Note</th></tr>
+    <tr><td>Rating numeral</td><td>Poppins ExtraBold</td><td>52</td><td>Gold on navy; the hero</td></tr>
     <tr><td>Screen title</td><td>Poppins Bold</td><td>22–26</td><td></td></tr>
-    <tr><td>Section heading</td><td>Poppins SemiBold</td><td>17–18</td><td></td></tr>
-    <tr><td>Body</td><td>Poppins Regular</td><td>15</td><td>Never below 15 for reading text</td></tr>
-    <tr><td>Caption</td><td>Poppins Medium</td><td>10</td><td>The floor. Nothing smaller exists.</td></tr>
+    <tr><td>Body</td><td>Poppins Regular</td><td>15–17</td><td>Never below 15 for reading text</td></tr>
+    <tr><td>Caption</td><td>Poppins Medium</td><td>10</td><td>The floor; nothing smaller exists</td></tr>
   </table>
-  <p style="font-size:9.5pt">
-    One family, five weights. A second face would cost a download on a metered
-    connection and buy nothing a weight change cannot.
+  <p style="font-size:9.2pt">
+    Depth: in light mode a shadow, in dark mode a progressively lighter surface,
+    because shadows are invisible on a dark ground. The ordering must be checked
+    numerically — hex codes do not sort by perceived lightness, and this exact
+    ordering has been silently inverted twice in this codebase.
   </p>
 </section>
 
-<!-- ============================ PART 5 ============================ -->
+<!-- ======================= PART 5 : MOCKS ======================= -->
 <section class="part">
   <div class="kicker">Part Five</div>
   <h2>Proposed screens</h2>
   <p class="lede">
-    Four screens in the proposed system. Teal carries action, gold carries
-    achievement, navy carries structure, and uncertainty is visible.
+    Navy carries structure and action, gold carries achievement and appears
+    nowhere else, and uncertainty is visible without being alarming.
   </p>
 
   <figure>
     <div class="mocks">
-      <!-- ============ PLAYER HOME ============ -->
-      <svg width="200" height="410" viewBox="0 0 200 410" role="img" aria-label="Player home screen mockup">
-        <rect x="0" y="0" width="200" height="410" rx="18" fill="#EEF1F6" stroke="#DDE4EE"/>
-        <text x="14" y="26" font-family="Poppins" font-size="7" fill="#6B7791">Good evening</text>
-        <text x="14" y="40" font-family="Poppins" font-size="14" font-weight="700" fill="#002040">simeon</text>
-        <circle cx="176" cy="32" r="11" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <rect x="148" y="21" width="20" height="20" rx="5" fill="#FFFFFF" stroke="#DDE4EE"/>
-
-        <!-- rating card: navy ground, gold numeral -->
-        <rect x="12" y="54" width="176" height="118" rx="12" fill="#002040"/>
-        <rect x="12" y="54" width="3.5" height="118" fill="#FFD54F"/>
-        <text x="26" y="98" font-family="Poppins" font-size="34" font-weight="800" fill="#FFD54F">25</text>
-        <text x="66" y="90" font-family="Poppins" font-size="9" font-weight="700" fill="#FFD54F">·</text>
-        <text x="26" y="112" font-family="Poppins" font-size="8" font-weight="700" fill="#FFFFFF" letter-spacing="1.6">RB</text>
-        <rect x="140" y="66" width="26" height="14" rx="4" fill="none" stroke="#FFD54F" stroke-opacity=".45"/>
-        <text x="146" y="76" font-family="Poppins" font-size="7" font-weight="700" fill="#FFD54F">KE</text>
-        <rect x="116" y="88" width="52" height="17" rx="8.5" fill="none" stroke="#3FC7D6" stroke-opacity=".5"/>
-        <text x="124" y="100" font-family="Poppins" font-size="7" font-weight="600" fill="#3FC7D6">Report ↗</text>
-        <line x1="26" y1="122" x2="174" y2="122" stroke="#FFFFFF" stroke-opacity=".14"/>
-        <text x="100" y="136" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="700" fill="#FFFFFF" letter-spacing="1.8">SIMEON ODHIAMBO</text>
-        <line x1="26" y1="143" x2="174" y2="143" stroke="#FFFFFF" stroke-opacity=".14"/>
-        <text x="28" y="158" font-family="Poppins" font-size="11" font-weight="800" fill="#7E8CA3">1·</text>
-        <text x="28" y="167" font-family="Poppins" font-size="5.5" fill="#7E8CA3">PAC</text>
-        <text x="70" y="158" font-family="Poppins" font-size="11" font-weight="800" fill="#FFFFFF">34</text>
-        <text x="70" y="167" font-family="Poppins" font-size="5.5" fill="#7E8CA3">PHY</text>
-        <text x="112" y="158" font-family="Poppins" font-size="11" font-weight="800" fill="#FFFFFF">66</text>
-        <text x="112" y="167" font-family="Poppins" font-size="5.5" fill="#7E8CA3">VIS</text>
-
-        <!-- upload CTA: teal = action -->
-        <rect x="12" y="182" width="176" height="46" rx="11" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <rect x="22" y="192" width="26" height="26" rx="8" fill="#00808F"/>
-        <text x="31" y="209" font-family="Poppins" font-size="11" fill="#FFFFFF">↑</text>
-        <text x="56" y="203" font-family="Poppins" font-size="9" font-weight="600" fill="#002040">Upload a highlight</text>
-        <text x="56" y="215" font-family="Poppins" font-size="7" fill="#6B7791">Get rated and seen by scouts</text>
-
-        <rect x="12" y="238" width="55" height="52" rx="10" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <rect x="72.5" y="238" width="55" height="52" rx="10" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <rect x="133" y="238" width="55" height="52" rx="10" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <circle cx="39.5" cy="258" r="9" fill="#FFF3D6"/><text x="30" y="282" font-family="Poppins" font-size="7" fill="#33405A">Trials</text>
-        <circle cx="100" cy="258" r="9" fill="#E4F3F5"/><text x="84" y="282" font-family="Poppins" font-size="7" fill="#33405A">Messages</text>
-        <circle cx="160.5" cy="258" r="9" fill="#E4F3F5"/><text x="147" y="282" font-family="Poppins" font-size="7" fill="#33405A">Ranking</text>
-
-        <text x="14" y="312" font-family="Poppins" font-size="9" font-weight="600" fill="#002040">Upcoming trials</text>
-        <rect x="12" y="320" width="176" height="34" rx="9" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <rect x="12" y="360" width="176" height="18" rx="6" fill="#FFFFFF" stroke="#DDE4EE" opacity=".6"/>
-
-        <rect x="0" y="384" width="200" height="26" rx="0" fill="#FFFFFF"/>
-        <line x1="0" y1="384" x2="200" y2="384" stroke="#DDE4EE"/>
-        <circle cx="24" cy="397" r="2.5" fill="#00808F"/>
-        <circle cx="62" cy="397" r="2.5" fill="#B9C2D0"/>
-        <rect x="90" y="390" width="20" height="14" rx="5" fill="#00808F"/>
-        <circle cx="138" cy="397" r="2.5" fill="#B9C2D0"/>
-        <circle cx="176" cy="397" r="2.5" fill="#B9C2D0"/>
+      <!-- PLAYER HOME -->
+      <svg width="196" height="400" viewBox="0 0 196 400" role="img" aria-label="Player home">
+        <rect width="196" height="400" rx="17" fill="#F1F4F8" stroke="#DCE2EA"/>
+        <text x="14" y="25" font-family="Poppins" font-size="7" fill="#6C7789">Good evening</text>
+        <text x="14" y="39" font-family="Poppins" font-size="13" font-weight="700" fill="#0A1B33">simeon</text>
+        <circle cx="172" cy="31" r="10" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="145" y="21" width="19" height="19" rx="5" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="12" y="52" width="172" height="112" rx="12" fill="#0A1B33"/>
+        <rect x="12" y="52" width="3.5" height="112" fill="#FFC53D"/>
+        <text x="26" y="94" font-family="Poppins" font-size="33" font-weight="800" fill="#FFC53D">25</text>
+        <text x="64" y="86" font-family="Poppins" font-size="10" font-weight="800" fill="#93A0B5">·</text>
+        <text x="26" y="108" font-family="Poppins" font-size="8" font-weight="700" fill="#fff" letter-spacing="1.6">RB</text>
+        <rect x="138" y="63" width="26" height="14" rx="4" fill="none" stroke="#FFC53D" stroke-opacity=".45"/>
+        <text x="144" y="73" font-family="Poppins" font-size="7" font-weight="700" fill="#FFC53D">KE</text>
+        <rect x="112" y="85" width="52" height="17" rx="8.5" fill="#1B3358"/>
+        <text x="120" y="97" font-family="Poppins" font-size="7" font-weight="600" fill="#DCE7F5">Report ↗</text>
+        <line x1="26" y1="118" x2="170" y2="118" stroke="#fff" stroke-opacity=".13"/>
+        <text x="98" y="131" text-anchor="middle" font-family="Poppins" font-size="8" font-weight="700" fill="#fff" letter-spacing="1.7">SIMEON ODHIAMBO</text>
+        <line x1="26" y1="138" x2="170" y2="138" stroke="#fff" stroke-opacity=".13"/>
+        <text x="28" y="152" font-family="Poppins" font-size="11" font-weight="800" fill="#8C99AE">1·</text>
+        <text x="28" y="160" font-family="Poppins" font-size="5.5" fill="#8C99AE">PAC</text>
+        <text x="68" y="152" font-family="Poppins" font-size="11" font-weight="800" fill="#fff">34</text>
+        <text x="68" y="160" font-family="Poppins" font-size="5.5" fill="#8C99AE">PHY</text>
+        <text x="108" y="152" font-family="Poppins" font-size="11" font-weight="800" fill="#fff">66</text>
+        <text x="108" y="160" font-family="Poppins" font-size="5.5" fill="#8C99AE">VIS</text>
+        <rect x="12" y="174" width="172" height="44" rx="11" fill="#123A6B"/>
+        <circle cx="34" cy="196" r="12" fill="#1B4E8C"/>
+        <text x="30" y="200" font-family="Poppins" font-size="11" fill="#fff">↑</text>
+        <text x="54" y="193" font-family="Poppins" font-size="9" font-weight="600" fill="#fff">Upload a highlight</text>
+        <text x="54" y="205" font-family="Poppins" font-size="7" fill="#B9CCE6">Get rated and seen by scouts</text>
+        <rect x="12" y="228" width="54" height="50" rx="10" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="71" y="228" width="54" height="50" rx="10" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="130" y="228" width="54" height="50" rx="10" fill="#fff" stroke="#DCE2EA"/>
+        <circle cx="39" cy="247" r="8.5" fill="#FFF3D6"/><text x="30" y="270" font-family="Poppins" font-size="7" fill="#333E52">Trials</text>
+        <circle cx="98" cy="247" r="8.5" fill="#E7EFFA"/><text x="82" y="270" font-family="Poppins" font-size="7" fill="#333E52">Messages</text>
+        <circle cx="157" cy="247" r="8.5" fill="#E7EFFA"/><text x="144" y="270" font-family="Poppins" font-size="7" fill="#333E52">Ranking</text>
+        <text x="14" y="298" font-family="Poppins" font-size="9" font-weight="600" fill="#0A1B33">Upcoming trials</text>
+        <rect x="12" y="306" width="172" height="32" rx="9" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="12" y="344" width="172" height="18" rx="6" fill="#fff" stroke="#DCE2EA" opacity=".55"/>
+        <rect y="374" width="196" height="26" fill="#fff"/><line x1="0" y1="374" x2="196" y2="374" stroke="#DCE2EA"/>
+        <circle cx="24" cy="387" r="2.5" fill="#123A6B"/><circle cx="61" cy="387" r="2.5" fill="#B4BDCB"/>
+        <rect x="88" y="380" width="20" height="14" rx="5" fill="#123A6B"/>
+        <circle cx="135" cy="387" r="2.5" fill="#B4BDCB"/><circle cx="172" cy="387" r="2.5" fill="#B4BDCB"/>
       </svg>
 
-      <!-- ============ SCOUT PLAYER DETAIL ============ -->
-      <svg width="200" height="410" viewBox="0 0 200 410" role="img" aria-label="Scout player detail mockup">
-        <rect x="0" y="0" width="200" height="410" rx="18" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <path d="M0 18 A18 18 0 0 1 18 0 H182 A18 18 0 0 1 200 18 V96 H0 Z" fill="#0A3252"/>
-        <circle cx="100" cy="52" r="26" fill="#1B4468"/>
-        <rect x="10" y="10" width="20" height="20" rx="6" fill="#000000" fill-opacity=".42"/>
-        <text x="16" y="24" font-family="Poppins" font-size="9" fill="#FFFFFF">‹</text>
-        <rect x="146" y="10" width="20" height="20" rx="6" fill="#000000" fill-opacity=".42"/>
-        <rect x="170" y="10" width="20" height="20" rx="6" fill="#000000" fill-opacity=".42"/>
-
-        <text x="100" y="112" text-anchor="middle" font-family="Poppins" font-size="12" font-weight="700" fill="#002040">Simeon Odhiambo</text>
-        <text x="100" y="124" text-anchor="middle" font-family="Poppins" font-size="7.5" fill="#6B7791">RB · Kenya · 21</text>
-
-        <rect x="12" y="134" width="176" height="20" rx="6" fill="#E4F3F5"/>
-        <text x="20" y="147" font-family="Poppins" font-size="6.5" fill="#00606E">Decision support, not a verdict — confirm with footage</text>
-
-        <!-- overall, gold on navy -->
-        <rect x="12" y="162" width="176" height="52" rx="11" fill="#002040"/>
-        <text x="100" y="180" text-anchor="middle" font-family="Poppins" font-size="6.5" fill="#7E8CA3" letter-spacing="1.8">OVERALL</text>
-        <text x="100" y="202" text-anchor="middle" font-family="Poppins" font-size="20" font-weight="800" fill="#FFD54F">25·</text>
-
-        <text x="14" y="230" font-family="Poppins" font-size="7" fill="#33405A">Pace</text>
-        <rect x="52" y="224" width="100" height="5" rx="2.5" fill="#EEF1F6"/>
-        <rect x="52" y="224" width="5" height="5" rx="2.5" fill="#9AA6B8"/>
-        <text x="158" y="230" font-family="Poppins" font-size="7" fill="#6B7791">1·</text>
-        <text x="172" y="230" font-family="Poppins" font-size="6" font-weight="600" fill="#C0392B">Low</text>
-
-        <text x="14" y="246" font-family="Poppins" font-size="7" fill="#33405A">Physical</text>
-        <rect x="52" y="240" width="100" height="5" rx="2.5" fill="#EEF1F6"/>
-        <rect x="52" y="240" width="34" height="5" rx="2.5" fill="#00808F"/>
-        <text x="158" y="246" font-family="Poppins" font-size="7" fill="#002040">34</text>
-        <text x="172" y="246" font-family="Poppins" font-size="6" font-weight="600" fill="#B8860B">Med</text>
-
-        <text x="14" y="262" font-family="Poppins" font-size="7" fill="#33405A">Vision</text>
-        <rect x="52" y="256" width="100" height="5" rx="2.5" fill="#EEF1F6"/>
-        <rect x="52" y="256" width="66" height="5" rx="2.5" fill="#00808F"/>
-        <text x="158" y="262" font-family="Poppins" font-size="7" fill="#002040">66</text>
-        <text x="172" y="262" font-family="Poppins" font-size="6" font-weight="600" fill="#1E8449">High</text>
-
-        <text x="14" y="286" font-family="Poppins" font-size="8.5" font-weight="600" fill="#002040">Footage</text>
-        <rect x="12" y="292" width="55" height="42" rx="8" fill="#0A3252"/>
-        <circle cx="39" cy="313" r="8" fill="#FFFFFF" fill-opacity=".9"/>
-        <path d="M37 309 l6 4 -6 4 z" fill="#002040"/>
-        <rect x="72" y="292" width="55" height="42" rx="8" fill="#0A3252"/>
-        <circle cx="99" cy="313" r="8" fill="#FFFFFF" fill-opacity=".9"/>
-        <path d="M97 309 l6 4 -6 4 z" fill="#002040"/>
-        <rect x="132" y="292" width="55" height="42" rx="8" fill="#EEF1F6"/>
-
-        <rect x="12" y="348" width="84" height="30" rx="9" fill="#FFFFFF" stroke="#00808F"/>
-        <text x="34" y="367" font-family="Poppins" font-size="8" font-weight="600" fill="#00606E">Save</text>
-        <rect x="104" y="348" width="84" height="30" rx="9" fill="#00808F"/>
-        <text x="124" y="367" font-family="Poppins" font-size="8" font-weight="600" fill="#FFFFFF">Message</text>
+      <!-- SCOUT PLAYER DETAIL -->
+      <svg width="196" height="400" viewBox="0 0 196 400" role="img" aria-label="Scout player detail">
+        <rect width="196" height="400" rx="17" fill="#fff" stroke="#DCE2EA"/>
+        <path d="M0 17 A17 17 0 0 1 17 0 H179 A17 17 0 0 1 196 17 V92 H0 Z" fill="#123A6B"/>
+        <circle cx="98" cy="50" r="25" fill="#1B4E8C"/>
+        <rect x="10" y="10" width="20" height="20" rx="6" fill="#000" fill-opacity=".42"/><text x="16" y="24" font-family="Poppins" font-size="9" fill="#fff">‹</text>
+        <rect x="144" y="10" width="20" height="20" rx="6" fill="#000" fill-opacity=".42"/>
+        <rect x="167" y="10" width="20" height="20" rx="6" fill="#000" fill-opacity=".42"/>
+        <text x="98" y="108" text-anchor="middle" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Simeon Odhiambo</text>
+        <text x="98" y="120" text-anchor="middle" font-family="Poppins" font-size="7.5" fill="#6C7789">RB · Kenya · 21</text>
+        <rect x="12" y="130" width="172" height="19" rx="6" fill="#EDF2F9"/>
+        <text x="19" y="142" font-family="Poppins" font-size="6.4" fill="#123A6B">Decision support, not a verdict — confirm with footage</text>
+        <rect x="12" y="157" width="172" height="50" rx="11" fill="#0A1B33"/>
+        <text x="98" y="174" text-anchor="middle" font-family="Poppins" font-size="6.4" fill="#8C99AE" letter-spacing="1.8">OVERALL</text>
+        <text x="98" y="196" text-anchor="middle" font-family="Poppins" font-size="19" font-weight="800" fill="#FFC53D">25·</text>
+        <text x="14" y="223" font-family="Poppins" font-size="7" fill="#333E52">Pace</text>
+        <rect x="50" y="217" width="98" height="5" rx="2.5" fill="#EDF1F6"/><rect x="50" y="217" width="5" height="5" rx="2.5" fill="#9AA5B6"/>
+        <text x="154" y="223" font-family="Poppins" font-size="7" fill="#6C7789">1·</text><text x="168" y="223" font-family="Poppins" font-size="6" font-weight="600" fill="#C0392B">Low</text>
+        <text x="14" y="239" font-family="Poppins" font-size="7" fill="#333E52">Physical</text>
+        <rect x="50" y="233" width="98" height="5" rx="2.5" fill="#EDF1F6"/><rect x="50" y="233" width="33" height="5" rx="2.5" fill="#123A6B"/>
+        <text x="154" y="239" font-family="Poppins" font-size="7" fill="#0A1B33">34</text><text x="168" y="239" font-family="Poppins" font-size="6" font-weight="600" fill="#8A5A00">Med</text>
+        <text x="14" y="255" font-family="Poppins" font-size="7" fill="#333E52">Vision</text>
+        <rect x="50" y="249" width="98" height="5" rx="2.5" fill="#EDF1F6"/><rect x="50" y="249" width="65" height="5" rx="2.5" fill="#123A6B"/>
+        <text x="154" y="255" font-family="Poppins" font-size="7" fill="#0A1B33">66</text><text x="168" y="255" font-family="Poppins" font-size="6" font-weight="600" fill="#1E8449">High</text>
+        <text x="14" y="278" font-family="Poppins" font-size="8.5" font-weight="600" fill="#0A1B33">Footage</text>
+        <rect x="12" y="284" width="54" height="41" rx="8" fill="#123A6B"/><circle cx="39" cy="304" r="8" fill="#fff" fill-opacity=".92"/><path d="M37 300 l6 4 -6 4 z" fill="#0A1B33"/>
+        <rect x="71" y="284" width="54" height="41" rx="8" fill="#123A6B"/><circle cx="98" cy="304" r="8" fill="#fff" fill-opacity=".92"/><path d="M96 300 l6 4 -6 4 z" fill="#0A1B33"/>
+        <rect x="130" y="284" width="54" height="41" rx="8" fill="#EDF1F6"/>
+        <rect x="12" y="338" width="82" height="29" rx="9" fill="#fff" stroke="#123A6B"/><text x="34" y="357" font-family="Poppins" font-size="8" font-weight="600" fill="#123A6B">Save</text>
+        <rect x="102" y="338" width="82" height="29" rx="9" fill="#123A6B"/><text x="121" y="357" font-family="Poppins" font-size="8" font-weight="600" fill="#fff">Message</text>
       </svg>
 
-      <!-- ============ LEADERBOARD ============ -->
-      <svg width="200" height="410" viewBox="0 0 200 410" role="img" aria-label="Leaderboard mockup">
-        <rect x="0" y="0" width="200" height="410" rx="18" fill="#EEF1F6" stroke="#DDE4EE"/>
-        <text x="100" y="30" text-anchor="middle" font-family="Poppins" font-size="11" font-weight="700" fill="#002040">Leaderboard</text>
-        <rect x="12" y="44" width="60" height="22" rx="11" fill="#00808F"/>
-        <text x="20" y="58" font-family="Poppins" font-size="7" font-weight="600" fill="#FFFFFF">Most improved</text>
-        <rect x="78" y="44" width="48" height="22" rx="11" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <text x="88" y="58" font-family="Poppins" font-size="7" fill="#6B7791">My region</text>
-        <rect x="132" y="44" width="56" height="22" rx="11" fill="#FFFFFF" stroke="#DDE4EE"/>
-        <text x="142" y="58" font-family="Poppins" font-size="7" fill="#6B7791">My position</text>
-
+      <!-- LEADERBOARD -->
+      <svg width="196" height="400" viewBox="0 0 196 400" role="img" aria-label="Leaderboard">
+        <rect width="196" height="400" rx="17" fill="#F1F4F8" stroke="#DCE2EA"/>
+        <text x="98" y="29" text-anchor="middle" font-family="Poppins" font-size="11" font-weight="700" fill="#0A1B33">Leaderboard</text>
+        <rect x="12" y="42" width="60" height="21" rx="10.5" fill="#123A6B"/><text x="19" y="56" font-family="Poppins" font-size="7" font-weight="600" fill="#fff">Most improved</text>
+        <rect x="77" y="42" width="47" height="21" rx="10.5" fill="#fff" stroke="#DCE2EA"/><text x="87" y="56" font-family="Poppins" font-size="7" fill="#6C7789">My region</text>
+        <rect x="129" y="42" width="55" height="21" rx="10.5" fill="#fff" stroke="#DCE2EA"/><text x="139" y="56" font-family="Poppins" font-size="7" fill="#6C7789">My position</text>
         <g font-family="Poppins">
-          <rect x="12" y="78" width="176" height="40" rx="10" fill="#FFFFFF" stroke="#DDE4EE"/>
-          <text x="22" y="102" font-size="10" font-weight="800" fill="#B8860B">1</text>
-          <circle cx="48" cy="98" r="12" fill="#DCE6EE"/>
-          <text x="66" y="95" font-size="8.5" font-weight="600" fill="#002040">Amina K.</text>
-          <text x="66" y="106" font-size="6.5" fill="#6B7791">CM · East Africa</text>
-          <text x="142" y="101" font-size="9" font-weight="700" fill="#1E8449">+9</text>
-          <circle cx="174" cy="98" r="11" fill="#E4F3F5"/>
-          <text x="168" y="101" font-size="7.5" font-weight="700" fill="#00606E">41</text>
-
-          <rect x="12" y="124" width="176" height="40" rx="10" fill="#FFFFFF" stroke="#DDE4EE"/>
-          <text x="22" y="148" font-size="10" font-weight="800" fill="#8892A3">2</text>
-          <circle cx="48" cy="144" r="12" fill="#DCE6EE"/>
-          <text x="66" y="141" font-size="8.5" font-weight="600" fill="#002040">Simeon O.</text>
-          <text x="66" y="152" font-size="6.5" fill="#6B7791">RB · East Africa</text>
-          <text x="142" y="147" font-size="9" font-weight="700" fill="#1E8449">+7</text>
-          <circle cx="174" cy="144" r="11" fill="#E4F3F5"/>
-          <text x="168" y="147" font-size="7.5" font-weight="700" fill="#00606E">25</text>
-          <circle cx="182" cy="136" r="3.4" fill="#9AA6B8" stroke="#FFFFFF" stroke-width="1.2"/>
-
-          <rect x="12" y="170" width="176" height="40" rx="10" fill="#FFFFFF" stroke="#DDE4EE"/>
-          <text x="22" y="194" font-size="10" font-weight="800" fill="#A0764B">3</text>
-          <circle cx="48" cy="190" r="12" fill="#DCE6EE"/>
-          <text x="66" y="187" font-size="8.5" font-weight="600" fill="#002040">Kofi A.</text>
-          <text x="66" y="198" font-size="6.5" fill="#6B7791">ST · West Africa</text>
-          <text x="142" y="193" font-size="9" font-weight="700" fill="#1E8449">+5</text>
-          <circle cx="174" cy="190" r="11" fill="#E4F3F5"/>
-          <text x="168" y="193" font-size="7.5" font-weight="700" fill="#00606E">38</text>
-
-          <rect x="12" y="216" width="176" height="34" rx="10" fill="#FFFFFF" stroke="#DDE4EE" opacity=".75"/>
-          <rect x="12" y="256" width="176" height="34" rx="10" fill="#FFFFFF" stroke="#DDE4EE" opacity=".5"/>
-          <rect x="12" y="296" width="176" height="34" rx="10" fill="#FFFFFF" stroke="#DDE4EE" opacity=".3"/>
+          <rect x="12" y="74" width="172" height="39" rx="10" fill="#fff" stroke="#DCE2EA"/>
+          <text x="22" y="98" font-size="10" font-weight="800" fill="#8A5A00">1</text><circle cx="47" cy="93" r="11.5" fill="#DCE3EC"/>
+          <text x="64" y="91" font-size="8.5" font-weight="600" fill="#0A1B33">Amina K.</text><text x="64" y="102" font-size="6.5" fill="#6C7789">CM · East Africa</text>
+          <text x="139" y="97" font-size="9" font-weight="700" fill="#1E8449">+9</text>
+          <circle cx="170" cy="93" r="11" fill="#E7EFFA"/><text x="164" y="96" font-size="7.5" font-weight="700" fill="#123A6B">41</text>
+          <rect x="12" y="119" width="172" height="39" rx="10" fill="#fff" stroke="#DCE2EA"/>
+          <text x="22" y="143" font-size="10" font-weight="800" fill="#8892A3">2</text><circle cx="47" cy="138" r="11.5" fill="#DCE3EC"/>
+          <text x="64" y="136" font-size="8.5" font-weight="600" fill="#0A1B33">Simeon O.</text><text x="64" y="147" font-size="6.5" fill="#6C7789">RB · East Africa</text>
+          <text x="139" y="142" font-size="9" font-weight="700" fill="#1E8449">+7</text>
+          <circle cx="170" cy="138" r="11" fill="#E7EFFA"/><text x="164" y="141" font-size="7.5" font-weight="700" fill="#123A6B">25</text>
+          <circle cx="178" cy="130" r="3.3" fill="#9AA5B6" stroke="#fff" stroke-width="1.2"/>
+          <rect x="12" y="164" width="172" height="39" rx="10" fill="#fff" stroke="#DCE2EA"/>
+          <text x="22" y="188" font-size="10" font-weight="800" fill="#A0764B">3</text><circle cx="47" cy="183" r="11.5" fill="#DCE3EC"/>
+          <text x="64" y="181" font-size="8.5" font-weight="600" fill="#0A1B33">Kofi A.</text><text x="64" y="192" font-size="6.5" fill="#6C7789">ST · West Africa</text>
+          <text x="139" y="187" font-size="9" font-weight="700" fill="#1E8449">+5</text>
+          <circle cx="170" cy="183" r="11" fill="#E7EFFA"/><text x="164" y="186" font-size="7.5" font-weight="700" fill="#123A6B">38</text>
+          <rect x="12" y="209" width="172" height="33" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".7"/>
+          <rect x="12" y="248" width="172" height="33" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".45"/>
+          <rect x="12" y="287" width="172" height="33" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".25"/>
         </g>
-
-        <rect x="12" y="344" width="176" height="36" rx="9" fill="#E4F3F5"/>
-        <text x="22" y="360" font-family="Poppins" font-size="6.8" fill="#00606E">Ratings compared against last week.</text>
-        <text x="22" y="371" font-family="Poppins" font-size="6.8" fill="#00606E">Upload a highlight and any gain shows here.</text>
+        <rect x="12" y="334" width="172" height="34" rx="9" fill="#EDF2F9"/>
+        <text x="21" y="349" font-family="Poppins" font-size="6.6" fill="#123A6B">Ratings compared against last week.</text>
+        <text x="21" y="360" font-family="Poppins" font-size="6.6" fill="#123A6B">Upload a highlight and any gain shows here.</text>
       </svg>
     </div>
     <figcaption>
-      <strong>Left — Player home.</strong> The rating card is navy with a gold
-      numeral: the one place gold appears, so it always means achievement. Teal
-      carries the upload action. The middot after <code>25</code> and the muted
-      <code>1· PAC</code> mark low-confidence values at a glance.<br>
+      <strong>Left — Player home.</strong> Gold appears once, on the rating, so
+      it always means achievement. Navy carries the upload action. The middot
+      after <code>25</code> and the muted <code>1· PAC</code> mark
+      low-confidence values without alarm.<br>
       <strong>Centre — Scout player detail.</strong> Confidence is stated in
       words as well as colour, because green/amber/red alone excludes red-green
       colour-blind viewers — around 8% of a scout population that skews male.
-      Footage is prominent and playable; Message is the single teal action.<br>
-      <strong>Right — Leaderboard, Most improved.</strong> The default board,
+      Footage is prominent and playable.<br>
+      <strong>Right — Leaderboard.</strong> Most improved is the default,
       because rating-sorted lists tell most users they are nowhere. Gains in
-      green, ratings in teal, gold reserved for first place.
+      green, ratings in navy, gold only for first place.
     </figcaption>
   </figure>
 
-  <h3>What I would change first</h3>
+  <h3>What I would do first</h3>
   <table>
-    <tr><th style="width:8%">#</th><th style="width:34%">Change</th><th>Why it is first</th></tr>
-    <tr><td>1</td><td>Swap primary blue for logo teal</td><td>One token change removes the brand incoherence across all 42 screens</td></tr>
-    <tr><td>2</td><td>Restrict gold to achievement only</td><td>Gives the rating a colour nothing else may borrow</td></tr>
-    <tr><td>3</td><td>Rating card to navy in both themes</td><td>Anchors the hero to the mark, and gold only works on a dark ground</td></tr>
-    <tr><td>4</td><td>Confidence in words, not colour alone</td><td>Accessibility, and it is the product's differentiator</td></tr>
-    <tr><td>5</td><td>Walk both roles end to end on a device</td><td>Three defects were found this way in ninety seconds; there will be more</td></tr>
+    <tr><th style="width:7%">#</th><th style="width:33%">Action</th><th>Why</th></tr>
+    <tr><td>1</td><td>Walk both roles end to end on a real device</td><td>Three defects surfaced in ninety seconds this way. There will be more, and they are cheap to fix once found.</td></tr>
+    <tr><td>2</td><td>Decide the positioning: safety, not AI</td><td>The AI claim is table stakes and Matobev is behind on it. Safety is unclaimed and largely already built.</td></tr>
+    <tr><td>3</td><td>Unify the palette and redraw the mark</td><td>One token change; the app and its own logo currently disagree.</td></tr>
+    <tr><td>4</td><td>Solve inventory in one segment</td><td>A scouting app with thin inventory is not worth opening twice. Pick one region or age group and fill it.</td></tr>
+    <tr><td>5</td><td>Make the rating breakdown one tap from every rating</td><td>It is the thing that justifies the number, and the thing scouts need to trust it.</td></tr>
   </table>
 
-  <div class="callout warn">
-    <span class="label">The honest assessment</span>
-    <p>
-      Matobev looks like a real app that has not been used yet. The engineering
-      is genuinely strong — access control enforced in the database, no
-      fabricated data anywhere, confidence surfaced rather than hidden, real
-      child-safety controls. But until this week a scout could not play a
-      player's video, the back button vanished on a light photo, and the
-      leaderboard offered scouts a filter on a position they do not have. None
-      of those are subtle; all three survived because the app was verified by
-      typechecks and bundles rather than by someone using it as a scout.
-      <strong>The gap is not polish or architecture. It is that nobody has
-      walked each role end to end.</strong>
-    </p>
-  </div>
-
   <div class="foot">
-    Matobev — Product &amp; Design Document · 20 August 2026 · Prepared for Simeon Odhiambo<br>
-    Colour ratios measured against the WCAG 2.1 relative-luminance formula. Brand
-    values sampled from <code>logofree.png</code>.
+    Matobev — Product, Screens &amp; Design · 20 August 2026 · Prepared for Simeon Odhiambo<br>
+    Contrast ratios computed with the WCAG 2.1 relative-luminance formula.<br>
+    Market and safeguarding context drawn from: ISS Africa and ENACT (player
+    trafficking); VICE and Sports&amp;Crime (fake agents); Scout Me Pro,
+    Afriskaut, SOCALOCA, ScoutMe and Scoutfutbol (competing platforms); Google
+    Play "next billion users" and IT News Africa (device and data constraints).
   </div>
 </section>
 
