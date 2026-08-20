@@ -28,6 +28,15 @@ export const MUTABLE_GROUPS = [
     description: 'When analysis of your video finishes',
     types: ['analysis_complete', 'analysis_skipped', 'analysis_failed'],
   },
+  {
+    key: 'profile_views',
+    label: 'Scout interest',
+    // Worded to match what the notification can honestly claim. The scout is
+    // never named (see migration 20260820100000), so the description does not
+    // promise a name the player will not get.
+    description: 'When a scout views your profile — at most one a day',
+    types: ['profile_view'],
+  },
 ] as const;
 
 // Never offered as mutable -- listed explicitly so the reason is visible in

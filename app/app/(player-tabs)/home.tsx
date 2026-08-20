@@ -76,6 +76,7 @@ export default function Home() {
   const ACTIVITY_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
     trial_status_change: 'clipboard',
     new_message: 'message-circle',
+    profile_view: 'eye',
   };
 
   return (

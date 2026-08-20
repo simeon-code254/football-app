@@ -23,6 +23,7 @@ const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = 
   analysis_complete: 'bar-chart-2',
   analysis_skipped: 'bar-chart-2',
   analysis_failed: 'alert-circle',
+  profile_view: 'eye',
 };
 
 // Every notification carries enough in `data` to know where it's actually
@@ -42,6 +43,11 @@ function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | 
       return '/ai-ratings';
     case 'scout_verification':
       return '/(scout-tabs)/home';
+    case 'profile_view':
+      // Their own profile: the notification says to keep highlights current,
+      // so it should land where they can see what the scout just saw and act
+      // on it, rather than dead-ending on the notification list.
+      return '/(player-tabs)/profile';
     default:
       return null;
   }
