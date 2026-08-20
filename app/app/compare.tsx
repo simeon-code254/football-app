@@ -38,13 +38,30 @@ export default function ComparePlayers() {
     new Set((players ?? []).flatMap((p) => p.attributes.filter((a) => a.value != null).map((a) => a.displayName)))
   );
 
-  const valueFor = (playerId: string, label: string) => {
-    const player = (players ?? []).find((p) => p.id === playerId);
-    return player?.attributes.find((a) => a.displayName === label)?.value ?? null;
-  };
+  const attrFor = (playerId: string, label: string) =>
+    (players ?? []).find((p) => p.id === playerId)?.attributes.find((a) => a.displayName === label);
 
+  const valueFor = (playerId: string, label: string) => attrFor(playerId, label)?.value ?? null;
+  const isLowFor = (playerId: string, label: string) => attrFor(playerId, label)?.confidence === 'Low';
+
+  // Over every scored attribute, not only the rows the table happens to show:
+  // the overall is a weighted average of all of them.
+  const anyLowFor = (p: { attributes: { value: number | null; confidence?: string | null }[] }) =>
+    p.attributes.some((a) => a.value != null && a.confidence === 'Low');
+
+  // Highlighting a cell as "best" is not a display choice, it is the app
+  // asserting that one player beats another at this attribute. That assertion
+  // needs a measurement we actually trust, so low-confidence values are not
+  // eligible to win -- otherwise a shakily-measured 40 visually defeats a
+  // confidently-measured 38 and a scout reads it as a verdict.
+  //
+  // The values themselves are still shown in full, marked. Nothing is hidden;
+  // we just decline to crown a winner on evidence we would not stand behind.
   const best = (label: string) => {
-    const vals = (players ?? []).map((p) => valueFor(p.id ?? '', label)).filter((v): v is number => v != null);
+    const vals = (players ?? [])
+      .filter((p) => !isLowFor(p.id ?? '', label))
+      .map((p) => valueFor(p.id ?? '', label))
+      .filter((v): v is number => v != null);
     return vals.length ? Math.max(...vals) : null;
   };
 
@@ -95,7 +112,13 @@ export default function ComparePlayers() {
             </View>
             {players.map((p) => (
               <View key={p.id} style={styles.playerCol}>
-                <Text style={styles.overallValue}>{p.overall_rating ?? '—'}</Text>
+                <Text
+                  style={styles.overallValue}
+                  accessibilityLabel={`${p.full_name ?? 'Player'} overall ${p.overall_rating ?? 'not rated'}${anyLowFor(p) ? ', based partly on low-confidence analysis' : ''}`}
+                >
+                  {p.overall_rating ?? '—'}
+                  {anyLowFor(p) ? '·' : ''}
+                </Text>
               </View>
             ))}
           </View>
@@ -109,10 +132,17 @@ export default function ComparePlayers() {
                 </View>
                 {players.map((p) => {
                   const val = valueFor(p.id ?? '', label);
-                  const isBest = val != null && val === bestVal && players.length > 1;
+                  const low = isLowFor(p.id ?? '', label);
+                  const isBest = val != null && !low && val === bestVal && players.length > 1;
                   return (
                     <View key={p.id} style={styles.playerCol}>
-                      <Text style={[styles.cellValue, isBest && styles.cellValueBest]}>{val ?? '—'}</Text>
+                      <Text
+                        style={[styles.cellValue, isBest && styles.cellValueBest, low && styles.cellValueLow]}
+                        accessibilityLabel={`${p.full_name ?? 'Player'} ${label} ${val ?? 'not rated'}${low ? ', low confidence' : ''}${isBest ? ', highest' : ''}`}
+                      >
+                        {val ?? '—'}
+                        {low ? '·' : ''}
+                      </Text>
                     </View>
                   );
                 })}
@@ -120,6 +150,16 @@ export default function ComparePlayers() {
             );
           })}
         </View>
+
+        {(players ?? []).some(anyLowFor) && (
+          // Says what the marker means AND what the app declined to do with
+          // it. A scout reading a comparison table needs to know that an
+          // unhighlighted row may simply be one we would not call.
+          <Text style={styles.legend}>
+            · Low-confidence values — the footage was hard to measure. These are shown in full but are not
+            highlighted as the strongest, since the comparison would not be sound.
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -146,6 +186,18 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   playerMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
   overallValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.headingLg, color: colors.primary },
   cellValue: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
-  cellValueBest: { color: colors.success },
+  // Was colour-only, which fails WCAG 1.4.1 and lands on the same green/red
+  // axis ~8% of men cannot separate. The weight change carries the meaning
+  // independently of hue; the screen-reader label says "highest" outright.
+  cellValueBest: { color: colors.success, fontFamily: fontFamily.extraBold },
+  cellValueLow: { color: colors.textMuted },
+  legend: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    lineHeight: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
   });
 }

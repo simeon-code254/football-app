@@ -193,6 +193,11 @@ export default function PlayerDetail() {
   const presentAttrCount = data.attributes.filter((a) => a.value != null).length;
   const totalAttrCount = data.attributes.length;
   const isProvisionalRating = presentAttrCount > 0 && presentAttrCount < totalAttrCount;
+  // The overall is a weighted average of every scored attribute, so a single
+  // low-confidence measurement moves it. Qualifying the individual rows while
+  // presenting the headline as settled would be incoherent -- the headline is
+  // the number a scout actually acts on.
+  const anyLowConfidence = data?.attributes.some((a) => a.value != null && a.confidence === 'Low') ?? false;
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
@@ -315,23 +320,55 @@ export default function PlayerDetail() {
 
               <View style={styles.overallCard}>
                 <Text style={styles.overallLabel}>OVERALL</Text>
-                <Text style={styles.overallValue}>{player.overall_rating ?? '—'}</Text>
+                <Text
+                  style={styles.overallValue}
+                  accessibilityLabel={`Overall ${player.overall_rating ?? 'not rated'}${anyLowConfidence ? ', based partly on low-confidence analysis' : ''}`}
+                >
+                  {player.overall_rating ?? '—'}
+                  {anyLowConfidence ? '·' : ''}
+                </Text>
                 {isProvisionalRating && (
                   <Text style={styles.provisionalNote}>
                     Provisional ({presentAttrCount}/{totalAttrCount} attributes assessed)
+                  </Text>
+                )}
+                {anyLowConfidence && (
+                  <Text style={styles.provisionalNote}>
+                    · Includes low-confidence values — footage was hard to measure
                   </Text>
                 )}
               </View>
 
               <View style={{ gap: 10 }}>
                 {data.attributes.map((a) => (
-                  <View key={a.key} style={styles.skillRow}>
+                  // One label for the whole row: the pieces are a name, a
+                  // decorative bar, a number and a dot, which a screen reader
+                  // would otherwise read as disconnected fragments.
+                  <View
+                    key={a.key}
+                    style={styles.skillRow}
+                    accessible
+                    accessibilityLabel={`${a.displayName} ${a.value ?? 'not rated'}${a.confidence ? `, ${a.confidence} confidence` : ''}`}
+                  >
                     <Text style={styles.skillName}>{a.displayName}</Text>
                     <View style={styles.skillTrack}>
                       <View style={[styles.skillFill, { width: `${a.value ?? 0}%` }]} />
                     </View>
                     <Text style={styles.skillVal}>{a.value ?? '—'}</Text>
-                    {a.confidence && <View style={[styles.confDot, { backgroundColor: CONFIDENCE_COLOR[a.confidence] }]} />}
+                    {/* Confidence was a bare coloured dot: no text, no label,
+                        and the palette is green/gold/red -- the red-green pair
+                        that ~8% of men cannot separate, on a screen whose
+                        users skew heavily male. Colour alone also fails WCAG
+                        1.4.1. The dot stays as a quick scanning cue, but the
+                        word now carries the meaning. */}
+                    {a.confidence && (
+                      <View style={styles.confWrap}>
+                        <View style={[styles.confDot, { backgroundColor: CONFIDENCE_COLOR[a.confidence] }]} />
+                        <Text style={[styles.confLabel, { color: CONFIDENCE_COLOR[a.confidence] }]}>
+                          {a.confidence === 'Medium' ? 'Med' : a.confidence}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 ))}
                 {data.attributes.every((a) => a.value == null) && (
@@ -503,6 +540,8 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   skillFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
   skillVal: { width: 24, textAlign: 'right', fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   confDot: { width: 8, height: 8, borderRadius: 4 },
+  confWrap: { flexDirection: 'row', alignItems: 'center', gap: 4, width: 46 },
+  confLabel: { fontFamily: fontFamily.semiBold, fontSize: 10 },
   videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   videoThumb: { width: '31.5%', aspectRatio: 9 / 14, borderRadius: radii.sm, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   videoPlay: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
