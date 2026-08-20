@@ -19,7 +19,7 @@ import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
@@ -115,6 +115,7 @@ const ReelItem = memo(function ReelItem({
   // doesn't have to build a per-item conditional closure.
   const canReport = !!viewerId && item.creatorId !== viewerId;
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const player = useVideoPlayer(item.videoUrl, (p) => {
     p.loop = true;
@@ -231,6 +232,7 @@ export default function Reels() {
   // other tab, since nothing ever told its player to stop.
   const isFocused = useIsFocused();
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const {
@@ -439,7 +441,7 @@ export default function Reels() {
           style={styles.commentsBackdrop}
         >
           <Pressable style={{ flex: 1 }} onPress={() => setCommentsFor(null)} />
-          <View style={styles.commentsSheet}>
+          <View style={[styles.commentsSheet, elevation('overlay', isDark)]}>
             <Text style={styles.commentsTitle}>Comments</Text>
             <FlashList
               data={comments}

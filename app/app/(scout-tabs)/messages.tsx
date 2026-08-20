@@ -8,7 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as messagesRepository from '../../src/repositories/messagesRepository';
@@ -37,6 +37,7 @@ function timeAgo(iso: string) {
 // context is never lost. Gated behind scoutVerified per spec §3.
 export default function Messages() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
   const userId = useSessionStore((s) => s.session?.user.id);
@@ -197,7 +198,7 @@ export default function Messages() {
       const player = item.players;
       const preview = previews?.[item.id];
       return (
-        <Pressable style={styles.convoRow} onPress={() => setActiveConversationId(item.id)}>
+        <Pressable style={[styles.convoRow, elevation('raised', isDark)]} onPress={() => setActiveConversationId(item.id)}>
           <Image source={{ uri: player?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar}
           cachePolicy="memory-disk"
           transition={200}

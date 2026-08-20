@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
@@ -18,6 +18,7 @@ import { showAlert } from '../src/lib/alert';
 // toggles, which a static HTML mockup can't express.
 export default function Signup() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const { role } = useLocalSearchParams<{ role?: 'player' | 'scout' }>();
   const isScout = role === 'scout';
@@ -105,7 +106,7 @@ export default function Signup() {
       </LinearGradient>
 
       <ScrollView
-        style={styles.sheet}
+        style={[styles.sheet, elevation('overlay', isDark)]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

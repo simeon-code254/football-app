@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../src/theme';
 import { PlayerCard } from '../src/components/PlayerCard';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
@@ -35,6 +35,7 @@ const PAGE_SIZE = 20;
 // tries to do one of those things -- rather than at the door.
 export default function Browse() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const { t } = useTranslation();
   const styles = makeStyles(colors);
 
@@ -105,7 +106,7 @@ export default function Browse() {
         />
       </QueryState>
 
-      <View style={styles.cta}>
+      <View style={[styles.cta, elevation('raised', isDark)]}>
         <PrimaryButton label={t('browse.cta')} onPress={() => router.push('/role-select')} />
         <Pressable onPress={() => router.push('/login')} hitSlop={10} style={styles.loginWrap}>
           <Text style={styles.loginText}>

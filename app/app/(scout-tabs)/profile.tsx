@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, gradients, radii, spacing, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, gradients, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { IconButton } from '../../src/components/IconButton';
@@ -24,6 +24,7 @@ import { SkeletonProfile } from '../../src/components/Skeleton';
 // which is why it lives as a real (if locally-stored) form, not a stub.
 export default function ScoutProfile() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const scoutVerified = useSessionStore((s) => s.scoutVerified);
   const userId = useSessionStore((s) => s.session?.user.id);
@@ -120,7 +121,7 @@ export default function ScoutProfile() {
       </LinearGradient>
 
       {!scoutVerified && (
-        <Pressable style={styles.verifyBanner} onPress={() => router.push('/scout-verification')}>
+        <Pressable style={[styles.verifyBanner, elevation('raised', isDark)]} onPress={() => router.push('/scout-verification')}>
           <View style={styles.verifyBannerIcon}>
             <Feather name="upload" size={16} color={colors.goldDark} />
           </View>
@@ -132,7 +133,7 @@ export default function ScoutProfile() {
         </Pressable>
       )}
 
-      <View style={styles.statsCard}>
+      <View style={[styles.statsCard, elevation('raised', isDark)]}>
         {activityStats.map((t, i) => (
           <View key={t.label} style={[styles.statTile, i < activityStats.length - 1 && styles.statTileDivider]}>
             <View style={styles.statIconWrap}>
@@ -151,7 +152,7 @@ export default function ScoutProfile() {
           </View>
           <Text style={styles.sectionTitle}>About</Text>
         </View>
-        <View style={styles.bioCard}>
+        <View style={[styles.bioCard, elevation('raised', isDark)]}>
           <Text style={styles.bio}>{data?.scout?.bio || 'No bio yet — add one from Edit Profile.'}</Text>
         </View>
       </View>
@@ -179,7 +180,7 @@ export default function ScoutProfile() {
           </View>
           <Text style={styles.sectionTitle}>Scouting Preferences</Text>
         </View>
-        <Pressable style={styles.prefsCard} onPress={() => setPrefsOpen(true)}>
+        <Pressable style={[styles.prefsCard, elevation('raised', isDark)]} onPress={() => setPrefsOpen(true)}>
           <View style={styles.prefsCardIcon}>
             <Feather name="sliders" size={16} color={colors.primary} />
           </View>

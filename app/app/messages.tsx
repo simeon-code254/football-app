@@ -8,7 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -40,6 +40,7 @@ function timeAgo(iso: string) {
 // reply to threads a scout has already opened.
 export default function Messages() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const { scoutId } = useLocalSearchParams<{ scoutId?: string }>();
@@ -189,7 +190,7 @@ export default function Messages() {
       const scout = item.scouts;
       const preview = previews?.[item.id];
       return (
-        <Pressable style={styles.convoRow} onPress={() => setActiveConversationId(item.id)}>
+        <Pressable style={[styles.convoRow, elevation('raised', isDark)]} onPress={() => setActiveConversationId(item.id)}>
           <Image source={{ uri: scout?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar}
           cachePolicy="memory-disk"
           transition={200}

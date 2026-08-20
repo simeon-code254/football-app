@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { IconButton } from '../../src/components/IconButton';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -26,6 +26,7 @@ const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
 // attributes (§20), Save-to-folder (§21), and private Scout Notes (§22).
 export default function PlayerDetail() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const CONFIDENCE_COLOR: Record<string, string> = {
     High: colors.success,
@@ -398,7 +399,7 @@ export default function PlayerDetail() {
       <Modal visible={saveOpen} transparent animationType="fade" onRequestClose={() => setSaveOpen(false)}>
         <KeyboardAvoidingView accessibilityViewIsModal style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setSaveOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.sheet, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Save Player</Text>
             {(scoutData?.folders ?? []).map((f) => (
               <Pressable key={f.id} style={styles.folderRow} onPress={() => saveToFolder(f.id)}>
@@ -433,7 +434,7 @@ export default function PlayerDetail() {
       <Modal visible={notesOpen} transparent animationType="fade" onRequestClose={() => setNotesOpen(false)}>
         <KeyboardAvoidingView accessibilityViewIsModal style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setNotesOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.sheet, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Scout Notes</Text>
             <Text style={styles.notesHint}>Private — players can't see these.</Text>
             <View style={styles.notesBox}>
@@ -458,7 +459,7 @@ export default function PlayerDetail() {
           and applying themselves (trial_applications.source='invited') */}
       <Modal visible={inviteOpen} transparent animationType="fade" onRequestClose={() => setInviteOpen(false)}>
         <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={() => setInviteOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.sheet, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Invite to Trial</Text>
             <Text style={styles.notesHint}>Choose one of your open trials to invite {player.full_name} to.</Text>
             {!scoutData?.openTrials.length && <Text style={styles.notesHint}>You have no open trials — create one first.</Text>}

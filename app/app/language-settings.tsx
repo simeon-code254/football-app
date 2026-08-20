@@ -2,12 +2,13 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { SUPPORTED_LOCALES, useLocaleStore, useTranslation } from '../src/i18n';
 
 export default function LanguageSettings() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const { locale } = useTranslation();
   const override = useLocaleStore((s) => s.override);
@@ -29,7 +30,7 @@ export default function LanguageSettings() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.list}>
+        <View style={[styles.list, elevation('raised', isDark)]}>
           {rows.map((r, i) => {
             const active = override === r.code;
             return (

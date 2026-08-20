@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
 import { images } from '../../src/constants/images';
@@ -57,6 +57,7 @@ const EMPTY_FILTERS: Filters = {
 // surfaced as removable chips.
 export default function DiscoverPlayers() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const { saved } = useLocalSearchParams<{ saved?: string }>();
@@ -295,7 +296,7 @@ export default function DiscoverPlayers() {
       <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
         <KeyboardAvoidingView accessibilityViewIsModal style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.backdrop} onPress={() => setSheetOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.sheet, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Filters</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.filterLabel}>Position</Text>

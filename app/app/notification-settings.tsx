@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { QueryState } from '../src/components/QueryState';
 import { SelectField } from '../src/components/SelectField';
@@ -19,6 +19,7 @@ const HOURS = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')
 
 export default function NotificationSettings() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
 
@@ -102,7 +103,7 @@ export default function NotificationSettings() {
           )}
 
           <Text style={styles.sectionLabel}>What you get notified about</Text>
-          <View style={styles.card}>
+          <View style={[styles.card, elevation('raised', isDark)]}>
             {MUTABLE_GROUPS.map((g, i) => {
               const enabled = !g.types.some((t) => muted.includes(t));
               return (
@@ -129,7 +130,7 @@ export default function NotificationSettings() {
           </Text>
 
           <Text style={styles.sectionLabel}>Quiet hours</Text>
-          <View style={styles.card}>
+          <View style={[styles.card, elevation('raised', isDark)]}>
             <View style={[styles.row, quietEnabled && styles.rowBorder]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Pause notifications overnight</Text>

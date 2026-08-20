@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -37,6 +37,7 @@ function parseDate(text: string): string | null {
 // Trial Management / Applicant review (app/trial/[id].tsx, spec §15).
 export default function Trials() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
     open: { bg: colors.successTint, text: colors.success },
@@ -167,7 +168,7 @@ export default function Trials() {
       const statusStyle = STATUS_STYLE[trial.status] ?? STATUS_STYLE.open;
       const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
       return (
-        <Pressable style={styles.card} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
+        <Pressable style={[styles.card, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardCover} contentFit="contain" />}
           <View style={styles.cardTop}>
             <Text style={styles.cardTitle}>{trial.title}</Text>
