@@ -9,10 +9,16 @@ title: Terms of Service
 
 > **⚠️ NEEDS LEGAL REVIEW, AND ONE FACT ONLY YOU CAN SUPPLY.**
 > These terms describe how the app actually behaves, checked against the code.
-> They are not a lawyer's work. The registered entity and its address are
-> marked `[[...]]`; terms naming no entity are difficult to enforce. Sections
-> 15 and 16 contain liability limits whose enforceability depends on Kenyan
-> consumer law — have those reviewed specifically.
+> They are not a lawyer's work. The operator's legal name and contact address
+> are marked `[[...]]`; terms naming nobody are difficult to enforce.
+>
+> **Matobev is currently run as a sole proprietorship, which means there is no
+> company between you and the business — the operator is personally liable for
+> its debts and claims against it.** The liability limits in sections 15 and 16
+> are therefore worth far less than they would be with a limited company behind
+> them. Incorporating before the platform carries real numbers of minors is the
+> single most valuable piece of legal work available here, and is worth raising
+> with an advocate ahead of the wording.
 
 These terms are a contract between you and us. By creating an account or using
 Matobev you accept them. If you do not accept them, do not use the app.
@@ -25,8 +31,9 @@ you should be able to find and understand it.
 
 ## 1. Who we are
 
-Matobev is a trading name of `[[REGISTERED LEGAL ENTITY NAME]]`, of
-`[[REGISTERED ADDRESS]]`. Contact: **support@matobev.com**.
+Matobev is a business name registered in Kenya, operated as a sole
+proprietorship by `[[YOUR FULL LEGAL NAME]]` of `[[CONTACT ADDRESS]]`.
+Contact: **support@matobev.com**.
 
 Matobev is a platform that connects footballers in Africa with scouts. We are
 not an agency, a club, or a representative. We do not negotiate on your behalf

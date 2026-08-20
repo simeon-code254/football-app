@@ -10,11 +10,11 @@ title: Privacy Policy
 > **⚠️ NEEDS LEGAL REVIEW, AND TWO FACTS ONLY YOU CAN SUPPLY.**
 > Everything below describes what the Matobev app and database actually do,
 > checked against the schema, the Edge Functions and the live project. It is
-> accurate and it is specific, but it is not a lawyer's work. The registered
-> entity and its address are marked `[[...]]` — a policy naming no accountable
-> entity is not compliant however accurate the rest of it is. It also commits
-> you to retention periods and response times in sections 9 and 12; read those
-> as promises, because that is what they become.
+> accurate and it is specific, but it is not a lawyer's work. The operator's
+> legal name and contact address are marked `[[...]]` — a policy
+> naming no accountable person or entity is not compliant however accurate the
+> rest of it is. It also commits you to retention periods and response times in
+> sections 9 and 12; read those as promises, because that is what they become.
 
 ## The short version
 
@@ -34,8 +34,9 @@ The rest of this document is the detail behind those five points.
 
 ## 1. Who is responsible for your data
 
-Matobev is a trading name of `[[REGISTERED LEGAL ENTITY NAME]]`, of
-`[[REGISTERED ADDRESS]]` ("Matobev", "we", "us").
+Matobev is a business name registered in Kenya, operated as a sole
+proprietorship by `[[YOUR FULL LEGAL NAME]]` of `[[CONTACT ADDRESS]]`
+("Matobev", "we", "us").
 
 We are the **data controller** for the personal data described here. That
 means we decide what is collected and why, and we are the ones answerable for
