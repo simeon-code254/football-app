@@ -144,7 +144,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     image: { width: '100%', height: '100%' },
     ovrBadge: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, alignItems: 'center' },
     ovrValue: { fontFamily: fontFamily.bold, fontSize: fontSize.body, color: colors.white, lineHeight: 16 },
-    ovrLabel: { fontFamily: fontFamily.medium, fontSize: 9, color: 'rgba(255,255,255,0.8)' },
+    ovrLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.caption, color: 'rgba(255,255,255,0.8)' },
     posBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: colors.primary, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4 },
     posText: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.white },
     body: { padding: 14 },

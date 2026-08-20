@@ -423,7 +423,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   convoLast: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   convoTime: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder },
   unreadDot: { backgroundColor: colors.primary, borderRadius: 9, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  unreadText: { fontFamily: fontFamily.bold, fontSize: 10, color: colors.white },
+  unreadText: { fontFamily: fontFamily.bold, fontSize: fontSize.caption, color: colors.white },
   threadHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },
   threadAvatar: { width: 38, height: 38, borderRadius: 19 },
   threadName: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },

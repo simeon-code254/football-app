@@ -499,7 +499,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     overflow: 'hidden',
   },
   photoUploadFilled: { borderStyle: 'solid', borderColor: colors.primary },
-  photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: 9, color: colors.textDisabled, marginTop: 2 },
+  photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.caption, color: colors.textDisabled, marginTop: 2 },
   photoPreview: { width: '100%', height: '100%', borderRadius: 40 },
   footRow: { flexDirection: 'row', gap: 8 },
   footPill: {

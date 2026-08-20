@@ -186,7 +186,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     overflow: 'hidden',
   },
   photoUploadFilled: { borderStyle: 'solid', borderColor: colors.primary },
-  photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: 9, color: colors.textDisabled, marginTop: 2 },
+  photoUploadLabel: { fontFamily: fontFamily.regular, fontSize: fontSize.caption, color: colors.textDisabled, marginTop: 2 },
   photoPreview: { width: '100%', height: '100%', borderRadius: 40 },
   label: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textLabel, marginBottom: 5 },
   bioBox: { borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 12, minHeight: 100 },

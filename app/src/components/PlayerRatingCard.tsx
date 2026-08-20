@@ -361,7 +361,7 @@ function makeStyles(c: Palette) {
     },
     legend: {
       fontFamily: fontFamily.regular,
-      fontSize: 10,
+      fontSize: fontSize.caption,
       color: c.muted,
       textAlign: "center",
       marginTop: spacing.xs,
@@ -375,7 +375,7 @@ function makeStyles(c: Palette) {
     },
     attrKey: {
       fontFamily: fontFamily.semiBold,
-      fontSize: 10,
+      fontSize: fontSize.caption,
       color: c.muted,
       letterSpacing: 1.2,
       marginTop: 2,
@@ -389,7 +389,7 @@ function makeStyles(c: Palette) {
     },
     provisional: {
       fontFamily: fontFamily.medium,
-      fontSize: 10,
+      fontSize: fontSize.caption,
       color: c.muted,
       textAlign: "center",
       marginTop: spacing.md,

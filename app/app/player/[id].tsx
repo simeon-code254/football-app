@@ -543,7 +543,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   skillVal: { width: 24, textAlign: 'right', fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
   confDot: { width: 8, height: 8, borderRadius: 4 },
   confWrap: { flexDirection: 'row', alignItems: 'center', gap: 4, width: 46 },
-  confLabel: { fontFamily: fontFamily.semiBold, fontSize: 10 },
+  confLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.caption },
   videoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   videoThumb: { width: '31.5%', aspectRatio: 9 / 14, borderRadius: radii.sm, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   videoPlay: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },

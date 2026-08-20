@@ -218,7 +218,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   attrCell: { width: '43%', flexGrow: 1 },
   attrTopRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   attrName: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted },
-  confText: { fontFamily: fontFamily.semiBold, fontSize: 10 },
+  confText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.caption },
   attrValue: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 2 },
   attrTrack: { height: 4, borderRadius: 2, backgroundColor: colors.divider, overflow: 'hidden', marginTop: 6 },
   attrFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },

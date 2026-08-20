@@ -15,7 +15,7 @@
 // #131B2E" is not answerable by eye. Measure it.
 //
 //   node scripts/verify-theme.mjs
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -85,6 +85,32 @@ for (const [bgName, bg] of ladder) {
   }
 }
 if (!bad) console.log('  all pass');
+
+// No raw font size below the scale's floor.
+//
+// Fifteen places had already bypassed the scale to reach a caption size it
+// did not define, four of them landing on 9px -- below every platform floor
+// (iOS HIG says 11pt, Material's caption is 12sp). Large one-off display
+// sizes are deliberate (the rating card's 52), so only the small end is
+// policed.
+const FLOOR = 10;
+const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+  const full = join(dir, e.name);
+  if (e.isDirectory()) return e.name === 'node_modules' ? [] : walk(full);
+  return /[.]tsx?$/.test(e.name) ? [full] : [];
+});
+console.log(String.fromCharCode(10) + 'raw font sizes below the scale floor:');
+let tiny = 0;
+for (const f of [...walk(join(ROOT, 'app/app')), ...walk(join(ROOT, 'app/src'))]) {
+  readFileSync(f, 'utf8').split(String.fromCharCode(10)).forEach((line, i) => {
+    const m = line.match(/fontSize: ([0-9]+)/);
+    if (m && Number(m[1]) < FLOOR) {
+      tiny++; bad++;
+      console.log('  FAIL  ' + f.slice(ROOT.length + 1) + ':' + (i + 1) + '  fontSize: ' + m[1] + ' -- use fontSize.caption or larger');
+    }
+  });
+}
+if (!tiny) console.log('  none');
 
 console.log(`\n${bad} problem(s).`);
 process.exit(bad ? 1 : 0);
