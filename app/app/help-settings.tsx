@@ -11,14 +11,19 @@ import { IconButton } from '../src/components/IconButton';
 // placeholder address, not a verified one.
 const SUPPORT_EMAIL = 'support@matobev.com';
 
-// Served by the `legal` Edge Function from docs/privacy-policy.md and
-// docs/terms-of-service.md. Built from the configured project URL rather than
-// hardcoded so the links follow whichever environment the app points at.
+// GitHub Pages, not Supabase.
 //
-// Google Play requires a privacy policy reachable from inside the app as well
-// as in the store listing; before this there was no https link anywhere in the
-// codebase.
-const LEGAL_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''}/functions/v1/legal`;
+// Both Supabase routes refuse to serve a browsable HTML page, by design and
+// not by misconfiguration:
+//   - Storage records the right mimetype but its public endpoint overrides it
+//     to text/plain (stored-XSS protection).
+//   - Edge Functions get a Content-Security-Policy on browser navigations that
+//     sandboxes the document, so Chrome shows the markup instead of rendering
+//     it ("Blocked script execution ... the document's frame is sandboxed").
+//
+// Neither can be configured away, so the documents are published as static
+// files from the repo's docs/ folder instead. Same markdown either way.
+const LEGAL_BASE = 'https://simeon-code254.github.io/football-app';
 
 const FAQS: { q: string; a: string }[] = [
   {
@@ -71,13 +76,13 @@ export default function HelpSettings() {
         <Text style={styles.sectionLabel}>Legal</Text>
         <View style={styles.list}>
           {[
-            { label: 'Privacy Policy', doc: 'privacy', icon: 'shield' as const },
-            { label: 'Terms of Service', doc: 'terms', icon: 'file-text' as const },
+            { label: 'Privacy Policy', slug: 'privacy-policy', icon: 'shield' as const },
+            { label: 'Terms of Service', slug: 'terms-of-service', icon: 'file-text' as const },
           ].map((item, i) => (
             <Pressable
-              key={item.doc}
+              key={item.slug}
               style={[styles.legalRow, i === 0 && styles.legalRowFirst]}
-              onPress={() => Linking.openURL(`${LEGAL_BASE}/${item.doc}.html`)}
+              onPress={() => Linking.openURL(`${LEGAL_BASE}/${item.slug}`)}
               accessibilityRole="link"
               accessibilityLabel={`${item.label}, opens in your browser`}
             >

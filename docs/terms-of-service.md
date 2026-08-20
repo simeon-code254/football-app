@@ -1,3 +1,8 @@
+---
+layout: default
+title: Terms of Service
+---
+
 # Matobev Terms of Service
 
 **Last updated: 20 August 2026**

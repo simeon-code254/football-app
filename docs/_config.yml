@@ -1,0 +1,30 @@
+# GitHub Pages configuration for the Matobev legal documents.
+#
+# These have to live on real static hosting, not on Supabase. Both Supabase
+# routes actively refuse to serve browsable HTML, by design:
+#
+#   - Storage stores the correct mimetype but the public endpoint overrides it
+#     to text/plain, which is their stored-XSS protection.
+#   - Edge Functions get a Content-Security-Policy applied to browser
+#     navigations that sandboxes the document ("Blocked script execution ...
+#     because the document's frame is sandboxed"), which stops their domain
+#     being used to host pages.
+#
+# Neither is a bug and neither can be configured away. GitHub Pages serves
+# static files as themselves, and this repo is already public.
+title: Matobev
+description: Legal documents for the Matobev football scouting app
+theme: jekyll-theme-primer
+
+# Only the two legal documents are published. docs/ also holds engineering
+# handbooks, design handoffs and internal notes, none of which should be on a
+# public website just because they share a folder.
+include:
+  - privacy-policy.md
+  - terms-of-service.md
+exclude:
+  - "*.docx"
+  - "*.jpg"
+  - HANDOFF.md
+  - design-handoff
+  - html

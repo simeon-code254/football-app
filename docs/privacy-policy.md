@@ -1,3 +1,8 @@
+---
+layout: default
+title: Privacy Policy
+---
+
 # Matobev Privacy Policy
 
 **Last updated: 20 August 2026**
