@@ -13,6 +13,8 @@ import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
+import { router } from 'expo-router';
+import * as guardianRepository from '../../src/repositories/guardianRepository';
 import { showAlert } from '../../src/lib/alert';
 import { successFeedback, errorFeedback } from '../../src/lib/haptics';
 import { PushPrimer } from '../../src/components/PushPrimer';
@@ -223,6 +225,34 @@ export default function Upload() {
 
   const publish = async () => {
     if (!video || !userId) return;
+
+    // Checked BEFORE a single byte is uploaded. The database rejects this
+    // anyway (migration 20260820151000), but that rejection happens after the
+    // video is already in storage -- so without this check a 15-year-old on a
+    // metered connection would pay for the whole transfer to be told no. The
+    // cleanup path then deletes the orphaned object, meaning they paid for
+    // nothing at all.
+    if (mode === 'ai') {
+      try {
+        const consented = await guardianRepository.hasAiConsent(userId);
+        if (!consented) {
+          showAlert(
+            'A parent or guardian needs to agree',
+            'AI analysis measures how you move from the video, so someone over 18 has to approve it first. You can still post this as a highlight.',
+            [
+              { text: 'Not now', style: 'cancel' },
+              { text: 'Ask them', onPress: () => router.push('/guardian-consent') },
+            ]
+          );
+          return;
+        }
+      } catch {
+        // If the check itself fails, fall through and let the upload proceed:
+        // the database is the real gate, so the worst case is the honest
+        // error rather than blocking someone who is actually allowed.
+      }
+    }
+
     setPublishing(true);
     try {
       const videoId = Crypto.randomUUID();
