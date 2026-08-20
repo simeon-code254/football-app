@@ -173,7 +173,7 @@ Deno.serve((req) => {
       'content-type': 'text/html; charset=utf-8',
       // Cached, but briefly: a corrected policy should reach people the same
       // day rather than sitting stale in a CDN for a week.
-      'cache-control': 'public, max-age=3600',
+      'cache-control': 'public, max-age=60, must-revalidate',
     },
   });
 });
