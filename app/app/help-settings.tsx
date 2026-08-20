@@ -77,7 +77,7 @@ export default function HelpSettings() {
             <Pressable
               key={item.doc}
               style={[styles.legalRow, i === 0 && styles.legalRowFirst]}
-              onPress={() => Linking.openURL(`${LEGAL_BASE}?doc=${item.doc}`)}
+              onPress={() => Linking.openURL(`${LEGAL_BASE}/${item.doc}.html`)}
               accessibilityRole="link"
               accessibilityLabel={`${item.label}, opens in your browser`}
             >

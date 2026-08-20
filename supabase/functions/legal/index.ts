@@ -163,8 +163,14 @@ Deno.serve((req) => {
   // Accepts ?doc=privacy and a trailing path segment, so both /legal?doc=terms
   // and /legal/terms work -- store listings and in-app links tend to be
   // written differently and neither should 404.
-  const seg = url.pathname.split('/').filter(Boolean).pop() ?? '';
-  const key = url.searchParams.get('doc') ?? (seg in PAGES ? seg : 'privacy');
+  // A trailing .html is accepted and stripped. Nothing on our side needs it --
+  // the Content-Type header is correct either way -- but proxies, in-app
+  // browsers and extensions in the wild still decide how to treat a response
+  // by looking at the extension, and a URL that ends in .html gives them the
+  // answer they expect. Costs nothing.
+  const seg = (url.pathname.split('/').filter(Boolean).pop() ?? '').replace(/\.html?$/i, '');
+  const qs = (url.searchParams.get('doc') ?? '').replace(/\.html?$/i, '');
+  const key = qs || (seg in PAGES ? seg : 'privacy');
   const page = PAGES[key] ?? PAGES.privacy;
 
   return new Response(shell(page.title, render(page.md)), {
