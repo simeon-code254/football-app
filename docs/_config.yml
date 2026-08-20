@@ -14,7 +14,16 @@
 # static files as themselves, and this repo is already public.
 title: Matobev
 description: Legal documents for the Matobev football scouting app
-theme: jekyll-theme-primer
+
+# Required for a project Pages site. GitHub serves this from
+# /football-app/, and without baseurl the relative_url filter emits
+# /privacy-policy -- which 404s, so every nav link between the two documents
+# would be broken.
+url: https://simeon-code254.github.io
+baseurl: /football-app
+# No theme: _layouts/default.html supplies the whole page. The stock themes
+# render these as undifferentiated grey text, and these two documents get read
+# by regulators, app reviewers and teenagers -- they earn a real layout.
 
 # Only the two legal documents are published. docs/ also holds engineering
 # handbooks, design handoffs and internal notes, none of which should be on a

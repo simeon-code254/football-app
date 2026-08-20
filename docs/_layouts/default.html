@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title }} &middot; Matobev</title>
+<meta name="description" content="{{ site.description }}">
+<meta name="color-scheme" content="light dark">
+
+<!--
+  Custom layout rather than a stock Jekyll theme.
+
+  These are the two documents a regulator, an app reviewer and a fifteen-year-old
+  might all read, and the default theme rendered them as undifferentiated grey
+  text. Long-form legal copy has specific needs the general-purpose themes do not
+  meet: a measure short enough to track across lines, headings that let you scan
+  to a clause, and a callout that cannot be mistaken for body text.
+
+  Design follows the app rather than inventing a second identity - the same navy
+  and blue, Poppins for headings as the app uses, and the same instinct that a
+  surface should lift off its background.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* Light is the base; only the tokens change in dark, so no rule is defined
+     in one theme and forgotten in the other. */
+  :root {
+    --bg: #EEF1F6;
+    --surface: #FFFFFF;
+    --ink: #0B1220;
+    --body: #2C3648;
+    --muted: #6B7488;
+    --rule: #E1E6EE;
+    --primary: #1A6DFF;
+    --accent: #B8860B;
+    --callout-bg: #FFF9E8;
+    --callout-edge: #E8A33D;
+    --code-bg: #F1F4F9;
+    --shadow: 0 1px 2px rgba(11,18,32,.04), 0 12px 32px rgba(11,18,32,.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #070E1B;
+      --surface: #111A2B;
+      --ink: #F5F7FA;
+      --body: #C3CBD9;
+      --muted: #8792A6;
+      --rule: #22304A;
+      --primary: #6BA5FF;
+      --accent: #FFD54F;
+      --callout-bg: #241D08;
+      --callout-edge: #C99A2E;
+      --code-bg: #1A2437;
+      --shadow: none;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--body);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* 17px base: these documents are long, and 15px asks too much of someone
+       reading terms on a phone. */
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  .masthead {
+    background: var(--surface);
+    border-bottom: 1px solid var(--rule);
+  }
+  .masthead-inner {
+    max-width: 760px; margin: 0 auto; padding: 20px 24px 0;
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  }
+  .wordmark {
+    font-family: Poppins, sans-serif; font-weight: 700; font-size: 21px;
+    letter-spacing: -.3px; color: var(--ink); text-decoration: none;
+  }
+  .wordmark span { color: var(--primary); }
+  .tagline { color: var(--muted); font-size: 14px; }
+
+  nav { max-width: 760px; margin: 0 auto; padding: 14px 24px 0; display: flex; gap: 4px; }
+  nav a {
+    font-size: 14.5px; font-weight: 500; text-decoration: none; color: var(--muted);
+    padding: 9px 14px; border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent;
+  }
+  nav a:hover { color: var(--ink); background: var(--code-bg); }
+  /* Current document marked by weight and a rule, not colour alone. */
+  nav a[aria-current="page"] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+  main {
+    max-width: 760px; margin: 28px auto 72px; padding: 40px 44px 52px;
+    background: var(--surface); border-radius: 14px; box-shadow: var(--shadow);
+  }
+
+  h1, h2, h3 { font-family: Poppins, sans-serif; color: var(--ink); letter-spacing: -.2px; }
+  h1 { font-size: 32px; line-height: 1.2; margin: 0 0 6px; font-weight: 700; }
+  /* Numbered clauses get a rule above so the eye can find a section boundary
+     when scanning, which is how these documents are actually read. */
+  h2 {
+    font-size: 21px; font-weight: 600; margin: 44px 0 14px;
+    padding-top: 22px; border-top: 1px solid var(--rule);
+  }
+  h3 { font-size: 17px; font-weight: 600; margin: 28px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--primary); }
+
+  /* "Last updated" reads as metadata, not as a first sentence. */
+  main > p:first-of-type strong { color: var(--muted); font-weight: 500; font-size: 14.5px; }
+
+  ul { padding-left: 20px; margin: 0 0 16px; }
+  li { margin-bottom: 9px; }
+  li::marker { color: var(--muted); }
+  strong { color: var(--ink); font-weight: 600; }
+
+  blockquote {
+    margin: 24px 0; padding: 18px 22px;
+    background: var(--callout-bg);
+    border-left: 4px solid var(--callout-edge);
+    border-radius: 0 10px 10px 0;
+  }
+  blockquote p { font-size: 15.5px; line-height: 1.62; margin: 0 0 10px; }
+  blockquote p:last-child { margin-bottom: 0; }
+
+  /* The [[...]] placeholders are unfinished content, and should look it --
+     dashed, tinted, impossible to skim past and ship by accident. */
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .87em; background: var(--code-bg); color: var(--accent);
+    padding: 2px 7px; border-radius: 5px;
+    border: 1px dashed var(--callout-edge);
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15.5px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--rule); }
+  th { font-weight: 600; color: var(--ink); background: var(--code-bg); }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  hr { display: none; } /* Section rules come from h2; a second divider is noise. */
+
+  footer {
+    max-width: 760px; margin: 0 auto 56px; padding: 0 24px;
+    color: var(--muted); font-size: 13.5px;
+  }
+  footer a { color: var(--muted); }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    main { margin: 14px 12px 44px; padding: 26px 20px 34px; border-radius: 12px; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 19px; margin-top: 34px; }
+    nav { padding-left: 12px; padding-right: 12px; overflow-x: auto; }
+    .masthead-inner { padding-left: 16px; padding-right: 16px; }
+    /* A table of processors and regions must not force the page sideways. */
+    table { display: block; overflow-x: auto; white-space: nowrap; }
+  }
+
+  /* Legal documents get printed and attached to things. */
+  @media print {
+    body { background: #fff; color: #000; font-size: 11pt; }
+    .masthead, nav, footer { display: none; }
+    main { box-shadow: none; margin: 0; padding: 0; max-width: none; }
+    h2 { break-after: avoid; }
+    blockquote, table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="{{ '/privacy-policy' | relative_url }}">Mato<span>bev</span></a>
+    <span class="tagline">{{ site.description }}</span>
+  </div>
+  <nav>
+    <a href="{{ '/privacy-policy' | relative_url }}"
+       {% if page.title == 'Privacy Policy' %}aria-current="page"{% endif %}>Privacy Policy</a>
+    <a href="{{ '/terms-of-service' | relative_url }}"
+       {% if page.title == 'Terms of Service' %}aria-current="page"{% endif %}>Terms of Service</a>
+  </nav>
+</header>
+
+<main>
+  {{ content }}
+</main>
+
+<footer>
+  Questions about either document: <a href="mailto:support@matobev.com">support@matobev.com</a>
+</footer>
+
+</body>
+</html>
