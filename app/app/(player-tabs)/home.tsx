@@ -77,6 +77,7 @@ export default function Home() {
     trial_status_change: 'clipboard',
     new_message: 'message-circle',
     profile_view: 'eye',
+    rating_improved: 'trending-up',
   };
 
   return (

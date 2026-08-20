@@ -25,8 +25,8 @@ export const MUTABLE_GROUPS = [
   {
     key: 'ratings',
     label: 'AI ratings',
-    description: 'When analysis of your video finishes',
-    types: ['analysis_complete', 'analysis_skipped', 'analysis_failed'],
+    description: 'When analysis finishes, and when your rating goes up',
+    types: ['analysis_complete', 'analysis_skipped', 'analysis_failed', 'rating_improved'],
   },
   {
     key: 'profile_views',

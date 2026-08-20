@@ -24,6 +24,7 @@ const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = 
   analysis_skipped: 'bar-chart-2',
   analysis_failed: 'alert-circle',
   profile_view: 'eye',
+  rating_improved: 'trending-up',
 };
 
 // Every notification carries enough in `data` to know where it's actually
@@ -40,6 +41,7 @@ function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | 
     case 'analysis_complete':
     case 'analysis_skipped':
     case 'analysis_failed':
+    case 'rating_improved':
       return '/ai-ratings';
     case 'scout_verification':
       return '/(scout-tabs)/home';
