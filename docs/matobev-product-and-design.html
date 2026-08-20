@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Matobev — Design Verdict, Screens &amp; Retention</title>
+<title>Matobev — Full Product Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
@@ -67,6 +67,17 @@
   .sw .chip{height:13mm;border-radius:1.6mm;border:1px solid rgba(0,0,0,.08)}
   .sw .nm{font-size:7.6pt;font-weight:600;color:var(--navy);margin-top:.8mm}
   .sw .hex{font-family:ui-monospace,Consolas,monospace;font-size:6.8pt;color:var(--muted)}
+  table.tight{font-size:7.3pt} table.tight td,table.tight th{padding:1.4mm 1.6mm}
+  .warnt{color:#8A6100;font-weight:600}
+  .scr{break-inside:avoid;margin:0 0 3mm;border:1px solid var(--rule);border-radius:2mm;overflow:hidden}
+  .scr-h{background:var(--wash);padding:1.7mm 2.5mm;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
+  .scr-h .nm{font-weight:600;color:var(--navy);font-size:9pt;font-family:Poppins,sans-serif}
+  .scr-h .path{font-family:ui-monospace,Consolas,monospace;font-size:6.8pt;color:var(--muted)}
+  .scr-b{padding:2.1mm 2.5mm;font-size:8.7pt}
+  .scr-b p{margin:0 0 1.7mm}
+  .scr-b dl{display:grid;grid-template-columns:23mm 1fr;gap:.7mm 2.5mm;margin:0;font-family:Poppins,sans-serif;font-size:7.8pt}
+  .scr-b dt{color:var(--muted);font-weight:500} .scr-b dd{margin:0}
+  .scr-b dd.risk{color:#8A3A18}
   .foot{margin-top:7mm;padding-top:2.5mm;border-top:1px solid var(--rule);font-family:Poppins,sans-serif;
         font-size:7.4pt;color:var(--muted);line-height:1.6}
 </style>
@@ -78,22 +89,447 @@
   <img src="assets/logo.png" alt="" style="width:23mm;height:23mm;margin-bottom:7mm">
   <div class="rule"></div>
   <h1>Matobev</h1>
-  <div class="sub">Design Verdict, Screens &amp; Retention</div>
+  <div class="sub">Full Product Report</div>
   <p style="max-width:116mm;font-size:10.4pt;margin-bottom:11mm">
-    A committed design decision with the evidence behind it, twenty-three
-    screens drawn, and the specific mechanics that make someone open the app
-    again next week.
+    What it is and why it exists. Who it competes with, in detail. How it can
+    sustain itself. Every screen explained. And a design decision with the
+    evidence behind it.
   </p>
   <div class="meta">
     <strong style="color:var(--navy)">Prepared for</strong> Simeon Odhiambo<br>
-    <strong style="color:var(--navy)">Scope</strong> 44 screens · 23 drawn · player, scout and guardian<br>
+    <strong style="color:var(--navy)">Scope</strong> 44 screens · 23 drawn · 6 competitors · business model<br>
     <strong style="color:var(--navy)">Date</strong> 20 August 2026
   </div>
 </section>
 
 <!-- ===== THE VERDICT ===== -->
+<!-- ===== EXEC SUMMARY ===== -->
 <section class="part">
-  <div class="kicker">The decision</div>
+  <div class="kicker">Executive summary</div>
+  <h2>The five things to know</h2>
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:26%">Finding</th><th>Detail</th></tr>
+    <tr><td>1</td><td><strong>The concept is not novel</strong></td>
+      <td>Six direct competitors. Scout Me Pro is near-identical: &quot;TikTok for football&quot;, computer-vision scores, 13+ with parental consent, free to start. Afriskaut relaunched in 2025 and is in talks with the NBA. SOCALOCA holds a Ghana FA partnership.</td></tr>
+    <tr><td>2</td><td><strong>AI is table stakes, and Matobev is behind</strong></td>
+      <td>Every competitor claims AI analysis. Matobev&#39;s engine scores four attributes and is <em>low-confidence on all of them</em>. It cannot be the pitch.</td></tr>
+    <tr><td>3</td><td><strong>Trust is the unclaimed position</strong></td>
+      <td>Fake-agent fraud and player trafficking is a documented, large-scale harm. No competitor positions on safety. Matobev has already built most of what a serious answer requires.</td></tr>
+    <tr><td>4</td><td><strong>There is no business model at all</strong></td>
+      <td>No payment, subscription or billing code exists anywhere. Not thin &mdash; absent. This is the largest unaddressed gap in the product.</td></tr>
+    <tr><td>5</td><td><strong>It has never been used end to end</strong></td>
+      <td>A ninety-second review surfaced three defects, including a scout being unable to play a player&#39;s video at all.</td></tr>
+  </table>
+  <div class="verdict">
+    <h3>The one-line strategy</h3>
+    <p><strong>Do not compete on AI. Compete on being the platform a parent would
+      let their child use</strong> &mdash; verified scouts, nobody ever charged, minors
+      protected by default, and ratings that admit when they are unsure. That is
+      defensible, it is what the market lacks, and most of it is already built.</p>
+  </div>
+</section>
+
+<!-- ===== PART ONE ===== -->
+<section class="part">
+  <div class="kicker">Part One</div>
+  <h2>What Matobev is, and why</h2>
+  <p class="lede">
+    A talent-discovery platform for African footballers. A player uploads a
+    highlight from their phone; software analyses how they move and produces a
+    rating with a confidence attached; scouts search, watch, shortlist and make
+    contact.
+  </p>
+  <h3>Why it exists</h3>
+  <p>
+    Discovery in African football runs on physical presence and personal
+    networks &mdash; being at the right academy, knowing the right person, affording
+    the journey to a trial. Every one of those is a filter on circumstance, not
+    on ability. A gifted seventeen-year-old in Kisumu is not short of talent.
+    They are short of anyone credible watching.
+  </p>
+  <p>
+    Into that gap steps an organised fraud industry. Fake agents approach young
+    players directly or through social media, promise trials with European
+    clubs, and charge families for &quot;insurance&quot;, &quot;registration&quot; or travel. The
+    money is sent and nothing further is heard. In the worst cases players reach
+    Europe, have documents and phones confiscated, and are pressed to extract
+    further payments from home. This is documented at scale by ISS Africa, ENACT
+    and VICE, and the remedy those bodies recommend is always the same:
+    <strong>verification, and publishing who is genuine</strong>.
+  </p>
+  <div class="callout"><span class="label">The product&#39;s actual bet</span>
+    <p>If a player can be seen and assessed from a phone video, discovery stops
+      depending on geography and connections. But the rating is not the product.
+      <strong>Being visible to someone real, safely, is the product.</strong> The
+      rating is only the mechanism that makes a stranger worth a scout&#39;s
+      attention.</p></div>
+
+  <h3>What it actually does</h3>
+  <table>
+    <tr><th style="width:22%">Capability</th><th>How it works today</th></tr>
+    <tr><td><strong>Player profiles</strong></td><td>Name, date of birth, nationality, position, physical attributes, club, bio, socials, photo. Four fields required; the rest optional.</td></tr>
+    <tr><td><strong>Video upload</strong></td><td>A clip from the camera roll, as either <em>highlight only</em> or <em>AI analysis</em>. Size checked before transfer; the player tags themselves in one frame so the analysis knows who to follow.</td></tr>
+    <tr><td><strong>AI analysis</strong></td><td>Pose estimation over the clip, producing attribute scores on a 0&ndash;99 scale plus an overall &mdash; each carrying a confidence of High, Medium or Low earned from sample count and tracking coverage.</td></tr>
+    <tr><td><strong>Confidence weighting</strong></td><td>The overall is weighted by both playing position and measurement confidence, so an uncertain number counts for less.</td></tr>
+    <tr><td><strong>Scout tools</strong></td><td>Filtered search, recommendations with real reasons, saved folders, private notes, side-by-side comparison, direct messaging.</td></tr>
+    <tr><td><strong>Trials</strong></td><td>Scouts post opportunities; players apply; both sides track status.</td></tr>
+    <tr><td><strong>Safeguarding</strong></td><td>Age floor of 13; guardian consent enforced in the database before any analysis of an under-18; under-18 profiles hidden from signed-out visitors; blocking enforced in row-level security; reporting on every surface.</td></tr>
+    <tr><td><strong>Retention</strong></td><td>Profile-view alerts, rating-increase alerts, a Monday digest that stays silent on quiet weeks, and an improvement leaderboard.</td></tr>
+  </table>
+
+  <h3>Who it serves</h3>
+  <table>
+    <tr><th style="width:17%">Role</th><th style="width:29%">Actually wants</th><th style="width:28%">Gets</th><th>Leaves when</th></tr>
+    <tr><td><strong>Player</strong><br><span style="color:var(--muted)">13+, mostly 15&ndash;21</span></td>
+      <td>Proof someone real is looking</td><td>Profile, rating, visibility, trials, evidence of attention</td><td>Nothing comes back after an upload</td></tr>
+    <tr><td><strong>Scout</strong><br><span style="color:var(--muted)">clubs, academies, agents</span></td>
+      <td>To avoid wasting a journey</td><td>Search, ratings as a first pass, footage, shortlists, notes, contact</td><td>Inventory is thin or ratings cannot be trusted</td></tr>
+    <tr><td><strong>Guardian</strong><br><span style="color:var(--muted)">of an under-18</span></td>
+      <td>To know their child is not being exploited</td><td>A consent decision they make themselves, and can withdraw</td><td>They were never really asked</td></tr>
+  </table>
+  <p style="font-size:9pt">The guardian never installs the app &mdash; they receive a
+    link and decide on a web page. That is the only part of the product designed
+    for someone who is not a user, and the part a regulator looks at first.</p>
+</section>
+
+<!-- ===== PART TWO ===== -->
+<section class="part">
+  <div class="kicker">Part Two</div>
+  <h2>The competition, in detail</h2>
+  <p class="lede">
+    Six platforms occupy the same sentence as Matobev. Two have institutional
+    backing it does not. One is a near-exact functional twin.
+  </p>
+  <table class="tight">
+    <tr><th style="width:13%">Platform</th><th style="width:15%">Positioning</th><th style="width:13%">AI claim</th><th style="width:13%">Player pays</th><th style="width:11%">Scout pays</th><th style="width:13%">Minors</th><th>Institutional weight</th></tr>
+    <tr><td><strong>Matobev</strong></td><td>African discovery with honest ratings</td><td>Pose estimation; 4 attributes; confidence shown</td><td class="pass">Never &mdash; stated in terms</td><td class="warnt">Nothing yet</td><td class="pass">13+, DB-enforced guardian consent, minors hidden from public</td><td class="fail">None</td></tr>
+    <tr><td><strong>Scout Me Pro</strong></td><td>&quot;TikTok for football&quot; &middot; <em>Get seen. Get scouted.</em></td><td>Computer vision; strengths, weaknesses, performance score</td><td class="warnt">Free tier; Pro for unlimited uploads and analyses</td><td class="pass">Free</td><td>13+ with parental-consent support</td><td>Global, 249 countries</td></tr>
+    <tr><td><strong>Afriskaut</strong></td><td>Scouting, signing and development of African players</td><td>Data analytics and technology</td><td>Not published</td><td>Not published</td><td>Not published</td><td class="fail">Relaunched at Viareggio 2025; NBA discussions</td></tr>
+    <tr><td><strong>SOCALOCA</strong></td><td>Continent-wide football platform</td><td>Platform, not AI-led</td><td>Not published</td><td>Not published</td><td>Not published</td><td class="fail">Ghana FA partnership &mdash; default platform in Ghana</td></tr>
+    <tr><td><strong>ScoutMe</strong></td><td>Bridging African players and professional opportunity</td><td>Profiles and highlights; transparency-led</td><td>Not published</td><td>Not published</td><td>Not published</td><td>Regional</td></tr>
+    <tr><td><strong>Scoutfutbol</strong></td><td>Africa&#39;s scouting marketplace &mdash; trials, agents, scouts</td><td>None claimed</td><td>Not published</td><td>Not published</td><td>Not published</td><td>Regional</td></tr>
+    <tr><td><strong>Wyscout</strong><br><span style="color:var(--muted)">incumbent, pro tier</span></td><td>Professional match data and video for clubs</td><td>Data, not consumer AI</td><td>N/A</td><td class="fail">&euro;270/yr individual &rarr; ~&pound;3,000/yr enterprise</td><td>N/A</td><td class="fail">Industry standard</td></tr>
+  </table>
+
+  <h3>Feature by feature</h3>
+  <table class="tight">
+    <tr><th style="width:30%">Capability</th><th style="width:11%">Matobev</th><th style="width:11%">Scout&nbsp;Me&nbsp;Pro</th><th style="width:11%">Afriskaut</th><th style="width:11%">SOCALOCA</th><th style="width:11%">ScoutMe</th><th>Scoutfutbol</th></tr>
+    <tr><td>Vertical short-form video feed</td><td class="pass">Yes</td><td class="pass">Yes &mdash; core</td><td>Unclear</td><td>Unclear</td><td class="pass">Highlights</td><td class="pass">Highlights</td></tr>
+    <tr><td>Automated performance rating</td><td class="pass">Yes</td><td class="pass">Yes</td><td class="pass">Analytics</td><td>No</td><td>No</td><td>No</td></tr>
+    <tr><td><strong>Confidence shown on ratings</strong></td><td class="pass">Yes</td><td class="fail">No</td><td class="fail">No</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td><strong>Refuses comparisons it cannot support</strong></td><td class="pass">Yes</td><td class="fail">No</td><td class="fail">No</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td>Scout verification</td><td class="pass">Documents reviewed</td><td>Claimed</td><td class="pass">Vetted network</td><td class="pass">FA-backed</td><td>Claimed</td><td>Claimed</td></tr>
+    <tr><td><strong>Guardian consent enforced in the database</strong></td><td class="pass">Yes</td><td>Supported</td><td>Unknown</td><td>Unknown</td><td>Unknown</td><td>Unknown</td></tr>
+    <tr><td><strong>Minors hidden from signed-out visitors</strong></td><td class="pass">Yes</td><td>Unknown</td><td>Unknown</td><td>Unknown</td><td>Unknown</td><td>Unknown</td></tr>
+    <tr><td>Blocking enforced server-side</td><td class="pass">Row-level security</td><td>Unknown</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td>Trials board</td><td class="pass">Yes</td><td>Partial</td><td class="pass">Yes</td><td class="pass">Yes</td><td>Partial</td><td class="pass">Yes</td></tr>
+    <tr><td>Direct player&harr;scout messaging</td><td class="pass">Yes</td><td class="pass">Yes</td><td>Unknown</td><td>Unknown</td><td class="pass">Yes</td><td class="pass">Yes</td></tr>
+    <tr><td>Offline support</td><td class="pass">24h cache</td><td>Unknown</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td>Languages</td><td class="pass">EN&middot;FR&middot;SW&middot;PT</td><td>EN</td><td>EN&middot;FR</td><td>EN</td><td>EN</td><td>EN</td></tr>
+    <tr><td><strong>Revenue model live</strong></td><td class="fail">None</td><td class="pass">Freemium</td><td class="pass">B2B</td><td class="pass">Partnership</td><td>Unknown</td><td>Unknown</td></tr>
+  </table>
+
+  <div class="callout warn"><span class="label">Read the last row again</span>
+    <p>Matobev wins or draws on nine of thirteen capabilities and leads decisively
+      on the four concerning honesty and child safety. It is alone in the table
+      with <strong>no way to earn a shilling</strong>. Every advantage above is
+      currently unfunded.</p></div>
+
+  <table>
+    <tr><th style="width:33%" class="pass">Wins on</th><th style="width:33%" class="fail">Loses on</th><th>Ties on</th></tr>
+    <tr><td>Honest ratings with confidence &middot; database-enforced child safety &middot; minors invisible to the public &middot; four languages &middot; never charging players &middot; offline tolerance</td>
+      <td>No revenue &middot; no partnerships &middot; no inventory &middot; weaker AI &middot; no brand recognition &middot; single operator</td>
+      <td>Video feed &middot; profiles &middot; search &middot; messaging &middot; trials &middot; verification claims</td></tr>
+  </table>
+</section>
+
+<!-- ===== PART THREE ===== -->
+<section class="part">
+  <div class="kicker">Part Three</div>
+  <h2>How Matobev can sustain itself</h2>
+
+  <div class="callout warn"><span class="label">Current state, stated plainly</span>
+    <p>There is <strong>no monetisation of any kind in the codebase</strong> &mdash; no
+      payment provider, no subscription table, no billing, no plan tiers, no
+      in-app purchase. The word &quot;payment&quot; appears once, in the notice warning
+      players that nobody should ever ask them for money. As it stands Matobev is
+      a cost centre with no revenue path.</p></div>
+
+  <h3>The constraint that shapes everything</h3>
+  <p>
+    Matobev&#39;s terms state that <strong>players are never charged</strong> &mdash; not
+    for the app, not for a trial, not for anything. That is right ethically and
+    competitively, in a market where charging hopeful families is the exact
+    mechanism of the fraud the platform exists to displace. But it permanently
+    removes the largest and most motivated group of users from the revenue
+    equation.
+  </p>
+  <p>
+    That leaves the demand side: whoever benefits from finding a player. Wyscout
+    proves the willingness to pay exists &mdash; &euro;270 a year for an individual scout
+    up to roughly &pound;3,000 for a club &mdash; but those are European budgets. A Kenyan
+    academy will not pay them.
+  </p>
+
+  <h3>Five paths, ranked</h3>
+  <table>
+    <tr><th style="width:4%">#</th><th style="width:19%">Model</th><th style="width:13%">Who pays</th><th style="width:15%">Realistic price</th><th>Assessment</th></tr>
+    <tr><td>1</td><td><strong>Tiered scout subscription</strong></td><td>Clubs, academies, agents</td><td>Regional: $5&ndash;15/mo local &middot; $40&ndash;100/mo European</td>
+      <td class="pass"><strong>Best fit.</strong> A free tier keeps inventory discoverable; paid unlocks unlimited saves, exports, contact volume and advanced filters. Matches proven willingness to pay while pricing for local reality.</td></tr>
+    <tr><td>2</td><td><strong>Federation &amp; academy partnerships</strong></td><td>FAs, academies, NGOs</td><td>Annual licence</td>
+      <td class="pass">SOCALOCA proved this works with the Ghana FA. Solves revenue <em>and</em> inventory at once, and confers legitimacy a single operator cannot buy. Slow to close.</td></tr>
+    <tr><td>3</td><td><strong>Verified-scout fee</strong></td><td>Scouts wanting a badge</td><td>$50&ndash;150 once + renewal</td>
+      <td class="warnt">Fits the trust positioning and funds real vetting. <strong>Dangerous if it becomes pay-to-look-legitimate</strong> &mdash; the fee must buy scrutiny, not the badge.</td></tr>
+    <tr><td>4</td><td><strong>Sponsored trials &amp; listings</strong></td><td>Clubs, brands</td><td>Per listing</td>
+      <td class="warnt">Natural fit, but a paid trial listing is exactly the shape a fraudster wants. Only viable once verification is rigorous.</td></tr>
+    <tr><td>5</td><td><strong>Player premium</strong></td><td>Players</td><td>&mdash;</td>
+      <td class="fail"><strong>Reject.</strong> Contradicts the terms, destroys the differentiator, and monetises the desperation the platform exists to protect. A competitor does this. Matobev should not.</td></tr>
+  </table>
+
+  <h3>What it costs to run</h3>
+  <table>
+    <tr><th style="width:28%">Cost</th><th style="width:20%">Driver</th><th>Note</th></tr>
+    <tr><td>Database &amp; storage</td><td>Video volume</td><td>The dominant cost, and it scales with success rather than with revenue.</td></tr>
+    <tr><td>AI analysis compute</td><td>Analyses run</td><td>Pose estimation is CPU-heavy. Currently local; hosted, it becomes a real per-upload cost.</td></tr>
+    <tr><td>Push, crash reporting, builds</td><td>Users</td><td>Modest at current scale.</td></tr>
+    <tr><td>Moderation &amp; verification</td><td><strong>People</strong></td><td>The one cost that cannot be automated away &mdash; and the one the entire trust positioning depends on.</td></tr>
+  </table>
+
+  <div class="verdict"><h3>Recommended model</h3>
+    <p><strong>Free for players, forever, and say so loudly.</strong> Free for
+      scouts at a basic tier so inventory stays discoverable. Charge scouts and
+      clubs for volume, export and priority, priced regionally. Pursue one
+      federation or academy partnership as the primary route to both revenue and
+      inventory.</p>
+    <p>Fund verification from the scout side, so that <em>being checked</em> is
+      the thing being paid for. In a market whose defining harm is fake agents,
+      <strong>rigorous verification is simultaneously the product, the
+      differentiator and the revenue line.</strong></p></div>
+
+  <div class="callout warn"><span class="label">The uncomfortable economics</span>
+    <p>The money is in Europe; the players are in Africa. Any model charging
+      European buyers for access to young African players sits uncomfortably
+      close to the dynamic that enables exploitation. The defence is that the
+      platform is paid for <em>verification and a safe channel</em>, never for
+      introductions or transfers, and takes no cut of any deal. That distinction
+      must hold on the pricing page as firmly as it does in the terms.</p></div>
+</section>
+
+<section class="part">
+  <div class="kicker">Part Four</div>
+  <h2>Every screen</h2>
+  <p class="lede">Forty-four screens. Purpose, how each is reached, what it contains, its empty and error states, and the specific thing that can go wrong.</p>
+  <h3>A &middot; Cold start and entry</h3>
+  <div class="scr"><div class="scr-h"><span class="nm">Splash</span><span class="path">native</span></div><div class="scr-b">
+    <p>Holds the first frame while fonts, session and theme resolve, so the app never flashes unstyled content.</p>
+    <dl>
+    <dt>Contains</dt><dd>Logo at 220px; white in light, <code>#0A1628</code> in dark</dd>
+    <dt>Leads to</dt><dd>Index</dd>
+    <dt>Risk</dt><dd class="risk">Dismissed manually once ready. Any failure before that leaves the user staring at a logo with no error and no exit.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Index &mdash; routing gate</span><span class="path">index</span></div><div class="scr-b">
+    <p>Decides where a launch lands. No interface of its own.</p>
+    <dl>
+    <dt>Decides</dt><dd>Welcome &middot; onboarding &middot; verify email &middot; profile completion &middot; player tabs &middot; scout tabs &middot; suspended</dd>
+    <dt>Inputs</dt><dd>Session, email-verified flag, role, profile-completed flag, suspension state</dd>
+    <dt>Risk</dt><dd class="risk">Every routing bug lands here, and it is the only place a user can be trapped in a loop.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Welcome</span><span class="path">welcome</span></div><div class="scr-b">
+    <p>The entire first impression for a signed-out visitor.</p>
+    <dl>
+    <dt>Contains</dt><dd>Brand, proposition, Create account, Sign in, Browse without an account</dd>
+    <dt>Risk</dt><dd class="risk">Currently sells the technology. &quot;Get seen by scouts&quot; outperforms &quot;AI-powered analysis&quot; with this audience.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Onboarding</span><span class="path">onboarding</span></div><div class="scr-b">
+    <p>Three slides: upload, analysis, scouts.</p>
+    <dl>
+    <dt>Risk</dt><dd class="risk">Skippable and widely skipped. Nothing load-bearing may live only here.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Browse &mdash; signed out</span><span class="path">browse</span></div><div class="scr-b">
+    <p>Shows real players before asking for anything. The strongest and cheapest argument the product can make.</p>
+    <dl>
+    <dt>Contains</dt><dd>Player cards: name, position, country, rating</dd>
+    <dt>Any action</dt><dd>Prompts sign-up with a reason naming the action taken</dd>
+    <dt>Safety</dt><dd><strong>Adults only.</strong> Under-18 profiles excluded in the database view, not hidden in the UI</dd>
+    <dt>Risk</dt><dd class="risk">With thin inventory this screen argues against the product rather than for it.</dd>
+    </dl></div></div>
+  <h3>B &middot; Account creation</h3>
+  <div class="scr"><div class="scr-h"><span class="nm">Role select</span><span class="path">role-select</span></div><div class="scr-b">
+    <p>Player or scout. Permanent.</p>
+    <dl>
+    <dt>Risk</dt><dd class="risk">The role is immutable in the database. Someone who picks wrong needs a whole new account, so the warning must precede the tap.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Sign up</span><span class="path">signup</span></div><div class="scr-b">
+    <p>Credentials, and acceptance of both legal documents.</p>
+    <dl>
+    <dt>Contains</dt><dd>Email, password, confirm, and two acceptance checkboxes linking to the Terms and Privacy Policy in an in-app browser</dd>
+    <dt>Errors</dt><dd>Duplicate email &middot; weak password &middot; network failure</dd>
+    <dt>Risk</dt><dd class="risk">Until recently those links were styled as links and did nothing &mdash; people accepted documents they could not open.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Log in &middot; Forgot password &middot; Verify email</span><span class="path">login &middot; forgot-password &middot; verify-email</span></div><div class="scr-b">
+    <p>Return, recover, confirm.</p>
+    <dl>
+    <dt>Risk</dt><dd class="risk">Verification-email deliverability is the most common silent drop-off in the entire funnel.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Profile completion</span><span class="path">profile-complete</span></div><div class="scr-b">
+    <p>The four fields the database requires, plus optional depth.</p>
+    <dl>
+    <dt>Required</dt><dd>Full name &middot; date of birth &middot; nationality &middot; primary position</dd>
+    <dt>Optional</dt><dd>Height, weight, club, foot, jersey, years playing, bio, socials, photo</dd>
+    <dt>Age logic</dt><dd>Under 13 blocked; 13&ndash;17 flagged for guardian consent</dd>
+    <dt>Risk</dt><dd class="risk">The longest form in the app and the last thing before value. Every optional field costs completions.</dd>
+    </dl></div></div>
+  <h3>C &middot; The player&#39;s app</h3>
+  <div class="scr"><div class="scr-h"><span class="nm">Home</span><span class="path">(player-tabs)/home</span></div><div class="scr-b">
+    <p>The player&#39;s standing, and the next thing to do. Seen on every launch.</p>
+    <dl>
+    <dt>Contains</dt><dd>Greeting, header actions, rating card, upload prompt, three quick actions, upcoming trials, recent activity</dd>
+    <dt>Loading</dt><dd>Screen-shaped skeleton matching the real layout</dd>
+    <dt>Empty</dt><dd>No rating yet &rarr; the card invites a first upload rather than showing a zero</dd>
+    <dt>Risk</dt><dd class="risk">The emotional centre of the product, and where a low number does the most damage to a teenager.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Reels</span><span class="path">(player-tabs)/reels</span></div><div class="scr-b">
+    <p>Vertical highlight feed. The habit surface.</p>
+    <dl>
+    <dt>Contains</dt><dd>Full-bleed video, player overlay, like, save, comment, share</dd>
+    <dt>Loading</dt><dd>Spinner rather than a skeleton &mdash; grey blocks on black interrupt more than they help</dd>
+    <dt>Risk</dt><dd class="risk">By far the most data-hungry screen. Autoplay on mobile data is a spending decision made on the user&#39;s behalf.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Upload</span><span class="path">(player-tabs)/upload</span></div><div class="scr-b">
+    <p>The core contribution, and the most expensive action a player takes in real money.</p>
+    <dl>
+    <dt>Steps</dt><dd>Pick clip &rarr; highlight or AI analysis &rarr; tag yourself in one frame &rarr; title, match, opponent, tags &rarr; publish</dd>
+    <dt>Guards</dt><dd>Size checked before transfer; guardian consent checked before any bytes move; a failed row insert deletes the orphaned file</dd>
+    <dt>Risk</dt><dd class="risk">Self-tagging is the least obvious step and the one the rating depends on most. Skip it and the number is wrong &mdash; and the player blames themselves.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Discover</span><span class="path">(player-tabs)/discover</span></div><div class="scr-b">
+    <p>Other players, search, trending, news.</p>
+    <dl>
+    <dt>Empty</dt><dd>No matches &rarr; prompt to widen filters</dd>
+    <dt>Risk</dt><dd class="risk">Player-to-player browsing is social rather than functional and competes with Reels for the same attention. It may not deserve a tab.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Profile &mdash; own</span><span class="path">(player-tabs)/profile</span></div><div class="scr-b">
+    <p>What a scout sees, plus what is still missing.</p>
+    <dl>
+    <dt>Tabs</dt><dd>About &middot; Videos &middot; AI Ratings &middot; Stats</dd>
+    <dt>Contains</dt><dd>Cover, avatar, stat tiles (OVR, reels, views, invites), profile-strength meter, playable videos</dd>
+    <dt>Risk</dt><dd class="risk">Views and invites are checked obsessively. Held at zero for weeks, this screen actively discourages.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Rating reveal</span><span class="path">modal</span></div><div class="scr-b">
+    <p>The single orchestrated moment in the product &mdash; the number arriving.</p>
+    <dl>
+    <dt>Contains</dt><dd>Animated badge, overall, provisional count, breakdown CTA; haptics; announced to screen readers</dd>
+    <dt>Risk</dt><dd class="risk">It celebrates a number the engine may be unsure about. The provisional line must survive every redesign of this screen.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">AI ratings</span><span class="path">ai-ratings</span></div><div class="scr-b">
+    <p>The full breakdown &mdash; the screen that justifies the number.</p>
+    <dl>
+    <dt>Contains</dt><dd>Hero rating, every attribute with value and confidence, job status, recommendations from the real result summary</dd>
+    <dt>States</dt><dd>Queued &middot; processing &middot; completed &middot; skipped &middot; failed, each explained rather than coded</dd>
+    <dt>Risk</dt><dd class="risk">Should be one tap from every place a rating appears. It is the difference between a number and evidence.</dd>
+    </dl></div></div>
+  <h3>D &middot; The scout&#39;s app</h3>
+  <div class="scr"><div class="scr-h"><span class="nm">Dashboard</span><span class="path">(scout-tabs)/home</span></div><div class="scr-b">
+    <p>A working surface, not a feed.</p>
+    <dl>
+    <dt>Contains</dt><dd>Verification state, search, overview counts, and four rails &mdash; Recommended, Recently Uploaded, Top Performers, Active Trials</dd>
+    <dt>Reasons</dt><dd>Recommendations carry a real reason from preferences and activity, never a fabricated one</dd>
+    <dt>Risk</dt><dd class="risk">Four rails of near-identical cards is a lot of scrolling for little differentiation. Two would likely outperform four.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Players &mdash; search</span><span class="path">(scout-tabs)/players</span></div><div class="scr-b">
+    <p>Where a scout actually works.</p>
+    <dl>
+    <dt>Filters</dt><dd>Position, age, country, foot, height, weight, minimum rating; sort; compare mode</dd>
+    <dt>Empty</dt><dd>No matches &rarr; widen filters</dd>
+    <dt>Risk</dt><dd class="risk">With thin inventory, filters return nothing and the app reads as broken rather than empty. Show near-misses instead.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Trials &mdash; scout</span><span class="path">(scout-tabs)/trials</span></div><div class="scr-b">
+    <p>Post an opportunity, manage applicants.</p>
+    <dl>
+    <dt>Contains</dt><dd>Trial list; create form with title, club, location, positions, age range, deadline; applicant review</dd>
+    <dt>Risk</dt><dd class="risk">A trial post is precisely the shape a fraudster wants. This is where the safety promise is tested hardest.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Messages &middot; Profile &mdash; scout</span><span class="path">(scout-tabs)/messages &middot; profile</span></div><div class="scr-b">
+    <p>Contact, and the scout&#39;s own record.</p>
+    <dl>
+    <dt>Contains</dt><dd>Conversations with a pinned anti-solicitation notice; organisation, bio, verification badge, saved counts</dd>
+    <dt>Risk</dt><dd class="risk">Adult-to-minor messaging is the highest-risk surface in the product and currently has the least friction.</dd>
+    </dl></div></div>
+  <h3>E &middot; Shared destinations</h3>
+  <div class="scr"><div class="scr-h"><span class="nm">Player detail</span><span class="path">player/[id]</span></div><div class="scr-b">
+    <p>The assessment screen. Every scouting decision is made here.</p>
+    <dl>
+    <dt>Contains</dt><dd>Cover, identity, decision-support disclaimer, overall with confidence, attribute bars, playable footage, save-to-folder, private notes, follow, message, report</dd>
+    <dt>Empty</dt><dd>No videos, or not analysed yet &mdash; both stated plainly</dd>
+    <dt>Risk</dt><dd class="risk">Until recently the videos were not tappable at all. This screen deserves more testing than any other.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Compare</span><span class="path">compare</span></div><div class="scr-b">
+    <p>Two or more players, attribute by attribute.</p>
+    <dl>
+    <dt>Rule</dt><dd>The &quot;best&quot; highlight is withheld when the winning value is low-confidence</dd>
+    <dt>Risk</dt><dd class="risk">Comparison manufactures false precision. Two uncertain numbers look authoritative purely by being adjacent.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Leaderboard</span><span class="path">leaderboard</span></div><div class="scr-b">
+    <p>A ranking someone can actually place in.</p>
+    <dl>
+    <dt>Player scopes</dt><dd><strong>Most improved</strong> (default) &middot; region &middot; position &middot; age band</dd>
+    <dt>Scout scopes</dt><dd>Most improved &middot; top rated &middot; matches my filters</dd>
+    <dt>Empty</dt><dd>Scope-aware &mdash; &quot;no movement this week&quot; is a different claim from &quot;not enough players&quot;</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Trials list &middot; Trial detail</span><span class="path">trials &middot; trial/[id]</span></div><div class="scr-b">
+    <p>Find and apply for opportunities.</p>
+    <dl>
+    <dt>Contains</dt><dd>Open trials, club, location, positions, age range, deadline, requirements, apply, status</dd>
+    <dt>Risk</dt><dd class="risk">Every listing needs the &quot;never pay to attend&quot; warning inline. In Help it protects nobody.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Messages &middot; Notifications &middot; News</span><span class="path">messages &middot; notifications &middot; news</span></div><div class="scr-b">
+    <p>Contact, signal, announcements.</p>
+    <dl>
+    <dt>Types</dt><dd>Scout viewed you &middot; rating went up &middot; weekly digest &middot; trial status &middot; invitation &middot; analysis result &middot; new message &middot; moderation</dd>
+    <dt>Behaviour</dt><dd>Each routes to its subject; per-category mutes and quiet hours respected</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Guardian consent</span><span class="path">guardian-consent + web</span></div><div class="scr-b">
+    <p>Where an under-18 asks a parent to approve analysis.</p>
+    <dl>
+    <dt>In app</dt><dd>Guardian name, email, relationship &rarr; generates a link &rarr; shared by WhatsApp or SMS</dd>
+    <dt>On web</dt><dd>The guardian sees the player&#39;s name and the exact scopes and confirms. Single-use; the token rotates on use.</dd>
+    <dt>Principle</dt><dd>A child ticking &quot;my parent agrees&quot; is a child consenting to themselves</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Scout verification &middot; Suspended</span><span class="path">scout-verification &middot; suspended</span></div><div class="scr-b">
+    <p>Prove you are real; or learn you are no longer welcome.</p>
+    <dl>
+    <dt>Risk</dt><dd class="risk">Verification is the platform&#39;s core trust claim. A rubber-stamped badge is worse than no badge, because it launders a stranger.</dd>
+    </dl></div></div>
+  <h3>F &middot; Settings and exit</h3>
+  <div class="scr"><div class="scr-h"><span class="nm">Settings hub</span><span class="path">settings</span></div><div class="scr-b">
+    <p>Everything about the account, and the way out.</p>
+    <dl>
+    <dt>Rows</dt><dd>Account &middot; Security &middot; Notifications &middot; Privacy &middot; Blocked &middot; Language &middot; Theme &middot; Help &mdash; plus <strong>Parent or guardian</strong> for under-18 players</dd>
+    <dt>Foot</dt><dd>Log out &middot; Delete account</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Account &middot; Security &middot; Privacy</span><span class="path">account- &middot; security- &middot; privacy-settings</span></div><div class="scr-b">
+    <p>Details, password, visibility, deletion.</p>
+    <dl>
+    <dt>Deletion</dt><dd>Immediate and irreversible &mdash; storage objects removed, rows cascaded. No email, no waiting period, no retention hostage.</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Notifications &middot; Blocked &middot; Language &middot; Theme &middot; Help</span><span class="path">five settings screens</span></div><div class="scr-b">
+    <p>Control, and the documents.</p>
+    <dl>
+    <dt>Notifications</dt><dd>Per-category mutes; quiet hours in local time</dd>
+    <dt>Blocked</dt><dd>Enforced in row-level security &mdash; neither party can read the other&#39;s rows</dd>
+    <dt>Language</dt><dd>English &middot; French &middot; Swahili &middot; Portuguese</dd>
+    <dt>Help</dt><dd>FAQ, safety notice, support email, and both legal documents in an in-app browser</dd>
+    </dl></div></div>
+  <div class="scr"><div class="scr-h"><span class="nm">Log out</span><span class="path">settings &rarr; logout</span></div><div class="scr-b">
+    <p>End the session on this device.</p>
+    <dl>
+    <dt>Sequence</dt><dd>Unregister this device&#39;s push token <strong>first</strong>, while the session still exists &rarr; sign out &rarr; clear local state &rarr; route to Welcome</dd>
+    <dt>Why</dt><dd>The token delete is scoped to the signed-in profile. After sign-out it is rejected, and the phone keeps receiving the previous account&#39;s notifications.</dd>
+    </dl></div></div>
+  </section>
+
+<section class="part">
+  <div class="kicker">Part Five</div>
   <h2>Verdict</h2>
 
   <div class="verdict">
@@ -220,8 +656,8 @@
 
 <!-- ===== RETENTION ===== -->
 <section class="part">
-  <div class="kicker">Why anyone comes back</div>
-  <h2>Retention is a design problem, not a notification problem</h2>
+  <div class="kicker">Part Six</div>
+  <h2>Retention</h2>
 
   <p class="lede">
     A scouting app has a brutal retention shape: a player uploads once, then has
@@ -295,8 +731,8 @@
 
 <!-- ===== SCREENS ===== -->
 <section class="part">
-  <div class="kicker">Part Three</div>
-  <h2>The screens</h2>
+  <div class="kicker">Part Seven</div>
+  <h2>The screens, drawn</h2>
   <p class="lede">
     Twenty-three screens in the proposed system, in the order a person meets
     them. Navy carries structure and action; gold appears only on a rating.
@@ -815,8 +1251,8 @@
 
 <!-- ===== PRIORITIES ===== -->
 <section class="part">
-  <div class="kicker">Part Four</div>
-  <h2>What to do, in order</h2>
+  <div class="kicker">Part Eight</div>
+  <h2>Risks and what to do</h2>
   <table>
     <tr><th style="width:6%">#</th><th style="width:30%">Action</th><th style="width:14%">Effort</th><th>Why here</th></tr>
     <tr><td>1</td><td>Walk both roles end to end on a device</td><td>1 day</td><td>Three defects surfaced in ninety seconds this way. This finds more than any audit I can run.</td></tr>
