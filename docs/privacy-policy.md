@@ -7,14 +7,18 @@ title: Privacy Policy
 
 **Last updated: 20 August 2026**
 
-> **⚠️ NEEDS LEGAL REVIEW, AND TWO FACTS ONLY YOU CAN SUPPLY.**
+> **⚠️ NEEDS LEGAL REVIEW, AND A POSTAL ADDRESS.**
 > Everything below describes what the Matobev app and database actually do,
 > checked against the schema, the Edge Functions and the live project. It is
-> accurate and it is specific, but it is not a lawyer's work. The operator's
-> legal name and contact address are marked `[[...]]` — a policy
-> naming no accountable person or entity is not compliant however accurate the
-> rest of it is. It also commits you to retention periods and response times in
-> sections 9 and 12; read those as promises, because that is what they become.
+> accurate and it is specific, but it is not a lawyer's work.
+>
+> **A postal address is still missing from section 1.** Kenya's Data Protection
+> Act expects a controller to be reachable at a physical address, and Google
+> Play requires one on the developer account and publishes it on the store
+> listing anyway — so it becomes public regardless.
+>
+> Sections 9 and 12 commit to retention periods and response times that nothing
+> currently automates. Read them as promises, because that is what they are.
 
 ## The short version
 
@@ -35,8 +39,7 @@ The rest of this document is the detail behind those five points.
 ## 1. Who is responsible for your data
 
 Matobev is a business name registered in Kenya, operated as a sole
-proprietorship by Matobev of `[[CONTACT ADDRESS]]`
-("Matobev", "we", "us").
+proprietorship by **Simeon Odhiambo** ("Matobev", "we", "us").
 
 We are the **data controller** for the personal data described here. That
 means we decide what is collected and why, and we are the ones answerable for

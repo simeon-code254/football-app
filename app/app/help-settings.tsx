@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+import { openLegal } from '../src/lib/legal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -11,19 +12,6 @@ import { IconButton } from '../src/components/IconButton';
 // placeholder address, not a verified one.
 const SUPPORT_EMAIL = 'support@matobev.com';
 
-// GitHub Pages, not Supabase.
-//
-// Both Supabase routes refuse to serve a browsable HTML page, by design and
-// not by misconfiguration:
-//   - Storage records the right mimetype but its public endpoint overrides it
-//     to text/plain (stored-XSS protection).
-//   - Edge Functions get a Content-Security-Policy on browser navigations that
-//     sandboxes the document, so Chrome shows the markup instead of rendering
-//     it ("Blocked script execution ... the document's frame is sandboxed").
-//
-// Neither can be configured away, so the documents are published as static
-// files from the repo's docs/ folder instead. Same markdown either way.
-const LEGAL_BASE = 'https://simeon-code254.github.io/football-app';
 
 const FAQS: { q: string; a: string }[] = [
   {
@@ -76,15 +64,15 @@ export default function HelpSettings() {
         <Text style={styles.sectionLabel}>Legal</Text>
         <View style={styles.list}>
           {[
-            { label: 'Privacy Policy', slug: 'privacy-policy', icon: 'shield' as const },
-            { label: 'Terms of Service', slug: 'terms-of-service', icon: 'file-text' as const },
+            { label: 'Privacy Policy', doc: 'privacy' as const, icon: 'shield' as const },
+            { label: 'Terms of Service', doc: 'terms' as const, icon: 'file-text' as const },
           ].map((item, i) => (
             <Pressable
-              key={item.slug}
+              key={item.doc}
               style={[styles.legalRow, i === 0 && styles.legalRowFirst]}
-              onPress={() => Linking.openURL(`${LEGAL_BASE}/${item.slug}`)}
+              onPress={() => openLegal(item.doc)}
               accessibilityRole="link"
-              accessibilityLabel={`${item.label}, opens in your browser`}
+              accessibilityLabel={item.label}
             >
               <Feather name={item.icon} size={16} color={colors.textMuted} />
               <Text style={styles.legalLabel}>{item.label}</Text>

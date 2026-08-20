@@ -7,18 +7,17 @@ title: Terms of Service
 
 **Last updated: 20 August 2026**
 
-> **⚠️ NEEDS LEGAL REVIEW, AND ONE FACT ONLY YOU CAN SUPPLY.**
+> **⚠️ NEEDS LEGAL REVIEW, AND A POSTAL ADDRESS.**
 > These terms describe how the app actually behaves, checked against the code.
-> They are not a lawyer's work. The operator's legal name and contact address
-> are marked `[[...]]`; terms naming nobody are difficult to enforce.
+> They are not a lawyer's work. A physical address for the operator is still
+> missing from section 1, and Google Play requires one regardless.
 >
-> **Matobev is currently run as a sole proprietorship, which means there is no
-> company between you and the business — the operator is personally liable for
-> its debts and claims against it.** The liability limits in sections 15 and 16
-> are therefore worth far less than they would be with a limited company behind
-> them. Incorporating before the platform carries real numbers of minors is the
-> single most valuable piece of legal work available here, and is worth raising
-> with an advocate ahead of the wording.
+> **Matobev is run as a sole proprietorship, which means there is no company
+> between the business and Simeon Odhiambo personally.** The liability limits
+> in sections 15 and 16 are therefore worth far less than they look, since
+> there is no corporate veil behind them. Incorporating before the platform
+> carries real numbers of minors is the single most valuable piece of legal
+> work available here.
 
 These terms are a contract between you and us. By creating an account or using
 Matobev you accept them. If you do not accept them, do not use the app.
@@ -32,8 +31,7 @@ you should be able to find and understand it.
 ## 1. Who we are
 
 Matobev is a business name registered in Kenya, operated as a sole
-proprietorship by `[[YOUR FULL LEGAL NAME]]` of `[[CONTACT ADDRESS]]`.
-Contact: **support@matobev.com**.
+proprietorship by **Simeon Odhiambo**. Contact: **support@matobev.com**.
 
 Matobev is a platform that connects footballers in Africa with scouts. We are
 not an agency, a club, or a representative. We do not negotiate on your behalf

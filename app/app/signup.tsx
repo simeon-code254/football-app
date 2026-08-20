@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { openLegal } from '../src/lib/legal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,10 +17,6 @@ import { showAlert } from '../src/lib/alert';
 // Organization/Club field — redesigned with a role-colored header (the flat
 // white-on-white version read as visually flat) and password visibility
 // toggles, which a static HTML mockup can't express.
-// Published from docs/ via GitHub Pages -- see help-settings for why this is
-// not served from Supabase.
-const LEGAL_BASE = 'https://simeon-code254.github.io/football-app';
-
 export default function Signup() {
   const colors = useThemeColors();
   const isDark = useIsDark();
@@ -174,10 +171,10 @@ export default function Signup() {
               style={styles.link}
               onPress={(e) => {
                 e.stopPropagation();
-                Linking.openURL(`${LEGAL_BASE}/terms-of-service`);
+                openLegal('terms');
               }}
               accessibilityRole="link"
-              accessibilityLabel="Read the Terms of Service, opens in your browser"
+              accessibilityLabel="Read the Terms of Service"
             >
               Terms &amp; Conditions
             </Text>
@@ -188,10 +185,10 @@ export default function Signup() {
               style={styles.link}
               onPress={(e) => {
                 e.stopPropagation();
-                Linking.openURL(`${LEGAL_BASE}/privacy-policy`);
+                openLegal('privacy');
               }}
               accessibilityRole="link"
-              accessibilityLabel="Read the Privacy Policy, opens in your browser"
+              accessibilityLabel="Read the Privacy Policy"
             >
               Privacy Policy
             </Text>
