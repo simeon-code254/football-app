@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,6 +16,10 @@ import { showAlert } from '../src/lib/alert';
 // Organization/Club field — redesigned with a role-colored header (the flat
 // white-on-white version read as visually flat) and password visibility
 // toggles, which a static HTML mockup can't express.
+// Published from docs/ via GitHub Pages -- see help-settings for why this is
+// not served from Supabase.
+const LEGAL_BASE = 'https://simeon-code254.github.io/football-app';
+
 export default function Signup() {
   const colors = useThemeColors();
   const isDark = useIsDark();
@@ -156,11 +160,41 @@ export default function Signup() {
         </View>
 
         <View style={styles.checksCard}>
+          {/* The document names are real links now. They were styled as links
+              and did nothing, so people were being asked to accept two
+              documents they had no way to open -- which is not informed
+              consent, and is exactly the kind of thing that makes the
+              acceptance worthless if it is ever tested.
+
+              onPress is stopped from propagating so tapping the link opens the
+              document instead of silently toggling the checkbox underneath. */}
           <Checkbox checked={acceptedTerms} onToggle={() => setAcceptedTerms((v) => !v)}>
-            I accept the <Text style={styles.link}>Terms & Conditions</Text>
+            I accept the{' '}
+            <Text
+              style={styles.link}
+              onPress={(e) => {
+                e.stopPropagation();
+                Linking.openURL(`${LEGAL_BASE}/terms-of-service`);
+              }}
+              accessibilityRole="link"
+              accessibilityLabel="Read the Terms of Service, opens in your browser"
+            >
+              Terms &amp; Conditions
+            </Text>
           </Checkbox>
           <Checkbox checked={acceptedPrivacy} onToggle={() => setAcceptedPrivacy((v) => !v)}>
-            I accept the <Text style={styles.link}>Privacy Policy</Text>
+            I accept the{' '}
+            <Text
+              style={styles.link}
+              onPress={(e) => {
+                e.stopPropagation();
+                Linking.openURL(`${LEGAL_BASE}/privacy-policy`);
+              }}
+              accessibilityRole="link"
+              accessibilityLabel="Read the Privacy Policy, opens in your browser"
+            >
+              Privacy Policy
+            </Text>
           </Checkbox>
         </View>
 

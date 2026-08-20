@@ -35,7 +35,7 @@ The rest of this document is the detail behind those five points.
 ## 1. Who is responsible for your data
 
 Matobev is a business name registered in Kenya, operated as a sole
-proprietorship by `[[YOUR FULL LEGAL NAME]]` of `[[CONTACT ADDRESS]]`
+proprietorship by Matobev of `[[CONTACT ADDRESS]]`
 ("Matobev", "we", "us").
 
 We are the **data controller** for the personal data described here. That

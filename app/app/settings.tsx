@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as authRepository from '../src/repositories/authRepository';
+import * as profileRepository from '../src/repositories/profileRepository';
 import { unregisterPush } from '../src/lib/push';
 import { showAlert } from '../src/lib/alert';
 
@@ -17,10 +19,32 @@ export default function Settings() {
   const styles = makeStyles(colors);
   const clearSession = useSessionStore((s) => s.clear);
   const userId = useSessionStore((s) => s.session?.user.id);
+  const role = useSessionStore((s) => s.role);
   const [deleting, setDeleting] = useState(false);
+
+  // Shown only to under-18 players. The guardian-consent screen was reachable
+  // only by attempting an upload and being refused, which meant a guardian
+  // holding the phone had no way to find it, and a player who had already
+  // been refused once had no way back to it. It is also where they check
+  // whether consent has actually been confirmed yet.
+  const { data: player } = useQuery({
+    queryKey: ['settingsPlayerDob', userId],
+    enabled: !!userId && role === 'player',
+    queryFn: () => profileRepository.getMyPlayer(userId!),
+  });
+  const isMinor = (() => {
+    const dob = player?.date_of_birth;
+    if (!dob) return false;
+    const d = new Date(dob);
+    const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
+    return age < 18;
+  })();
 
   const rows: SettingsRow[] = [
     { title: 'Account', icon: 'user', onPress: () => router.push('/account-settings') },
+    ...(isMinor
+      ? [{ title: 'Parent or guardian', icon: 'users' as const, onPress: () => router.push('/guardian-consent') }]
+      : []),
     { title: 'Security', icon: 'shield', onPress: () => router.push('/security-settings') },
     { title: 'Notifications', icon: 'bell', onPress: () => router.push('/notification-settings') },
     { title: 'Privacy', icon: 'eye-off', onPress: () => router.push('/privacy-settings') },
