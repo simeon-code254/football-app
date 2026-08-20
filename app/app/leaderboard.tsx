@@ -13,20 +13,33 @@ import { SkeletonRow } from '../src/components/Skeleton';
 import { RatingBadge } from '../src/components/RatingBadge';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as communityRepository from '../src/repositories/communityRepository';
+import * as scoutingRepository from '../src/repositories/scoutingRepository';
 import * as profileRepository from '../src/repositories/profileRepository';
 import { images } from '../src/constants/images';
 import type { LeaderboardScope } from '../src/repositories/communityRepository';
 
-const SCOPES: { key: LeaderboardScope; label: string }[] = [
-  // 'Most improved' first, deliberately. The other three all sort by rating,
-  // so the same handful of players top all of them and everyone else opens
-  // this screen to be told they are nowhere. Improvement is the board where a
-  // week of work outranks a head start, so it is the one most users should
-  // land on.
+// 'Most improved' first for players, deliberately. The rating-sorted boards
+// all put the same handful of people on top, so everyone else opens the screen
+// to be told they are nowhere. Improvement is the board where a week of work
+// outranks a head start.
+const PLAYER_SCOPES: { key: LeaderboardScope; label: string }[] = [
   { key: 'improved', label: 'Most improved' },
   { key: 'region', label: 'My region' },
   { key: 'position', label: 'My position' },
   { key: 'age', label: 'My age group' },
+];
+
+// Scouts get different scopes, because the player ones are meaningless for
+// them and were quietly broken: a scout has no row in `players`, so "My
+// position" and "My age group" filtered on null and rendered the same
+// unfiltered list three times under three labels that each implied a filter.
+//
+// A scout's segment is their scouting preferences, not their own position, so
+// that is what "Matches my filters" uses.
+const SCOUT_SCOPES: { key: LeaderboardScope; label: string }[] = [
+  { key: 'improved', label: 'Most improved' },
+  { key: 'age', label: 'Top rated' },
+  { key: 'position', label: 'Matches my filters' },
 ];
 
 function ageBandOf(age: number | null | undefined): string {
@@ -46,14 +59,30 @@ export default function Leaderboard() {
   const styles = makeStyles(colors);
   const userId = useSessionStore((s) => s.session?.user.id);
   const player = useSessionStore((s) => s.player);
+  const role = useSessionStore((s) => s.role);
+  const isScout = role === 'scout';
+  const SCOPES = isScout ? SCOUT_SCOPES : PLAYER_SCOPES;
   const [scope, setScope] = useState<LeaderboardScope>('improved');
 
-  // The viewer's own segment values. Region comes from their country, which
-  // the leaderboard view already resolves.
+  // The viewer's segment. For a player that is their own region, position and
+  // age band. For a scout it comes from their saved scouting preferences --
+  // they have no position or age of their own to rank within.
   const { data: viewer } = useQuery({
-    queryKey: ['leaderboardViewer', userId],
+    queryKey: ['leaderboardViewer', userId, role],
     enabled: !!userId,
     queryFn: async () => {
+      if (isScout) {
+        const prefs = await scoutingRepository.getPreferences(userId!);
+        const countries = await profileRepository.getCountries();
+        const region = countries.find((c) => c.code === prefs?.countries?.[0])?.region ?? null;
+        return {
+          region,
+          position: prefs?.positions?.[0] ?? null,
+          // 'Top rated' is deliberately unsegmented for scouts, so this stays
+          // null rather than inventing an age band they do not have.
+          ageBand: null,
+        };
+      }
       const me = await profileRepository.getPlayerPublicView(userId!);
       const countries = await profileRepository.getCountries();
       const region = countries.find((c) => c.code === me?.nationality_code)?.region ?? null;
@@ -67,8 +96,11 @@ export default function Leaderboard() {
     queryFn: () => communityRepository.getLeaderboard(scope, viewer!),
   });
 
-  const scopeLabel =
-    scope === 'region' ? viewer?.region ?? 'your region'
+  const scopeLabel = isScout
+    ? scope === 'position'
+      ? viewer?.position ?? 'your filters'
+      : 'this board'
+    : scope === 'region' ? viewer?.region ?? 'your region'
     : scope === 'position' ? viewer?.position ?? 'your position'
     : viewer?.ageBand?.toUpperCase() ?? 'your age group';
 

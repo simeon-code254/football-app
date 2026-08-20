@@ -17,6 +17,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
 import { tapFeedback } from '../../src/lib/haptics';
 import { QueryState } from '../../src/components/QueryState';
+import { VideoPlayerModal } from '../../src/components/VideoPlayerModal';
 import { SkeletonProfile } from '../../src/components/Skeleton';
 import { ReportModal } from '../../src/components/ReportModal';
 
@@ -120,6 +121,23 @@ export default function PlayerDetail() {
     },
   });
 
+  const [playing, setPlaying] = useState<{ url: string; title: string | null } | null>(null);
+  const openVideo = async (v: { storage_path: string; title: string | null; is_removed: boolean | null; removed_reason: string | null }) => {
+    if (v.is_removed) {
+      showAlert('Video removed', v.removed_reason || 'This video was removed for violating community guidelines.');
+      return;
+    }
+    try {
+      // Signed on demand rather than up front: the bucket is private, the links
+      // are short-lived, and signing every video on page load would waste most
+      // of them.
+      const url = await videosRepository.getVideoUrl(v.storage_path);
+      setPlaying({ url, title: v.title });
+    } catch (err) {
+      showAlert('Could not play', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
+
   const openNotes = () => {
     setNote(scoutData?.note ?? '');
     setNotesOpen(true);
@@ -208,7 +226,27 @@ export default function PlayerDetail() {
           <Image source={{ uri: player.avatar_url ?? images.avatarMale }} style={styles.coverImage} />
           <View style={styles.coverMask} />
           <View style={styles.coverTop}>
-            <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
+            {/* Two fixes. `light` is a translucent white button and this
+                cover is the player's own avatar -- on a bright photo it
+                disappeared entirely, which is why it read as "there is no back
+                button". backBtn puts a dark scrim behind it so it stays
+                visible against any image.
+
+                And router.back() is a no-op when there is no history, which is
+                exactly the case when this screen opens from a push
+                notification or a deep link -- the user was then genuinely
+                stuck. Falls back to the tab the viewer belongs in. */}
+            <IconButton
+              icon="chevron-left"
+              light
+              style={styles.backBtn}
+              accessibilityLabel="Go back"
+              onPress={() =>
+                router.canGoBack()
+                  ? router.back()
+                  : router.replace(role === 'scout' ? '/(scout-tabs)/players' : '/(player-tabs)/discover')
+              }
+            />
             {viewerId && viewerId !== id && (
               <>
                 <IconButton
@@ -383,18 +421,29 @@ export default function PlayerDetail() {
           {tab === 'Videos' && (
             <View style={styles.videoGrid}>
               {!data.videos.length && <Text style={styles.disclaimerText}>No videos uploaded yet.</Text>}
+              {/* These were plain Views with a play icon drawn on them. A scout
+                  could see that a player's footage existed and could not watch
+                  it, which is the one thing this screen exists for. */}
               {data.videos.map((v) => (
-                <View key={v.id} style={styles.videoThumb}>
+                <Pressable
+                  key={v.id}
+                  style={styles.videoThumb}
+                  onPress={() => openVideo(v)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Play ${v.title || 'video'}`}
+                >
                   {thumbUrls?.[v.id] && <Image source={{ uri: thumbUrls[v.id] }} style={StyleSheet.absoluteFill} contentFit="contain" />}
                   <View style={styles.videoPlay}>
                     <Feather name="play" size={12} color={colors.white} />
                   </View>
-                </View>
+                </Pressable>
               ))}
             </View>
           )}
         </View>
       </ScrollView>
+
+      <VideoPlayerModal url={playing?.url ?? null} title={playing?.title} onClose={() => setPlaying(null)} />
 
       {/* Save to folder (spec §21) */}
       <Modal visible={saveOpen} transparent animationType="fade" onRequestClose={() => setSaveOpen(false)}>
@@ -496,6 +545,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   cover: { height: 160 },
   coverImage: { width: '100%', height: '100%' },
   coverMask: { position: 'absolute', bottom: -1, left: 0, right: 0, height: 24, backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  backBtn: { backgroundColor: 'rgba(0,0,0,0.42)' },
   coverTop: { position: 'absolute', top: 8, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' },
   headerBlock: { alignItems: 'center', marginTop: -44, paddingHorizontal: 20 },
   avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface },
