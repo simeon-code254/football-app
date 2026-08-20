@@ -24,8 +24,33 @@ const PAGES: Record<string, { md: string; title: string }> = {
   terms: { md: TERMS, title: 'Terms of Service' },
 };
 
-const esc = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Escapes markup AND encodes every non-ASCII character as a numeric HTML
+// entity, so the emitted page is pure ASCII.
+//
+// The response already declares charset=utf-8 and the bytes are correct UTF-8
+// (a middot serves as c2 b7, as it should). But any client that ignores the
+// header -- an in-app browser, a proxy, a preview pane -- decodes those bytes
+// as Latin-1 and renders "Policy A. Matobev" instead of "Policy - Matobev".
+// A privacy policy is read in whatever the user happens to open it in, and
+// pure ASCII cannot be mis-decoded by anything. Cheap insurance for a document
+// that has to be legible to be worth anything.
+// Written as an explicit loop rather than a regex character class of unicode
+// escapes, because those escapes have to survive whatever tooling edits this
+// file. A previous attempt silently ended up holding the literal U+0080 and
+// U+FFFF characters instead of the escape text -- which still compiled, and
+// matched almost nothing. A loop has nothing to mangle.
+function esc(s: string): string {
+  let out = '';
+  for (const ch of s) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (ch === '&') out += '&amp;';
+    else if (ch === '<') out += '&lt;';
+    else if (ch === '>') out += '&gt;';
+    else if (code > 127) out += '&#' + code + ';';
+    else out += ch;
+  }
+  return out;
+}
 
 // A deliberately small markdown renderer covering exactly the syntax these two
 // documents use: headings, bold, inline code, links, bullet lists, tables,
@@ -97,7 +122,7 @@ function render(md: string): string {
 const shell = (title: string, body: string) => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} · Matobev</title>
+<title>${esc(title)} &middot; Matobev</title>
 <style>
   :root { color-scheme: light dark; }
   body { margin:0; background:#F4F6F9; color:#0B1220;
