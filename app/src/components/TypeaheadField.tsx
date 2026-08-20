@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../theme';
 
 type Props = {
   label: string;
@@ -18,6 +18,7 @@ type Props = {
 // Africa-only and a 54-country list is easier to type than scroll.
 export function TypeaheadField({ label, value, onChange, options, placeholder = 'Start typing…', error, onBlur }: Props) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const [focused, setFocused] = useState(false);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +59,7 @@ export function TypeaheadField({ label, value, onChange, options, placeholder = 
       {!!error && <Text style={styles.errorText}>{error}</Text>}
 
       {showDropdown && (
-        <View style={styles.dropdown}>
+        <View style={[styles.dropdown, elevation('overlay', isDark)]}>
           <ScrollView keyboardShouldPersistTaps="always" style={{ maxHeight: 190 }} nestedScrollEnabled>
             {matches.map((item) => (
               <Pressable
@@ -108,11 +109,16 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       borderRadius: radii.md,
       borderWidth: 1,
       borderColor: colors.border,
-      shadowColor: '#000',
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 6,
+      // Depth comes from elevation('overlay') at the call site, not from a
+      // hand-rolled shadow. The shadow here was shadowColor '#000' on a dark
+      // navy ground -- invisible in dark mode, so the dropdown had no
+      // separation from the field behind it at all. The helper handles both
+      // themes, lifting the surface where a shadow cannot read.
+      //
+      // The border stays: elevation is applied after this in the style array,
+      // so dark mode overrides borderColor with its own hairline while light
+      // mode keeps this one. Dropping it would have left the light dropdown
+      // with a shadow and no outline.
       zIndex: 30,
     },
     option: { paddingHorizontal: spacing.lg, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },

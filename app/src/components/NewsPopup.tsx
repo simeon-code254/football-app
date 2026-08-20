@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
-import { fontFamily, fontSize, radii, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../theme';
 import * as newsRepository from '../repositories/newsRepository';
 import { getPublicStorageUrl } from '../lib/publicUrl';
 
@@ -17,6 +17,7 @@ const LAST_SEEN_KEY = 'matobev-last-seen-news-id';
 // competes with the News screen itself, which stays the full list.
 export function NewsPopup() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const [visible, setVisible] = useState(false);
 
@@ -54,7 +55,7 @@ export function NewsPopup() {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
       <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={dismiss} accessibilityRole="button" accessibilityLabel="Dismiss announcement">
-        <Pressable style={styles.card} onPress={(e) => e.stopPropagation()} accessible={false}>
+        <Pressable style={[styles.card, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()} accessible={false}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="contain" />}
           <View style={styles.body}>
             <Text style={styles.eyebrow}>{latest.trial_id ? 'New trial' : "What's new"}</Text>

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../theme';
 import * as trialsRepository from '../repositories/trialsRepository';
 
 // Shown to a player who has just finished the wizard but has not uploaded
@@ -21,6 +21,7 @@ import * as trialsRepository from '../repositories/trialsRepository';
 // empty, and the card hides itself entirely if nothing encouraging is true.
 export function FirstWinCard({ primaryPosition }: { primaryPosition?: string | null }) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
 
   const { data } = useQuery({
@@ -66,7 +67,7 @@ export function FirstWinCard({ primaryPosition }: { primaryPosition?: string | n
   });
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, elevation('raised', isDark)]}>
       <Text style={styles.title}>You're on the map</Text>
       <Text style={styles.sub}>Here's what's waiting for you right now.</Text>
 

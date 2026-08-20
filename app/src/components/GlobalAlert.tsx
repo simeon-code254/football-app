@@ -1,5 +1,5 @@
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../theme';
 import { useAlertStore } from '../store/useAlertStore';
 
 // Mounted once in app/_layout.tsx. Reads from useAlertStore so `showAlert()`
@@ -7,6 +7,7 @@ import { useAlertStore } from '../store/useAlertStore';
 // why RN's own Alert.alert can't be relied on here.
 export function GlobalAlert() {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const { visible, title, message, buttons, hide } = useAlertStore();
 
@@ -18,7 +19,7 @@ export function GlobalAlert() {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => handlePress()}>
       <View accessibilityViewIsModal style={styles.backdrop}>
-        <View style={styles.card}>
+        <View style={[styles.card, elevation('overlay', isDark)]}>
           <Text style={styles.title}>{title}</Text>
           {message ? <Text style={styles.message}>{message}</Text> : null}
           <View style={buttons.length > 2 ? styles.buttonsStacked : styles.buttonsRow}>

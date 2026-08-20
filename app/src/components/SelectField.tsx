@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../theme';
 
 type Props = {
   label: string;
@@ -15,6 +15,7 @@ type Props = {
 // backed by a simple modal option list since RN has no native <select>.
 export function SelectField({ label, value, options, onChange, placeholder = 'Select' }: Props) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const [open, setOpen] = useState(false);
 
@@ -34,7 +35,7 @@ export function SelectField({ label, value, options, onChange, placeholder = 'Se
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={() => setOpen(false)}>
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, elevation('overlay', isDark)]}>
             <Text style={styles.sheetTitle}>{label}</Text>
             <FlatList
               data={options}

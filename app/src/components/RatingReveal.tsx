@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, gradients, useThemeColors, type ThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, gradients, useThemeColors, type ThemeColors, useIsDark, elevation } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 import { successFeedback } from '../lib/haptics';
 
@@ -47,6 +47,7 @@ export function RatingReveal({
   onClose: () => void;
 }) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
 
   const badgeScale = useSharedValue(0.4);
@@ -101,7 +102,7 @@ export function RatingReveal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View accessibilityViewIsModal style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, elevation('overlay', isDark)]}>
           <Animated.View style={badgeStyle}>
             <LinearGradient colors={gradients.primaryButton} style={styles.badge}>
               <Text style={styles.badgeValue}>{rating}</Text>

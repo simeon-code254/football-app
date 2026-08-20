@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../theme';
 import { useTranslation } from '../i18n';
 
 type StrengthInput = {
@@ -40,6 +40,7 @@ export function buildStrengthItems(p: StrengthInput, t: (k: string) => string): 
 
 export function ProfileStrength(props: StrengthInput) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const { t } = useTranslation();
   const styles = makeStyles(colors);
 
@@ -52,7 +53,7 @@ export function ProfileStrength(props: StrengthInput) {
   const next = items.find((i) => !i.done);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, elevation('raised', isDark)]}>
       <View style={styles.headRow}>
         <Text style={styles.title}>{t('profileStrength.title')}</Text>
         <Text style={styles.pct}>{pct}%</Text>

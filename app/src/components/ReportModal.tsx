@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TextInput } from 'react-native';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
 import * as reportsRepository from '../repositories/reportsRepository';
@@ -29,6 +29,7 @@ type Props = {
 // needs to be reachable from several unrelated screens.
 export function ReportModal({ visible, title, targetType, targetId, reporterId, blockableProfileId, onBlocked, onClose }: Props) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const styles = makeStyles(colors);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -83,7 +84,7 @@ export function ReportModal({ visible, title, targetType, targetId, reporterId, 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close report dialog">
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()} accessible={false}>
+        <Pressable style={[styles.sheet, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()} accessible={false}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.hint}>Tell us what's wrong. Reports are reviewed by our team, not shown publicly.</Text>
           <View style={styles.inputBox}>

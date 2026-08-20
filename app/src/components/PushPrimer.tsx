@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors } from '../theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../theme';
 import { PrimaryButton } from './PrimaryButton';
 import { registerForPush } from '../lib/push';
 import { useTranslation } from '../i18n';
@@ -27,6 +27,7 @@ export function PushPrimer({
   onDone: (granted: boolean) => void;
 }) {
   const colors = useThemeColors();
+  const isDark = useIsDark();
   const { t } = useTranslation();
   const styles = makeStyles(colors);
   const [working, setWorking] = useState(false);
@@ -53,7 +54,7 @@ export function PushPrimer({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => onDone(false)}>
       <View accessibilityViewIsModal style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, elevation('overlay', isDark)]}>
           <View style={styles.iconWrap}>
             <Feather name="bell" size={22} color={colors.primary} />
           </View>
