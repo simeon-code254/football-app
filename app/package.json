@@ -59,7 +59,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "verify:queries": "node ../scripts/verify-queries.mjs"
+    "verify:queries": "node ../scripts/verify-queries.mjs",
+    "build:legal": "node ../scripts/build-legal.mjs"
   },
   "private": true
 }

@@ -4,12 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { ScoutSafetyNotice } from '../src/components/ScoutSafetyNotice';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 
 // TODO: replace with the real support inbox before shipping -- this is a
 // placeholder address, not a verified one.
 const SUPPORT_EMAIL = 'support@matobev.com';
+
+// Served by the `legal` Edge Function from docs/privacy-policy.md and
+// docs/terms-of-service.md. Built from the configured project URL rather than
+// hardcoded so the links follow whichever environment the app points at.
+//
+// Google Play requires a privacy policy reachable from inside the app as well
+// as in the store listing; before this there was no https link anywhere in the
+// codebase.
+const LEGAL_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''}/functions/v1/legal`;
 
 const FAQS: { q: string; a: string }[] = [
   {
@@ -59,6 +68,26 @@ export default function HelpSettings() {
           <Feather name="external-link" size={16} color={colors.textPlaceholder} />
         </Pressable>
 
+        <Text style={styles.sectionLabel}>Legal</Text>
+        <View style={styles.list}>
+          {[
+            { label: 'Privacy Policy', doc: 'privacy', icon: 'shield' as const },
+            { label: 'Terms of Service', doc: 'terms', icon: 'file-text' as const },
+          ].map((item, i) => (
+            <Pressable
+              key={item.doc}
+              style={[styles.legalRow, i === 0 && styles.legalRowFirst]}
+              onPress={() => Linking.openURL(`${LEGAL_BASE}?doc=${item.doc}`)}
+              accessibilityRole="link"
+              accessibilityLabel={`${item.label}, opens in your browser`}
+            >
+              <Feather name={item.icon} size={16} color={colors.textMuted} />
+              <Text style={styles.legalLabel}>{item.label}</Text>
+              <Feather name="external-link" size={15} color={colors.textPlaceholder} />
+            </Pressable>
+          ))}
+        </View>
+
         <Text style={styles.sectionLabel}>Your safety</Text>
         <ScoutSafetyNotice />
 
@@ -92,6 +121,17 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
     headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
     content: { padding: 20 },
+    legalRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 14,
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+    },
+    legalRowFirst: { borderTopWidth: 0 },
+    legalLabel: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textPrimary },
     contactCard: {
       flexDirection: 'row',
       alignItems: 'center',
