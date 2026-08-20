@@ -12,6 +12,7 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
 import * as videosRepository from '../src/repositories/videosRepository';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonProfile } from '../src/components/Skeleton';
 import { RatingReveal } from '../src/components/RatingReveal';
 
 // Key holds the last job id whose reveal was shown, so it fires once.
@@ -107,7 +108,7 @@ export default function AiRatings() {
         <View style={{ width: 36 }} />
       </View>
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <LinearGradient colors={[colors.primary, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
             <Text style={styles.heroLabel}>OVERALL RATING</Text>

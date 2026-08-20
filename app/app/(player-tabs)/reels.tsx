@@ -401,6 +401,12 @@ export default function Reels() {
     <View style={styles.root} onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}>
       {viewportHeight > 0 && (isLoading || error) && (
         <View style={{ height: viewportHeight }}>
+          {/* Deliberately no skeleton. Every other QueryState in the app has
+              one, but reels is an edge-to-edge video feed on black: pulsing
+              grey blocks would be a bigger visual interruption than the
+              spinner they replaced, and there is no card structure to
+              preview. The point of a skeleton is to show the shape of what is
+              coming, and here the shape is a single full-bleed video. */}
           <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
             <View />
           </QueryState>

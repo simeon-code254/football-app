@@ -13,6 +13,7 @@ import * as verificationRepository from '../src/repositories/verificationReposit
 import * as profileRepository from '../src/repositories/profileRepository';
 import { showAlert } from '../src/lib/alert';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonRow } from '../src/components/Skeleton';
 
 type DocType = 'id_document' | 'proof_of_organization' | 'certification';
 
@@ -139,6 +140,7 @@ export default function ScoutVerification() {
             refetchScout();
             refetchDocs();
           }}
+          skeleton={<SkeletonRow count={4} />}
         >
           <View />
         </QueryState>

@@ -17,6 +17,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
 import { tapFeedback } from '../../src/lib/haptics';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonProfile } from '../../src/components/Skeleton';
 import { ReportModal } from '../../src/components/ReportModal';
 
 const TABS = ['Overview', 'AI Analysis', 'Videos'] as const;
@@ -182,7 +183,7 @@ export default function PlayerDetail() {
   if (isLoading || error || !data) {
     return (
       <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+        <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
           <Text style={styles.notFound}>Player not found.</Text>
         </QueryState>
       </SafeAreaView>

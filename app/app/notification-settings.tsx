@@ -7,6 +7,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonRow } from '../src/components/Skeleton';
 import { SelectField } from '../src/components/SelectField';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as prefsRepository from '../src/repositories/notificationPrefsRepository';
@@ -87,7 +88,7 @@ export default function NotificationSettings() {
         <View style={{ width: 36 }} />
       </View>
 
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonRow count={6} />}>
         <ScrollView contentContainerStyle={styles.content}>
           {permission === 'denied' && (
             // Without this the toggles below look functional while nothing

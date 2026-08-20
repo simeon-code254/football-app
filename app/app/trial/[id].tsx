@@ -19,6 +19,7 @@ import type { ApplicantStatus } from '../../src/repositories/trialsRepository';
 import { showAlert } from '../../src/lib/alert';
 import { successFeedback } from '../../src/lib/haptics';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonCards } from '../../src/components/Skeleton';
 import { getPublicStorageUrl } from '../../src/lib/publicUrl';
 
 const STATUS_TABS: { key: 'all' | ApplicantStatus; label: string }[] = [
@@ -203,7 +204,7 @@ export default function TrialDetail() {
   if (loadingTrial || trialError || !trial) {
     return (
       <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        <QueryState isLoading={loadingTrial} error={trialError} onRetry={refetchTrial}>
+        <QueryState isLoading={loadingTrial} error={trialError} onRetry={refetchTrial} skeleton={<SkeletonCards count={1} />}>
           <Text style={styles.notFound}>Trial not found.</Text>
         </QueryState>
       </SafeAreaView>

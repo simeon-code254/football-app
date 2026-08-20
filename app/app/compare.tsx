@@ -8,6 +8,7 @@ import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
 import * as profileRepository from '../src/repositories/profileRepository';
 import { QueryState } from '../src/components/QueryState';
+import { SkeletonRow } from '../src/components/Skeleton';
 
 // Compare Players (spec §23) — reachable from the Players list's Compare
 // mode. Side-by-side attribute table; rows are the union of whatever
@@ -76,7 +77,7 @@ export default function ComparePlayers() {
   if (isLoading || error || !players) {
     return (
       <SafeAreaView style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
-        <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+        <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonRow count={5} />}>
           <Text style={styles.notFound}>Couldn't load these players.</Text>
         </QueryState>
       </SafeAreaView>

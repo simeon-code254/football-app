@@ -18,6 +18,7 @@ import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as videosRepository from '../../src/repositories/videosRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonScoutHome } from '../../src/components/Skeleton';
 import { NewsPopup } from '../../src/components/NewsPopup';
 
 const TOP_FILTERS = ['All', 'My Region', 'My Positions', 'Under 18', 'Under 21'] as const;
@@ -209,7 +210,7 @@ export default function ScoutDashboard() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <NewsPopup />
-      <QueryState isLoading={profileLoading} error={profileError} onRetry={refetchProfile}>
+      <QueryState isLoading={profileLoading} error={profileError} onRetry={refetchProfile} skeleton={<SkeletonScoutHome />}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={profileRefetching} onRefresh={refetchProfile} colors={[colors.primary]} tintColor={colors.primary} />}

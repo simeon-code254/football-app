@@ -132,6 +132,72 @@ export function SkeletonProfile() {
   );
 }
 
+/**
+ * The player home tab: greeting + header actions, the rating card, the upload
+ * prompt, and the three quick actions.
+ *
+ * Home is the first thing a player sees on every launch, and it was showing a
+ * bare spinner -- the one screen where a spinner costs the most, because it is
+ * the app's first impression on every single open. The shapes deliberately
+ * match the real layout's sizes so nothing jumps when the data lands; a
+ * skeleton whose proportions are wrong is just a different kind of flicker.
+ */
+export function SkeletonHome() {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+  return (
+    <SkeletonGroup>
+      <View style={styles.homeHeader}>
+        <View style={{ flex: 1 }}>
+          <SkeletonBlock width={72} height={10} />
+          <SkeletonBlock width={130} height={20} style={{ marginTop: 8 }} />
+        </View>
+        <SkeletonBlock width={34} height={34} radius={radii.sm} />
+        <SkeletonBlock width={34} height={34} radius={radii.sm} style={{ marginLeft: spacing.sm }} />
+        <SkeletonBlock width={40} height={40} radius={radii.pill} style={{ marginLeft: spacing.sm }} />
+      </View>
+
+      {/* The rating card -- the tallest thing on the screen. */}
+      <SkeletonBlock height={190} radius={radii.xl} style={styles.homeHero} />
+      {/* Upload prompt. */}
+      <SkeletonBlock height={84} radius={radii.lg} style={styles.homeWide} />
+
+      <View style={styles.homeActions}>
+        {[0, 1, 2].map((i) => (
+          <SkeletonBlock key={i} height={92} radius={radii.lg} style={{ flex: 1 }} />
+        ))}
+      </View>
+    </SkeletonGroup>
+  );
+}
+
+/**
+ * The scout home tab: a section heading above a horizontally scrolling row of
+ * player cards, repeated. Mirrors the real "Recommended For You" / "Recently
+ * Uploaded" / "Top Performers" structure rather than showing generic blocks.
+ */
+export function SkeletonScoutHome({ sections = 2 }: { sections?: number }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+  return (
+    <SkeletonGroup>
+      {Array.from({ length: sections }).map((_, s) => (
+        <View key={s} style={styles.scoutSection}>
+          <View style={styles.scoutHeading}>
+            <SkeletonBlock width={150} height={14} />
+            <SkeletonBlock width={54} height={11} />
+          </View>
+          <View style={styles.scoutRow}>
+            {[0, 1].map((i) => (
+              <SkeletonBlock key={i} width={240} height={300} radius={radii.xl} />
+            ))}
+          </View>
+        </View>
+      ))}
+    </SkeletonGroup>
+  );
+}
+
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     row: {
@@ -144,5 +210,29 @@ function makeStyles(colors: ThemeColors) {
     card: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
     profileHead: { alignItems: 'center', paddingVertical: spacing.xxl },
     statRow: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.lg },
+    homeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.md,
+    },
+    homeHero: { marginHorizontal: spacing.xl, marginTop: spacing.md },
+    homeWide: { marginHorizontal: spacing.xl, marginTop: spacing.lg },
+    homeActions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginHorizontal: spacing.xl,
+      marginTop: spacing.lg,
+    },
+    scoutSection: { marginTop: spacing.xl },
+    scoutHeading: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.xl,
+      marginBottom: spacing.md,
+    },
+    scoutRow: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl },
   });
 }

@@ -12,6 +12,7 @@ import * as profileRepository from '../../src/repositories/profileRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
 import { QueryState } from '../../src/components/QueryState';
+import { SkeletonHome } from '../../src/components/Skeleton';
 import { FirstWinCard } from '../../src/components/FirstWinCard';
 import { PlayerRatingCard } from '../../src/components/PlayerRatingCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
@@ -80,7 +81,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <NewsPopup />
-      <QueryState isLoading={isLoading} error={error} onRetry={refetch}>
+      <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonHome />}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
