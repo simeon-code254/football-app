@@ -2,824 +2,855 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Matobev — Product, Screens &amp; Design</title>
+<title>Matobev — Design Verdict, Screens &amp; Retention</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
-  @page { size:A4; margin:17mm 15mm 18mm; }
+  @page{size:A4;margin:15mm 13mm 16mm}
   :root{
-    --navy:#0A1B33; --navy-2:#123A6B; --gold:#8A5A00; --gold-lt:#FFC53D;
-    --ink:#0E1726; --body:#333E52; --muted:#6C7789; --rule:#DCE2EA;
-    --wash:#F5F7FA; --tint:#EDF2F9; --warn:#FFF7E6; --warnEdge:#D99A20;
-    --bad:#C0392B; --good:#1E8449;
+    --navy:#0A1B33;--primary:#123A6B;--gold:#FFC53D;--goldD:#8A5A00;
+    --ink:#0E1726;--body:#333E52;--muted:#6C7789;--rule:#DCE2EA;
+    --wash:#F5F7FA;--tint:#EDF2F9;--warn:#FFF7E6;--warnE:#D99A20;
+    --good:#1E8449;--bad:#C0392B;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:"Source Serif 4",Georgia,serif;font-size:10.2pt;
-       line-height:1.6;color:var(--body);background:#fff}
-  h1,h2,h3,h4,th,.ui,figcaption,.k,.nm,.path,.tag{font-family:Poppins,sans-serif}
+  body{margin:0;font-family:"Source Serif 4",Georgia,serif;font-size:10pt;line-height:1.58;
+       color:var(--body);background:#fff}
+  h1,h2,h3,h4,th,figcaption,.k,.nm,.tag,.cap{font-family:Poppins,sans-serif}
 
-  .cover{height:246mm;display:flex;flex-direction:column;justify-content:center;
-         break-after:page;position:relative}
+  .cover{height:250mm;display:flex;flex-direction:column;justify-content:center;break-after:page;position:relative}
   .cover::before{content:"";position:absolute;left:0;right:0;top:0;height:5mm;
-                 background:linear-gradient(90deg,var(--navy),var(--navy-2) 55%,var(--gold-lt))}
-  .cover h1{font-size:38pt;line-height:1.03;margin:0 0 5mm;color:var(--navy);
-            font-weight:800;letter-spacing:-1.1px}
-  .cover .sub{font-size:13pt;color:var(--navy-2);font-family:Poppins,sans-serif;
-              font-weight:500;margin-bottom:10mm}
-  .cover .rule{width:24mm;height:3px;background:var(--gold-lt);margin:0 0 7mm}
+    background:linear-gradient(90deg,var(--navy) 0%,var(--primary) 55%,var(--gold) 100%)}
+  .cover h1{font-size:38pt;line-height:1.02;margin:0 0 4mm;color:var(--navy);font-weight:800;letter-spacing:-1.1px}
+  .cover .sub{font-size:13pt;color:var(--primary);font-family:Poppins,sans-serif;font-weight:500;margin-bottom:9mm}
+  .cover .rule{width:24mm;height:3px;background:var(--gold);margin:0 0 6mm}
   .cover .meta{font-family:Poppins,sans-serif;font-size:9pt;color:var(--muted);line-height:1.85}
 
   .part{break-before:page;padding-top:1mm}
-  .kicker{font-family:Poppins,sans-serif;font-size:8pt;letter-spacing:2.2px;
-          text-transform:uppercase;color:var(--navy-2);font-weight:600;margin-bottom:1.5mm}
-  h2{font-size:18pt;color:var(--navy);font-weight:700;letter-spacing:-.4px;margin:0 0 3mm;
+  .kicker{font-family:Poppins,sans-serif;font-size:8pt;letter-spacing:2.2px;text-transform:uppercase;
+          color:var(--primary);font-weight:600;margin-bottom:1.5mm}
+  h2{font-size:17.5pt;color:var(--navy);font-weight:700;letter-spacing:-.4px;margin:0 0 3mm;
      padding-bottom:2.5mm;border-bottom:2px solid var(--navy);break-after:avoid}
-  h3{font-size:12pt;color:var(--navy);font-weight:600;margin:7mm 0 2mm;break-after:avoid}
-  h4{font-size:10pt;color:var(--navy-2);font-weight:600;margin:4.5mm 0 1.5mm;break-after:avoid}
-  p{margin:0 0 3.2mm}
-  ul,ol{margin:0 0 3.2mm;padding-left:5mm} li{margin-bottom:1.4mm}
-  strong{color:var(--ink);font-weight:600}
-  em{color:var(--navy-2);font-style:italic}
+  h3{font-size:11.5pt;color:var(--navy);font-weight:600;margin:6mm 0 2mm;break-after:avoid}
+  h4{font-size:9.6pt;color:var(--primary);font-weight:600;margin:4mm 0 1.2mm;break-after:avoid}
+  p{margin:0 0 3mm} ul,ol{margin:0 0 3mm;padding-left:5mm} li{margin-bottom:1.3mm}
+  strong{color:var(--ink);font-weight:600} em{color:var(--primary);font-style:italic}
 
-  .lede{font-size:11.5pt;line-height:1.5;color:var(--navy);font-family:Poppins,sans-serif;
-        font-weight:400;margin-bottom:5mm}
-  .callout{background:var(--tint);border-left:3px solid var(--navy-2);padding:3.5mm 4.5mm;
-           margin:4mm 0;break-inside:avoid}
-  .callout.warn{background:var(--warn);border-left-color:var(--warnEdge)}
+  .lede{font-size:11.4pt;line-height:1.48;color:var(--navy);font-family:Poppins,sans-serif;font-weight:400;margin-bottom:5mm}
+  .verdict{background:var(--navy);color:#fff;padding:6mm 7mm;border-radius:3mm;margin:5mm 0;break-inside:avoid}
+  .verdict h3{color:var(--gold);margin:0 0 2.5mm;font-size:12.5pt}
+  .verdict p{color:#DCE4F0;margin-bottom:2.5mm} .verdict p:last-child{margin-bottom:0}
+  .verdict strong{color:#fff}
+  .callout{background:var(--tint);border-left:3px solid var(--primary);padding:3.5mm 4.5mm;margin:4mm 0;break-inside:avoid}
+  .callout.warn{background:var(--warn);border-left-color:var(--warnE)}
   .callout p:last-child{margin-bottom:0}
-  .callout .label{font-family:Poppins,sans-serif;font-size:7.5pt;letter-spacing:1.5px;
-        text-transform:uppercase;color:var(--navy-2);font-weight:600;display:block;margin-bottom:1.2mm}
+  .callout .label{font-family:Poppins,sans-serif;font-size:7.4pt;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--primary);font-weight:600;display:block;margin-bottom:1.2mm}
   .callout.warn .label{color:#8A6100}
 
-  table{width:100%;border-collapse:collapse;margin:3.5mm 0;font-size:8.6pt;
-        break-inside:avoid;font-family:Poppins,sans-serif}
-  th{text-align:left;background:var(--navy);color:#fff;font-weight:600;padding:2.2mm 2.6mm;font-size:8.2pt}
-  td{padding:2.2mm 2.6mm;border-bottom:1px solid var(--rule);vertical-align:top}
+  table{width:100%;border-collapse:collapse;margin:3.5mm 0;font-size:8.4pt;break-inside:avoid;font-family:Poppins,sans-serif}
+  th{text-align:left;background:var(--navy);color:#fff;font-weight:600;padding:2mm 2.4mm;font-size:8pt}
+  td{padding:2mm 2.4mm;border-bottom:1px solid var(--rule);vertical-align:top}
   tr:nth-child(even) td{background:var(--wash)}
-  code{font-family:ui-monospace,Consolas,monospace;font-size:8.2pt;background:var(--wash);
-       padding:.3mm 1.1mm;border-radius:2px;color:var(--navy)}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:8pt;background:var(--wash);padding:.3mm 1mm;border-radius:2px;color:var(--navy)}
+  .pass{color:var(--good);font-weight:600} .fail{color:var(--bad);font-weight:600}
 
-  /* screen specification block */
-  .spec{break-inside:avoid;margin:0 0 3.5mm;border:1px solid var(--rule);border-radius:2mm;overflow:hidden}
-  .spec-head{background:var(--wash);padding:2mm 3mm;border-bottom:1px solid var(--rule);
-             display:flex;justify-content:space-between;align-items:baseline;gap:3mm}
-  .spec-head .nm{font-weight:600;color:var(--navy);font-size:9.6pt}
-  .spec-head .path{font-family:ui-monospace,Consolas,monospace;font-size:7.2pt;color:var(--muted)}
-  .spec-body{padding:2.5mm 3mm}
-  .spec .purpose{font-size:9.2pt;margin:0 0 2mm}
-  .spec dl{display:grid;grid-template-columns:26mm 1fr;gap:1mm 3mm;margin:0;
-           font-family:Poppins,sans-serif;font-size:8.2pt}
-  .spec dt{color:var(--muted);font-weight:500}
-  .spec dd{margin:0;color:var(--body)}
-  .spec dd.risk{color:#8A3A18}
+  .grid{display:flex;flex-wrap:wrap;gap:5mm;margin:4mm 0}
+  .cell{width:54mm;break-inside:avoid}
+  .cell svg{display:block;width:54mm;height:auto;border-radius:3mm}
+  .cap{font-size:7.6pt;color:var(--muted);line-height:1.35;margin-top:1.5mm}
+  .cap b{color:var(--navy);font-weight:600;display:block;font-size:8.2pt}
 
-  .swatches{display:flex;flex-wrap:wrap;gap:2.6mm;margin:3.5mm 0;break-inside:avoid}
-  .sw{width:28mm}
-  .sw .chip{height:14mm;border-radius:1.6mm;border:1px solid rgba(0,0,0,.08)}
-  .sw .nm{font-size:8pt;font-weight:600;color:var(--navy);margin-top:1mm}
-  .sw .hex{font-family:ui-monospace,Consolas,monospace;font-size:7pt;color:var(--muted)}
-  .sw .use{font-size:7pt;color:var(--muted);line-height:1.3;font-family:Poppins,sans-serif}
-
-  figure{margin:4mm 0;break-inside:avoid}
-  figcaption{font-size:8.2pt;color:var(--muted);margin-top:2mm;line-height:1.45}
-  .mocks{display:flex;gap:4mm;justify-content:center}
-  .foot{margin-top:8mm;padding-top:2.5mm;border-top:1px solid var(--rule);
-        font-family:Poppins,sans-serif;font-size:7.6pt;color:var(--muted);line-height:1.6}
+  .swatches{display:flex;flex-wrap:wrap;gap:2.4mm;margin:3.5mm 0;break-inside:avoid}
+  .sw{width:26mm}
+  .sw .chip{height:13mm;border-radius:1.6mm;border:1px solid rgba(0,0,0,.08)}
+  .sw .nm{font-size:7.6pt;font-weight:600;color:var(--navy);margin-top:.8mm}
+  .sw .hex{font-family:ui-monospace,Consolas,monospace;font-size:6.8pt;color:var(--muted)}
+  .foot{margin-top:7mm;padding-top:2.5mm;border-top:1px solid var(--rule);font-family:Poppins,sans-serif;
+        font-size:7.4pt;color:var(--muted);line-height:1.6}
 </style>
 </head>
 <body>
 
-<!-- ======================= COVER ======================= -->
+<!-- ===== COVER ===== -->
 <section class="cover">
-  <img src="assets/logo.png" alt="" style="width:24mm;height:24mm;margin-bottom:8mm">
+  <img src="assets/logo.png" alt="" style="width:23mm;height:23mm;margin-bottom:7mm">
   <div class="rule"></div>
   <h1>Matobev</h1>
-  <div class="sub">Product, Screens &amp; Design</div>
-  <p style="max-width:118mm;font-size:10.5pt;margin-bottom:12mm">
-    What the product is, the market it is entering, every screen from splash to
-    logout, an honest assessment of what people will and will not like, and a
-    design direction argued from first principles.
+  <div class="sub">Design Verdict, Screens &amp; Retention</div>
+  <p style="max-width:116mm;font-size:10.4pt;margin-bottom:11mm">
+    A committed design decision with the evidence behind it, twenty-three
+    screens drawn, and the specific mechanics that make someone open the app
+    again next week.
   </p>
   <div class="meta">
     <strong style="color:var(--navy)">Prepared for</strong> Simeon Odhiambo<br>
-    <strong style="color:var(--navy)">Scope</strong> 44 screens · player and scout roles<br>
-    <strong style="color:var(--navy)">Date</strong> 20 August 2026<br>
-    <strong style="color:var(--navy)">Status</strong> Pre-launch · Android build passing · not yet used end to end
+    <strong style="color:var(--navy)">Scope</strong> 44 screens · 23 drawn · player, scout and guardian<br>
+    <strong style="color:var(--navy)">Date</strong> 20 August 2026
   </div>
 </section>
 
-<!-- ======================= SUMMARY ======================= -->
+<!-- ===== THE VERDICT ===== -->
 <section class="part">
-  <div class="kicker">Read this first</div>
-  <h2>The four findings that matter</h2>
+  <div class="kicker">The decision</div>
+  <h2>Verdict</h2>
 
-  <p class="lede">
-    If you read nothing else, read these. Two of them are uncomfortable.
-  </p>
-
-  <h3>1. The concept is not novel, and the AI is not the differentiator</h3>
-  <p>
-    Matobev is entering a market with at least six direct competitors, several
-    better funded. <strong>Scout Me Pro</strong> is nearly identical in
-    positioning — "TikTok for football", AI video analysis, computer-vision
-    performance scores, players aged 13+ with parental-consent support, scouts
-    with advanced filters, free to start. <strong>Afriskaut</strong> relaunched
-    in 2025 at the Viareggio Cup and is in talks with the NBA.
-    <strong>SOCALOCA</strong> has a partnership with the Ghana Football
-    Association. ScoutMe, Scoutfutbol and Afriq Foot Scout all occupy the same
-    sentence.
-  </p>
-  <p>
-    Every one of them claims AI analysis. Matobev's engine currently scores four
-    attributes and is <em>uncertain about all of them</em>. As a differentiator,
-    "we have AI" is already table stakes and Matobev is behind on it.
-  </p>
-
-  <h3>2. The real opening is trust, and it is enormous</h3>
-  <p>
-    The documented problem in African football is not that talent goes unseen.
-    It is that <strong>tens of thousands of young players a year are defrauded
-    and trafficked</strong> by people posing as agents. Families pay for trials
-    that do not exist. Players arrive abroad, have documents and phones seized,
-    and are forced to extract more money from home. This is reported by ISS
-    Africa, ENACT, VICE and others, and the recommended remedies are
-    consistently about <em>verification and publishing who is genuine</em>.
-  </p>
-  <div class="callout">
-    <span class="label">Where Matobev is genuinely ahead</span>
+  <div class="verdict">
+    <h3>Navy and gold. Redraw the mark in one colour.</h3>
     <p>
-      Not one competitor positions on safety. Matobev already enforces guardian
-      consent in the database, hides under-18 profiles from the open internet,
-      enforces blocking in row-level security, and states in its terms that
-      <strong>nobody may ever ask a player for money</strong>. That is a real
-      position in a market defined by confident AI claims and a documented
-      trafficking problem — and most of it is already built.
+      <strong>Primary <code style="background:#1B3358;color:#fff">#123A6B</code>.
+      Achievement <code style="background:#1B3358;color:#fff">#FFC53D</code>.
+      Ground <code style="background:#1B3358;color:#fff">#0A1B33</code>.</strong>
+      Green and red stay free for outcomes. Gold appears on exactly one thing —
+      the rating — and is never borrowed for a button.
+    </p>
+    <p>
+      Every one of the eleven colour pairings this app actually renders passes
+      WCAG AA at normal text size. Not "mostly", not "at large sizes" —
+      <strong>11 of 11</strong>.
     </p>
   </div>
 
-  <h3>3. The honesty about uncertainty is the product's best idea</h3>
-  <p>
-    Every competitor sells a confident "performance score". Matobev marks
-    confidence, mutes low-confidence values, and refuses to declare a winner in
-    a comparison it cannot support. That is unusual, defensible, and impossible
-    to copy without admitting your own numbers are soft.
-  </p>
-  <p>
-    It is also the harder sell. A scout skimming a store listing wants a number.
-    Matobev's pitch has to be <em>"the ratings you can trust because we tell you
-    when not to"</em> — which is a better long-term position and a worse
-    screenshot.
-  </p>
-
-  <h3>4. It has not been used, and it shows</h3>
-  <p>
-    In one ninety-second review, three defects surfaced: a scout could not play
-    a player's video at all, the back button was invisible on a light photo, and
-    the leaderboard offered scouts a filter on a position scouts do not have.
-    None are subtle. All three survived because the app was verified by
-    typechecks and bundles rather than by a person using it as a scout.
-  </p>
-</section>
-
-<!-- ======================= PART 1 ======================= -->
-<section class="part">
-  <div class="kicker">Part One</div>
-  <h2>What Matobev is</h2>
-
-  <p class="lede">
-    A talent-discovery platform for African footballers. A player uploads a
-    highlight from their phone; software analyses how they move and produces a
-    rating with a confidence attached; scouts search, watch, shortlist and make
-    contact.
-  </p>
-
-  <h3>The problem</h3>
-  <p>
-    Discovery in African football runs on physical presence and personal
-    networks — being at the right academy, knowing someone, being able to travel.
-    Each is a filter on circumstance rather than ability. Into that gap steps a
-    large, organised fraud industry selling the one thing families will pay for:
-    hope.
-  </p>
-
-  <h3>Who it serves</h3>
+  <h3>Why this and not the alternatives</h3>
   <table>
-    <tr><th style="width:20%">Role</th><th style="width:38%">Actually wants</th><th>Gets</th></tr>
-    <tr><td><strong>Player</strong><br><span style="color:var(--muted)">13+, mostly 15–21</span></td>
-        <td>Proof that someone real is looking</td>
-        <td>Profile, rating, scout visibility, open trials, and evidence of attention</td></tr>
-    <tr><td><strong>Scout</strong><br><span style="color:var(--muted)">clubs, academies, agents</span></td>
-        <td>To avoid wasting a journey</td>
-        <td>Filtered search, ratings as a first pass, footage, shortlists, notes, contact, trials</td></tr>
-    <tr><td><strong>Guardian</strong><br><span style="color:var(--muted)">of an under-18</span></td>
-        <td>To know their child is not being exploited</td>
-        <td>A consent decision they make themselves, and the ability to withdraw it</td></tr>
-  </table>
-  <p style="font-size:9.4pt">
-    The guardian is a genuine third user, not an afterthought. They never install
-    the app — they receive a link. That is the only screen in the product built
-    for someone who is not a user.
-  </p>
-
-  <h3>The two loops the product depends on</h3>
-  <p>
-    <strong>Player loop:</strong> upload → get rated → be seen → be told someone
-    looked → upload again. It breaks if nothing ever comes back. That is why
-    "a scout viewed your profile", "your rating went up" and the weekly summary
-    exist, and why the improvement leaderboard is the default board — a
-    rating-sorted list tells the bottom 90% they are nowhere.
-  </p>
-  <p>
-    <strong>Scout loop:</strong> filter → skim → watch → shortlist → contact.
-    It breaks at <em>watch</em> if footage is slow, unplayable, or not worth the
-    data. For a scout on mobile data, every video that turns out to be useless
-    is money.
-  </p>
-</section>
-
-<!-- ======================= PART 2 ======================= -->
-<section class="part">
-  <div class="kicker">Part Two</div>
-  <h2>What people will like, and what they will not</h2>
-  <p class="lede">
-    Written as bluntly as I can. The second column is the one worth arguing with.
-  </p>
-
-  <h3>Players</h3>
-  <table>
-    <tr><th style="width:50%">Will like</th><th>Will not</th></tr>
-    <tr>
-      <td><strong>Being told a scout looked at them.</strong> This is the single most emotionally valuable thing the app does, and it is already built.</td>
-      <td><strong>A low rating.</strong> A 16 out of 99 on a scale they read fluently from FIFA reads as a verdict on them as a person. The confidence marker helps, but a teenager will remember the number.</td>
-    </tr>
-    <tr>
-      <td><strong>Free, with nobody asking for money.</strong> In this market that is not a feature, it is a relief.</td>
-      <td><strong>Uploading a video on mobile data and getting nothing back.</strong> The upload is the single most expensive action in the app, in real money.</td>
-    </tr>
-    <tr>
-      <td><strong>The improvement board.</strong> A category they can actually top.</td>
-      <td><strong>Being asked for a guardian.</strong> Correct, necessary, and a real drop-off point. Some will lie about their age instead.</td>
-    </tr>
-    <tr>
-      <td><strong>The rating reveal moment.</strong> The one orchestrated moment; it is what gets screenshotted and shared.</td>
-      <td><strong>Waiting.</strong> Analysis is not instant, and "processing" with no estimate feels broken on a slow connection.</td>
-    </tr>
+    <tr><th style="width:20%">Option</th><th style="width:38%">Case for</th><th style="width:30%">Why rejected</th><th>Verdict</th></tr>
+    <tr><td><strong>Keep electric blue</strong> <code>#1A6DFF</code></td>
+      <td>Already built; no migration cost</td>
+      <td>It disagrees with the logo by 33°, which is the worst possible distance — close enough to read as a mistake, far enough to clash</td>
+      <td class="fail">No</td></tr>
+    <tr><td><strong>Match the current teal</strong> <code>#00A0B0</code></td>
+      <td>Agrees with the existing mark</td>
+      <td>Fails contrast as text at 3.16 : 1, and the teal does two jobs at once — brand <em>and</em> primary action</td>
+      <td class="fail">No</td></tr>
+    <tr><td><strong>Pitch green</strong> <code>#0B6B3A</code></td>
+      <td>Football's own colour; differentiates hard from a market of dark blue apps</td>
+      <td>Green already means "success" everywhere. This app needs that meaning free for applications, consent and moderation</td>
+      <td class="fail">No</td></tr>
+    <tr><td><strong>Navy + gold</strong> <code>#123A6B</code> · <code>#FFC53D</code></td>
+      <td>The register of institutions people trust with children — exactly the position the market leaves open. Gold on navy is the strongest pairing available and it is the trophy language young footballers already read</td>
+      <td>Navy is common; the <em>mark</em> must carry distinctiveness, which is why it should be redrawn</td>
+      <td class="pass">Recommended</td></tr>
   </table>
 
-  <h3>Scouts</h3>
+  <h3>The same card, both ways</h3>
+  <div class="grid">
+    <div class="cell">
+      <svg viewBox="0 0 168 96" role="img" aria-label="Current rating card">
+        <rect width="168" height="96" rx="8" fill="#F1F4F8"/>
+        <rect x="8" y="8" width="152" height="80" rx="9" fill="#FFFBF0" stroke="#E4D9C0"/>
+        <rect x="8" y="8" width="3" height="80" fill="#B8860B"/>
+        <text x="20" y="42" font-family="Poppins" font-size="24" font-weight="800" fill="#8A5A00">25</text>
+        <text x="20" y="53" font-family="Poppins" font-size="6.5" font-weight="700" fill="#1C1408" letter-spacing="1.4">RB</text>
+        <rect x="112" y="16" width="38" height="13" rx="6.5" fill="none" stroke="#1A6DFF" stroke-opacity=".5"/>
+        <text x="118" y="25" font-family="Poppins" font-size="6" fill="#1A6DFF">Report</text>
+        <line x1="20" y1="60" x2="148" y2="60" stroke="#000" stroke-opacity=".12"/>
+        <text x="84" y="71" text-anchor="middle" font-family="Poppins" font-size="6.5" font-weight="700" fill="#1C1408" letter-spacing="1.3">SIMEON ODHIAMBO</text>
+        <text x="22" y="83" font-family="Poppins" font-size="7" font-weight="800" fill="#8892A3">1·</text>
+        <text x="46" y="83" font-family="Poppins" font-size="7" font-weight="800" fill="#1C1408">34</text>
+        <text x="70" y="83" font-family="Poppins" font-size="7" font-weight="800" fill="#1C1408">66</text>
+      </svg>
+      <div class="cap"><b>Current — cream, deep gold, blue action</b>
+        Three families competing: warm cream, dark gold, electric blue. The
+        rating does not feel earned because gold-on-cream has nowhere to glow.</div>
+    </div>
+    <div class="cell">
+      <svg viewBox="0 0 168 96" role="img" aria-label="Proposed rating card">
+        <rect width="168" height="96" rx="8" fill="#F1F4F8"/>
+        <rect x="8" y="8" width="152" height="80" rx="9" fill="#0A1B33"/>
+        <rect x="8" y="8" width="3" height="80" fill="#FFC53D"/>
+        <text x="20" y="42" font-family="Poppins" font-size="24" font-weight="800" fill="#FFC53D">25</text>
+        <text x="49" y="35" font-family="Poppins" font-size="8" font-weight="800" fill="#8C99AE">·</text>
+        <text x="20" y="53" font-family="Poppins" font-size="6.5" font-weight="700" fill="#FFFFFF" letter-spacing="1.4">RB</text>
+        <rect x="112" y="16" width="38" height="13" rx="6.5" fill="#1B3358"/>
+        <text x="118" y="25" font-family="Poppins" font-size="6" fill="#DCE7F5">Report</text>
+        <line x1="20" y1="60" x2="148" y2="60" stroke="#fff" stroke-opacity=".14"/>
+        <text x="84" y="71" text-anchor="middle" font-family="Poppins" font-size="6.5" font-weight="700" fill="#fff" letter-spacing="1.3">SIMEON ODHIAMBO</text>
+        <text x="22" y="83" font-family="Poppins" font-size="7" font-weight="800" fill="#8C99AE">1·</text>
+        <text x="46" y="83" font-family="Poppins" font-size="7" font-weight="800" fill="#fff">34</text>
+        <text x="70" y="83" font-family="Poppins" font-size="7" font-weight="800" fill="#fff">66</text>
+      </svg>
+      <div class="cap"><b>Proposed — navy ground, gold rating</b>
+        Gold at 10.93 : 1 on navy. One colour, one meaning, and the object now
+        looks like something you would screenshot and send to a friend.</div>
+    </div>
+  </div>
+
+  <h3>The palette, in full</h3>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#0A1B33"></div><div class="nm">Ground</div><div class="hex">#0A1B33</div></div>
+    <div class="sw"><div class="chip" style="background:#123A6B"></div><div class="nm">Primary</div><div class="hex">#123A6B</div></div>
+    <div class="sw"><div class="chip" style="background:#7FB0F0"></div><div class="nm">Primary · dark</div><div class="hex">#7FB0F0</div></div>
+    <div class="sw"><div class="chip" style="background:#FFC53D"></div><div class="nm">Gold</div><div class="hex">#FFC53D</div></div>
+    <div class="sw"><div class="chip" style="background:#8A5A00"></div><div class="nm">Gold · on light</div><div class="hex">#8A5A00</div></div>
+    <div class="sw"><div class="chip" style="background:#1E8449"></div><div class="nm">Success</div><div class="hex">#1E8449</div></div>
+    <div class="sw"><div class="chip" style="background:#C0392B"></div><div class="nm">Error</div><div class="hex">#C0392B</div></div>
+    <div class="sw"><div class="chip" style="background:#6C7789"></div><div class="nm">Muted</div><div class="hex">#6C7789</div></div>
+  </div>
   <table>
-    <tr><th style="width:50%">Will like</th><th>Will not</th></tr>
-    <tr>
-      <td><strong>Filters that match how they think</strong> — position, age band, region, minimum rating.</td>
-      <td><strong>Ratings they cannot interrogate.</strong> A scout will not trust a number without knowing what produced it. The breakdown exists; it must be one tap away, not three.</td>
-    </tr>
-    <tr>
-      <td><strong>Notes and folders.</strong> Unglamorous and the reason a scout returns.</td>
-      <td><strong>Thin inventory.</strong> A scouting app with 40 players is not worth opening twice. This is the hardest problem the product has.</td>
-    </tr>
-    <tr>
-      <td><strong>Confidence markers</strong> — once explained. It tells them which numbers to ignore, which saves journeys.</td>
-      <td><strong>Verification friction</strong> before they can see anything of value.</td>
-    </tr>
+    <tr><th>Pairing</th><th>Ratio</th><th>Pairing</th><th>Ratio</th></tr>
+    <tr><td>Primary on white</td><td class="pass">11.39</td><td>Gold on navy</td><td class="pass">10.93</td></tr>
+    <tr><td>White on primary</td><td class="pass">11.39</td><td>Gold-dark on white</td><td class="pass">5.93</td></tr>
+    <tr><td>Primary·dark on #0B1220</td><td class="pass">8.35</td><td>Muted on white</td><td class="pass">4.53</td></tr>
+    <tr><td>Body on white</td><td class="pass">10.76</td><td>Muted·dark on navy</td><td class="pass">5.98</td></tr>
+    <tr><td>Success on white</td><td class="pass">4.72</td><td>Error on white</td><td class="pass">5.44</td></tr>
+    <tr><td>White on navy card</td><td class="pass">17.25</td><td colspan="2"><strong>11 / 11 pass AA</strong></td></tr>
   </table>
 
   <div class="callout warn">
-    <span class="label">The thing nobody will say out loud</span>
+    <span class="label">The one thing gold cannot do</span>
     <p>
-      The cold-start problem is the real risk, not the design. Players join
-      because scouts are there; scouts join because players are there. Every
-      competitor listed in this document is fighting the same fight, and two of
-      them have federation partnerships. <strong>A design document cannot solve
-      this.</strong> Seeding one region, one age group, or one academy
-      relationship properly matters more than any screen in Part Four.
+      Gold <code>#FFC53D</code> on white is <strong>1.58 : 1</strong> — invisible.
+      Any light surface showing a rating must use <code>#8A5A00</code> instead.
+      This is the single most likely mistake when applying the palette, because
+      the colour looks fine in a swatch and disappears in use.
+    </p>
+  </div>
+
+  <h3>On the mark</h3>
+  <p>
+    The two figures and ball is a good silhouette that reads at small sizes. The
+    <strong>gradient is the weak part</strong>: it goes muddy at a 48px launcher
+    icon, forces a light background, and is the reason the app and its own logo
+    currently use different colours. Redrawn as <strong>solid gold on a navy
+    tile</strong>, it survives the launcher, matches the product, and gains the
+    trophy association the rating already depends on.
+  </p>
+</section>
+
+<!-- ===== RETENTION ===== -->
+<section class="part">
+  <div class="kicker">Why anyone comes back</div>
+  <h2>Retention is a design problem, not a notification problem</h2>
+
+  <p class="lede">
+    A scouting app has a brutal retention shape: a player uploads once, then has
+    nothing to do until something happens <em>to</em> them. If nothing does, they
+    leave and never come back. Every design decision below exists to close that
+    gap.
+  </p>
+
+  <h3>The four returns, and what each depends on</h3>
+  <table>
+    <tr><th style="width:20%">Trigger</th><th style="width:26%">The feeling</th><th style="width:28%">Design requirement</th><th>Status</th></tr>
+    <tr><td><strong>A scout viewed you</strong></td><td>Someone real is looking</td>
+      <td>Must arrive without naming the scout, and at most once a day or it becomes noise</td><td class="pass">Built</td></tr>
+    <tr><td><strong>Your rating went up</strong></td><td>The work paid off</td>
+      <td>Only on a <em>visible</em> change; never on a fall; one message per day that updates as the number climbs</td><td class="pass">Built</td></tr>
+    <tr><td><strong>Your week</strong></td><td>A rhythm worth keeping</td>
+      <td>Monday morning local time, and <strong>silent when nothing happened</strong></td><td class="pass">Built</td></tr>
+    <tr><td><strong>You moved up</strong></td><td>Competition you can win</td>
+      <td>Improvement, not rating, as the default board</td><td class="pass">Built</td></tr>
+  </table>
+
+  <div class="callout">
+    <span class="label">The rule that makes the difference</span>
+    <p>
+      <strong>Never send a hollow notification.</strong> A weekly digest that
+      says "0 views, no change" is a weekly reminder that nobody is looking, and
+      it trains people to swipe the app away unread. Silence on a quiet week is
+      what makes the loud weeks mean something.
+    </p>
+  </div>
+
+  <h3>Three design decisions that do more for retention than any push</h3>
+
+  <h4>1. The rating must look like an object worth owning</h4>
+  <p>
+    This is why gold on navy matters beyond aesthetics. A number in a blue panel
+    is a statistic. The same number in a card with a metal edge is a
+    <em>possession</em> — the visual language of a football card, which this
+    audience already reads fluently. People screenshot possessions. They do not
+    screenshot statistics. <strong>The card is the app's only organic growth
+    mechanic.</strong>
+  </p>
+
+  <h4>2. Progress must be visible before it is impressive</h4>
+  <p>
+    A player rated 25 will never top a rating board and knows it. The
+    improvement board is not a nice extra — it is the only place they can place,
+    and it is why <code>+7</code> is rendered in green at the same weight as the
+    rating itself. What is measured as progress must be shown as progress.
+  </p>
+
+  <h4>3. The empty state is the retention surface</h4>
+  <p>
+    A new player has no rating, no views and no rank. That is the moment most of
+    them decide. Every empty state must name the <em>next action</em> rather than
+    the absence: "upload a highlight and any gain shows here" rather than "no
+    data".
+  </p>
+
+  <div class="callout warn">
+    <span class="label">What none of this fixes</span>
+    <p>
+      If a player uploads and <strong>no scout ever views them</strong>, no
+      notification design saves the account. Retention mechanics amplify real
+      activity; they cannot manufacture it. Filling one segment with enough
+      scouts that a view is likely matters more than every screen in this
+      document.
     </p>
   </div>
 </section>
 
-<!-- ======================= PART 3 : SCREENS ======================= -->
+<!-- ===== SCREENS ===== -->
 <section class="part">
   <div class="kicker">Part Three</div>
-  <h2>Every screen, splash to logout</h2>
+  <h2>The screens</h2>
   <p class="lede">
-    Forty-four screens. Each entry gives its purpose, how it is reached, where it
-    leads, what is on it, its empty and error states, and what to watch for.
+    Twenty-three screens in the proposed system, in the order a person meets
+    them. Navy carries structure and action; gold appears only on a rating.
   </p>
 
-  <h3>A · Cold start</h3>
+  <h3>Arriving</h3>
+  <div class="grid">
 
-  <div class="spec"><div class="spec-head"><span class="nm">Splash</span><span class="path">native · expo-splash-screen</span></div>
-    <div class="spec-body"><p class="purpose">Holds the first frame while fonts, session and theme resolve, so the app never flashes an unstyled screen.</p>
-      <dl>
-        <dt>Shows</dt><dd>Logo at 220px on white; <code>#0A1628</code> in dark mode</dd>
-        <dt>Leads to</dt><dd>Index, once ready</dd>
-        <dt>Watch out</dt><dd class="risk">On a 1–2 GB device this is where a slow cold start is felt. It is dismissed manually, so any error before <code>hideAsync()</code> leaves the user staring at a logo.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#0A1B33"/>
+        <circle cx="84" cy="150" r="26" fill="none" stroke="#FFC53D" stroke-width="2.5"/>
+        <circle cx="76" cy="142" r="7" fill="#FFC53D"/><circle cx="93" cy="142" r="7" fill="#FFC53D"/>
+        <circle cx="84" cy="158" r="6" fill="#FFC53D"/>
+        <text x="84" y="205" text-anchor="middle" font-family="Poppins" font-size="14" font-weight="800" fill="#fff">Matobev</text>
+      </svg>
+      <div class="cap"><b>1 · Splash</b>Held until fonts and session resolve. Navy in both themes — the first frame already teaches the palette.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Index — routing gate</span><span class="path">index</span></div>
-    <div class="spec-body"><p class="purpose">Decides where a launch lands. No UI of its own.</p>
-      <dl>
-        <dt>Decides between</dt><dd>Welcome · onboarding · verify-email · profile completion · player tabs · scout tabs · suspended</dd>
-        <dt>Inputs</dt><dd>Session, email-verified flag, role, profile-completed flag, suspension state</dd>
-        <dt>Watch out</dt><dd class="risk">Every routing bug in the app lands here. It is also the only place that can trap a user in a loop.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <rect width="168" height="180" rx="14" fill="#123A6B"/><rect y="150" width="168" height="30" fill="#123A6B"/>
+        <circle cx="84" cy="72" r="20" fill="#1B4E8C"/><circle cx="78" cy="66" r="5.5" fill="#FFC53D"/><circle cx="90" cy="66" r="5.5" fill="#FFC53D"/>
+        <text x="84" y="118" text-anchor="middle" font-family="Poppins" font-size="13" font-weight="700" fill="#fff">Get seen.</text>
+        <text x="84" y="136" text-anchor="middle" font-family="Poppins" font-size="8" fill="#B9CCE6">Scouts are looking. Be findable.</text>
+        <rect x="16" y="206" width="136" height="30" rx="9" fill="#123A6B"/>
+        <text x="84" y="225" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#fff">Create account</text>
+        <rect x="16" y="244" width="136" height="30" rx="9" fill="#fff" stroke="#123A6B"/>
+        <text x="84" y="263" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#123A6B">Sign in</text>
+        <text x="84" y="292" text-anchor="middle" font-family="Poppins" font-size="8" fill="#6C7789">Browse without an account</text>
+      </svg>
+      <div class="cap"><b>2 · Welcome</b>Leads with the outcome, not the technology. The third option removes the wall in front of the value.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Welcome</span><span class="path">welcome</span></div>
-    <div class="spec-body"><p class="purpose">First screen a signed-out visitor sees.</p>
-      <dl>
-        <dt>Elements</dt><dd>Brand, one-line proposition, <em>Create account</em>, <em>Sign in</em>, <em>Browse without an account</em></dd>
-        <dt>Leads to</dt><dd>Signup · login · browse</dd>
-        <dt>Watch out</dt><dd class="risk">This screen carries the entire first impression and currently sells features rather than the outcome. "Get seen by scouts" beats "AI-powered analysis".</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <rect width="168" height="200" rx="14" fill="#DCE3EC"/><rect y="170" width="168" height="30" fill="#DCE3EC"/>
+        <circle cx="84" cy="96" r="30" fill="#B9C6D6"/>
+        <text x="84" y="232" text-anchor="middle" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Upload one clip</text>
+        <text x="84" y="250" text-anchor="middle" font-family="Poppins" font-size="8" fill="#6C7789">We analyse how you move</text>
+        <circle cx="70" cy="276" r="3" fill="#123A6B"/><circle cx="84" cy="276" r="3" fill="#C8D2DE"/><circle cx="98" cy="276" r="3" fill="#C8D2DE"/>
+        <rect x="16" y="292" width="136" height="28" rx="9" fill="#123A6B"/>
+        <text x="84" y="310" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#fff">Next</text>
+      </svg>
+      <div class="cap"><b>3 · Onboarding</b>Three slides. Skippable, so nothing load-bearing lives only here.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Onboarding</span><span class="path">onboarding</span></div>
-    <div class="spec-body"><p class="purpose">Three slides: upload → analysis → scouts.</p>
-      <dl>
-        <dt>Elements</dt><dd>Full-bleed imagery, headline per slide, skip, final CTA</dd>
-        <dt>Leads to</dt><dd>Browse or signup</dd>
-        <dt>Watch out</dt><dd class="risk">Skippable and skipped. Anything load-bearing must not live only here.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="28" font-family="Poppins" font-size="11" font-weight="700" fill="#0A1B33">Players</text>
+        <rect x="14" y="38" width="140" height="22" rx="11" fill="#fff" stroke="#DCE2EA"/>
+        <text x="24" y="53" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Search players</text>
+        <g>
+          <rect x="14" y="70" width="140" height="40" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <circle cx="34" cy="90" r="11" fill="#DCE3EC"/>
+          <text x="52" y="87" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Amina K.</text>
+          <text x="52" y="98" font-family="Poppins" font-size="6.5" fill="#6C7789">CM · Kenya</text>
+          <circle cx="140" cy="90" r="10" fill="#E7EFFA"/><text x="134" y="93" font-family="Poppins" font-size="7" font-weight="700" fill="#123A6B">41</text>
+          <rect x="14" y="116" width="140" height="40" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <circle cx="34" cy="136" r="11" fill="#DCE3EC"/>
+          <text x="52" y="133" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Kofi A.</text>
+          <text x="52" y="144" font-family="Poppins" font-size="6.5" fill="#6C7789">ST · Ghana</text>
+          <circle cx="140" cy="136" r="10" fill="#E7EFFA"/><text x="134" y="139" font-family="Poppins" font-size="7" font-weight="700" fill="#123A6B">38</text>
+          <rect x="14" y="162" width="140" height="40" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".6"/>
+          <rect x="14" y="208" width="140" height="40" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".35"/>
+        </g>
+        <rect x="14" y="264" width="140" height="46" rx="10" fill="#0A1B33"/>
+        <text x="24" y="282" font-family="Poppins" font-size="8" font-weight="600" fill="#fff">Want to be on this list?</text>
+        <rect x="24" y="288" width="60" height="16" rx="8" fill="#FFC53D"/>
+        <text x="34" y="299" font-family="Poppins" font-size="7" font-weight="700" fill="#0A1B33">Join free</text>
+      </svg>
+      <div class="cap"><b>4 · Browse (signed out)</b>Real players before any ask. <b style="display:inline">Adults only</b> — under-18 profiles are excluded in the database.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Browse (signed out)</span><span class="path">browse</span></div>
-    <div class="spec-body"><p class="purpose">Shows real players before asking for anything — the strongest argument the app can make.</p>
-      <dl>
-        <dt>Elements</dt><dd>Player cards with name, position, country, rating badge</dd>
-        <dt>Empty</dt><dd>Nothing to show yet — falls back to a sign-up prompt</dd>
-        <dt>Any action</dt><dd>Prompts sign-up with a reason naming the action</dd>
-        <dt>Safety</dt><dd><strong>Adults only.</strong> Under-18 profiles are excluded in the database view, not hidden in the UI</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <text x="14" y="34" font-family="Poppins" font-size="13" font-weight="700" fill="#0A1B33">Create account</text>
+        <text x="14" y="52" font-family="Poppins" font-size="7.5" fill="#6C7789">Free, and always free for players</text>
+        <rect x="14" y="66" width="140" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="22" y="83" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Email</text>
+        <rect x="14" y="98" width="140" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="22" y="115" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Password</text>
+        <rect x="14" y="130" width="140" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="22" y="147" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Confirm password</text>
+        <rect x="14" y="168" width="10" height="10" rx="2.5" fill="#123A6B"/>
+        <text x="30" y="177" font-family="Poppins" font-size="7" fill="#333E52">I accept the </text>
+        <text x="76" y="177" font-family="Poppins" font-size="7" font-weight="600" fill="#123A6B" text-decoration="underline">Terms</text>
+        <rect x="14" y="186" width="10" height="10" rx="2.5" fill="#123A6B"/>
+        <text x="30" y="195" font-family="Poppins" font-size="7" fill="#333E52">I accept the </text>
+        <text x="76" y="195" font-family="Poppins" font-size="7" font-weight="600" fill="#123A6B" text-decoration="underline">Privacy Policy</text>
+        <rect x="14" y="212" width="140" height="30" rx="9" fill="#123A6B"/>
+        <text x="84" y="231" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#fff">Create Player Account</text>
+      </svg>
+      <div class="cap"><b>5 · Sign up</b>Both documents open <b style="display:inline">in-app</b>, so reading them does not abandon registration.</div>
+    </div>
 
-  <h3>B · Account creation</h3>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <text x="14" y="30" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Your profile</text>
+        <rect x="14" y="40" width="140" height="4" rx="2" fill="#E7EFFA"/><rect x="14" y="40" width="46" height="4" rx="2" fill="#123A6B"/>
+        <text x="14" y="60" font-family="Poppins" font-size="7" fill="#6C7789">Step 1 of 3 — the basics</text>
+        <rect x="14" y="72" width="140" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="22" y="89" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Full name</text>
+        <rect x="14" y="104" width="140" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="22" y="121" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Date of birth</text>
+        <rect x="14" y="136" width="68" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="22" y="153" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Country</text>
+        <rect x="86" y="136" width="68" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="94" y="153" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Position</text>
+        <rect x="14" y="176" width="140" height="34" rx="8" fill="#FFF7E6" stroke="#D99A20"/>
+        <text x="22" y="190" font-family="Poppins" font-size="6.6" fill="#8A6100">You are under 18, so a parent or</text>
+        <text x="22" y="200" font-family="Poppins" font-size="6.6" fill="#8A6100">guardian must approve AI analysis.</text>
+        <rect x="14" y="222" width="140" height="30" rx="9" fill="#123A6B"/>
+        <text x="84" y="241" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#fff">Continue</text>
+      </svg>
+      <div class="cap"><b>6 · Profile completion</b>Only four fields are required. The minor notice appears the moment the date of birth says so.</div>
+    </div>
+  </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Role select</span><span class="path">role-select</span></div>
-    <div class="spec-body"><p class="purpose">Player or scout. Irreversible.</p>
-      <dl>
-        <dt>Watch out</dt><dd class="risk">The role is immutable in the database. The screen must say so before the tap, not after — a scout who meant to be a player currently needs a new account.</dd>
-      </dl></div></div>
+  <h3>Being a player</h3>
+  <div class="grid">
 
-  <div class="spec"><div class="spec-head"><span class="nm">Sign up</span><span class="path">signup</span></div>
-    <div class="spec-body"><p class="purpose">Email, password, and acceptance of both legal documents.</p>
-      <dl>
-        <dt>Elements</dt><dd>Email, password, confirm, two acceptance checkboxes with in-app links to the Terms and Privacy Policy</dd>
-        <dt>Errors</dt><dd>Duplicate email, weak password, network failure</dd>
-        <dt>Watch out</dt><dd class="risk">Until this week the two document links were styled as links and did nothing — people accepted documents they could not open.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="24" font-family="Poppins" font-size="6.6" fill="#6C7789">Good evening</text>
+        <text x="14" y="37" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">simeon</text>
+        <circle cx="148" cy="30" r="9" fill="#fff" stroke="#DCE2EA"/><rect x="122" y="21" width="18" height="18" rx="5" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="12" y="48" width="144" height="96" rx="11" fill="#0A1B33"/><rect x="12" y="48" width="3" height="96" fill="#FFC53D"/>
+        <text x="24" y="86" font-family="Poppins" font-size="28" font-weight="800" fill="#FFC53D">25</text>
+        <text x="57" y="79" font-family="Poppins" font-size="9" font-weight="800" fill="#8C99AE">·</text>
+        <text x="24" y="98" font-family="Poppins" font-size="7" font-weight="700" fill="#fff" letter-spacing="1.4">RB</text>
+        <rect x="116" y="58" width="26" height="13" rx="4" fill="none" stroke="#FFC53D" stroke-opacity=".45"/><text x="122" y="67" font-family="Poppins" font-size="6.4" font-weight="700" fill="#FFC53D">KE</text>
+        <line x1="24" y1="106" x2="144" y2="106" stroke="#fff" stroke-opacity=".13"/>
+        <text x="84" y="118" text-anchor="middle" font-family="Poppins" font-size="7" font-weight="700" fill="#fff" letter-spacing="1.4">SIMEON ODHIAMBO</text>
+        <text x="26" y="136" font-family="Poppins" font-size="9" font-weight="800" fill="#8C99AE">1·</text>
+        <text x="60" y="136" font-family="Poppins" font-size="9" font-weight="800" fill="#fff">34</text>
+        <text x="94" y="136" font-family="Poppins" font-size="9" font-weight="800" fill="#fff">66</text>
+        <rect x="12" y="154" width="144" height="38" rx="10" fill="#123A6B"/>
+        <circle cx="32" cy="173" r="10" fill="#1B4E8C"/><text x="28" y="177" font-family="Poppins" font-size="9" fill="#fff">↑</text>
+        <text x="50" y="170" font-family="Poppins" font-size="8" font-weight="600" fill="#fff">Upload a highlight</text>
+        <text x="50" y="181" font-family="Poppins" font-size="6.4" fill="#B9CCE6">Get rated and seen</text>
+        <rect x="12" y="202" width="45" height="42" rx="9" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="61.5" y="202" width="45" height="42" rx="9" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="111" y="202" width="45" height="42" rx="9" fill="#fff" stroke="#DCE2EA"/>
+        <circle cx="34" cy="218" r="7" fill="#FFF3D6"/><text x="25" y="238" font-family="Poppins" font-size="6.4" fill="#333E52">Trials</text>
+        <circle cx="84" cy="218" r="7" fill="#E7EFFA"/><text x="70" y="238" font-family="Poppins" font-size="6.4" fill="#333E52">Messages</text>
+        <circle cx="133" cy="218" r="7" fill="#E7EFFA"/><text x="121" y="238" font-family="Poppins" font-size="6.4" fill="#333E52">Ranking</text>
+        <text x="14" y="262" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Recent activity</text>
+        <rect x="12" y="270" width="144" height="24" rx="7" fill="#fff" stroke="#DCE2EA"/>
+        <circle cx="26" cy="282" r="6" fill="#E7EFFA"/><text x="38" y="285" font-family="Poppins" font-size="6.4" fill="#333E52">A scout viewed your profile</text>
+        <rect y="312" width="168" height="24" fill="#fff"/><line y1="312" x2="168" y2="312" stroke="#DCE2EA"/>
+        <circle cx="22" cy="324" r="2.4" fill="#123A6B"/><circle cx="53" cy="324" r="2.4" fill="#B4BDCB"/>
+        <rect x="76" y="317" width="17" height="13" rx="4" fill="#123A6B"/>
+        <circle cx="116" cy="324" r="2.4" fill="#B4BDCB"/><circle cx="147" cy="324" r="2.4" fill="#B4BDCB"/>
+      </svg>
+      <div class="cap"><b>7 · Player home</b>The card is the hero and the only gold on screen. "A scout viewed your profile" sits directly beneath it.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Log in · Forgot password · Verify email</span><span class="path">login · forgot-password · verify-email</span></div>
-    <div class="spec-body"><p class="purpose">Return, recover, and confirm.</p>
-      <dl>
-        <dt>Elements</dt><dd>Credentials; reset by email; a hold screen with resend</dd>
-        <dt>Watch out</dt><dd class="risk">Verification email deliverability to Gmail on mobile is the most common silent drop-off in this flow.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#0A1B33"/>
+        <rect x="20" y="60" width="128" height="180" rx="10" fill="#123A6B" opacity=".35"/>
+        <circle cx="84" cy="150" r="26" fill="#FFC53D"/>
+        <text x="84" y="150" text-anchor="middle" font-family="Poppins" font-size="7" font-weight="700" fill="#0A1B33" letter-spacing="1.6">OVERALL</text>
+        <text x="84" y="172" text-anchor="middle" font-family="Poppins" font-size="20" font-weight="800" fill="#0A1B33">25</text>
+        <text x="84" y="212" text-anchor="middle" font-family="Poppins" font-size="12" font-weight="700" fill="#fff">Your rating is ready</text>
+        <text x="84" y="230" text-anchor="middle" font-family="Poppins" font-size="7" fill="#B9CCE6">Provisional — 4 of 10 attributes</text>
+        <rect x="26" y="252" width="116" height="28" rx="9" fill="#FFC53D"/>
+        <text x="84" y="270" text-anchor="middle" font-family="Poppins" font-size="8" font-weight="700" fill="#0A1B33">See the breakdown</text>
+        <text x="84" y="296" text-anchor="middle" font-family="Poppins" font-size="7.5" fill="#8C99AE">Close</text>
+      </svg>
+      <div class="cap"><b>8 · Rating reveal</b>The one orchestrated moment. Gold fills the badge here and nowhere else — this is the screenshot.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Profile completion</span><span class="path">profile-complete</span></div>
-    <div class="spec-body"><p class="purpose">The four fields the database actually requires, plus optional depth.</p>
-      <dl>
-        <dt>Required</dt><dd>Full name · date of birth · nationality · primary position</dd>
-        <dt>Optional</dt><dd>Height, weight, club, foot, jersey, bio, socials, photo</dd>
-        <dt>Age logic</dt><dd>Under 13 blocked outright; 13–17 flagged for guardian consent</dd>
-        <dt>Watch out</dt><dd class="risk">The longest form in the app and the last thing between a user and value. Every optional field here costs completions.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">AI ratings</text>
+        <rect x="12" y="40" width="144" height="44" rx="10" fill="#0A1B33"/>
+        <text x="84" y="58" text-anchor="middle" font-family="Poppins" font-size="6.4" fill="#8C99AE" letter-spacing="1.8">OVERALL</text>
+        <text x="84" y="76" text-anchor="middle" font-family="Poppins" font-size="17" font-weight="800" fill="#FFC53D">25·</text>
+        <g font-family="Poppins" font-size="7">
+          <text x="14" y="104" fill="#333E52">Pace</text><rect x="52" y="98" width="80" height="5" rx="2.5" fill="#EDF1F6"/><rect x="52" y="98" width="4" height="5" rx="2.5" fill="#9AA5B6"/>
+          <text x="138" y="104" fill="#6C7789">1</text><text x="150" y="104" font-size="6" font-weight="600" fill="#C0392B">Low</text>
+          <text x="14" y="120" fill="#333E52">Physical</text><rect x="52" y="114" width="80" height="5" rx="2.5" fill="#EDF1F6"/><rect x="52" y="114" width="27" height="5" rx="2.5" fill="#123A6B"/>
+          <text x="136" y="120" fill="#0A1B33">34</text><text x="150" y="120" font-size="6" font-weight="600" fill="#8A5A00">Med</text>
+          <text x="14" y="136" fill="#333E52">Vision</text><rect x="52" y="130" width="80" height="5" rx="2.5" fill="#EDF1F6"/><rect x="52" y="130" width="53" height="5" rx="2.5" fill="#123A6B"/>
+          <text x="136" y="136" fill="#0A1B33">66</text><text x="150" y="136" font-size="6" font-weight="600" fill="#1E8449">High</text>
+          <text x="14" y="152" fill="#333E52">Positioning</text><rect x="52" y="146" width="80" height="5" rx="2.5" fill="#EDF1F6"/><rect x="52" y="146" width="7" height="5" rx="2.5" fill="#9AA5B6"/>
+          <text x="138" y="152" fill="#6C7789">3</text><text x="150" y="152" font-size="6" font-weight="600" fill="#C0392B">Low</text>
+        </g>
+        <rect x="12" y="168" width="144" height="40" rx="9" fill="#FFF7E6" stroke="#D99A20"/>
+        <text x="20" y="182" font-family="Poppins" font-size="6.4" fill="#8A6100">Low-confidence values were hard to</text>
+        <text x="20" y="192" font-family="Poppins" font-size="6.4" fill="#8A6100">measure in your footage. Clearer video</text>
+        <text x="20" y="202" font-family="Poppins" font-size="6.4" fill="#8A6100">improves them.</text>
+        <text x="14" y="228" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">What to work on</text>
+        <rect x="12" y="236" width="144" height="22" rx="7" fill="#F5F7FA"/><text x="20" y="250" font-family="Poppins" font-size="6.6" fill="#333E52">Film closer, and keep the camera still</text>
+      </svg>
+      <div class="cap"><b>9 · AI ratings</b>The screen that justifies the number. Confidence in words <b style="display:inline">and</b> colour, never colour alone.</div>
+    </div>
 
-  <h3>C · Player tabs</h3>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#000"/>
+        <rect y="0" width="168" height="336" rx="14" fill="#101822"/>
+        <circle cx="84" cy="140" r="30" fill="#1A2634"/><path d="M78 130 l18 10 -18 10 z" fill="#fff" fill-opacity=".85"/>
+        <circle cx="146" cy="180" r="11" fill="#000" fill-opacity=".35"/><path d="M141 180 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0" fill="#fff" fill-opacity=".9"/>
+        <circle cx="146" cy="212" r="11" fill="#000" fill-opacity=".35"/>
+        <circle cx="146" cy="244" r="11" fill="#000" fill-opacity=".35"/>
+        <circle cx="24" cy="286" r="11" fill="#2A3644"/>
+        <text x="42" y="283" font-family="Poppins" font-size="8" font-weight="600" fill="#fff">Amina K.</text>
+        <text x="42" y="294" font-family="Poppins" font-size="6.5" fill="#9AA5B6">CM · Kenya</text>
+        <rect x="118" y="276" width="34" height="18" rx="9" fill="#FFC53D"/>
+        <text x="128" y="288" font-family="Poppins" font-size="7.5" font-weight="700" fill="#0A1B33">41</text>
+        <rect y="312" width="168" height="24" fill="#0A1B33"/>
+      </svg>
+      <div class="cap"><b>10 · Reels</b>Full-bleed video, minimal chrome. The rating badge in gold is the only brand colour — everything else gets out of the way.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Home</span><span class="path">(player-tabs)/home</span></div>
-    <div class="spec-body"><p class="purpose">The player's standing, and the one thing to do next.</p>
-      <dl>
-        <dt>Elements</dt><dd>Greeting, header actions, <strong>rating card</strong>, upload prompt, three quick actions, upcoming trials, recent activity</dd>
-        <dt>Loading</dt><dd>Screen-shaped skeleton matching the real layout</dd>
-        <dt>Empty</dt><dd>No rating yet → the card invites a first upload rather than showing a zero</dd>
-        <dt>Watch out</dt><dd class="risk">The rating card is the emotional centre of the product. It is also where a low number does the most damage.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Upload</text>
+        <rect x="12" y="40" width="70" height="26" rx="8" fill="#123A6B"/><text x="24" y="57" font-family="Poppins" font-size="7.5" font-weight="600" fill="#fff">AI analysis</text>
+        <rect x="86" y="40" width="70" height="26" rx="8" fill="#F5F7FA" stroke="#DCE2EA"/><text x="98" y="57" font-family="Poppins" font-size="7.5" fill="#6C7789">Highlight only</text>
+        <rect x="12" y="76" width="144" height="86" rx="10" fill="#F5F7FA" stroke="#B9C6D6" stroke-dasharray="4 3"/>
+        <circle cx="84" cy="110" r="14" fill="#E7EFFA"/><text x="79" y="115" font-family="Poppins" font-size="11" fill="#123A6B">↑</text>
+        <text x="84" y="138" text-anchor="middle" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Choose a clip</text>
+        <text x="84" y="150" text-anchor="middle" font-family="Poppins" font-size="6.6" fill="#6C7789">Up to 100 MB · about 40 MB of data</text>
+        <rect x="12" y="172" width="144" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="20" y="189" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Title</text>
+        <rect x="12" y="204" width="70" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="20" y="221" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Match</text>
+        <rect x="86" y="204" width="70" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="94" y="221" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Opponent</text>
+        <rect x="12" y="242" width="144" height="30" rx="9" fill="#123A6B"/>
+        <text x="84" y="261" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#fff">Upload &amp; publish</text>
+        <text x="84" y="286" text-anchor="middle" font-family="Poppins" font-size="6.6" fill="#6C7789">You will tag yourself in the next step</text>
+      </svg>
+      <div class="cap"><b>11 · Upload</b>The data cost is stated <b style="display:inline">before</b> the transfer. On metered data that is a courtesy that earns trust.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Reels</span><span class="path">(player-tabs)/reels</span></div>
-    <div class="spec-body"><p class="purpose">Vertical highlight feed — the habit surface.</p>
-      <dl>
-        <dt>Elements</dt><dd>Full-bleed video, player overlay, like · save · comment · share</dd>
-        <dt>Loading</dt><dd>Spinner, deliberately not a skeleton — grey blocks on black interrupt more than they help</dd>
-        <dt>Watch out</dt><dd class="risk">The most data-hungry screen in the app. Autoplay on mobile data is a real cost decision, not a UX preference.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="84" y="26" text-anchor="middle" font-family="Poppins" font-size="11" font-weight="700" fill="#0A1B33">Leaderboard</text>
+        <rect x="12" y="38" width="56" height="20" rx="10" fill="#123A6B"/><text x="19" y="51" font-family="Poppins" font-size="6.6" font-weight="600" fill="#fff">Most improved</text>
+        <rect x="72" y="38" width="42" height="20" rx="10" fill="#fff" stroke="#DCE2EA"/><text x="81" y="51" font-family="Poppins" font-size="6.6" fill="#6C7789">My region</text>
+        <rect x="118" y="38" width="38" height="20" rx="10" fill="#fff" stroke="#DCE2EA"/><text x="126" y="51" font-family="Poppins" font-size="6.6" fill="#6C7789">My age</text>
+        <g font-family="Poppins">
+          <rect x="12" y="68" width="144" height="36" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <text x="21" y="90" font-size="9" font-weight="800" fill="#FFC53D">1</text><circle cx="44" cy="86" r="10" fill="#DCE3EC"/>
+          <text x="60" y="84" font-size="8" font-weight="600" fill="#0A1B33">Amina K.</text><text x="60" y="94" font-size="6.2" fill="#6C7789">CM · East Africa</text>
+          <text x="120" y="89" font-size="8.5" font-weight="700" fill="#1E8449">+9</text>
+          <circle cx="145" cy="86" r="10" fill="#E7EFFA"/><text x="139" y="89" font-size="7" font-weight="700" fill="#123A6B">41</text>
+          <rect x="12" y="110" width="144" height="36" rx="9" fill="#EDF2F9" stroke="#123A6B"/>
+          <text x="21" y="132" font-size="9" font-weight="800" fill="#6C7789">2</text><circle cx="44" cy="128" r="10" fill="#DCE3EC"/>
+          <text x="60" y="126" font-size="8" font-weight="600" fill="#0A1B33">Simeon O.</text><text x="60" y="136" font-size="6.2" fill="#6C7789">RB · East Africa — you</text>
+          <text x="120" y="131" font-size="8.5" font-weight="700" fill="#1E8449">+7</text>
+          <circle cx="145" cy="128" r="10" fill="#fff"/><text x="139" y="131" font-size="7" font-weight="700" fill="#123A6B">25</text>
+          <rect x="12" y="152" width="144" height="36" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <text x="21" y="174" font-size="9" font-weight="800" fill="#A0764B">3</text><circle cx="44" cy="170" r="10" fill="#DCE3EC"/>
+          <text x="60" y="168" font-size="8" font-weight="600" fill="#0A1B33">Kofi A.</text><text x="60" y="178" font-size="6.2" fill="#6C7789">ST · West Africa</text>
+          <text x="120" y="173" font-size="8.5" font-weight="700" fill="#1E8449">+5</text>
+          <circle cx="145" cy="170" r="10" fill="#E7EFFA"/><text x="139" y="173" font-size="7" font-weight="700" fill="#123A6B">38</text>
+          <rect x="12" y="194" width="144" height="30" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".6"/>
+          <rect x="12" y="230" width="144" height="30" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".35"/>
+        </g>
+        <rect x="12" y="272" width="144" height="30" rx="9" fill="#EDF2F9"/>
+        <text x="20" y="286" font-family="Poppins" font-size="6.4" fill="#123A6B">Compared against last week.</text>
+        <text x="20" y="296" font-family="Poppins" font-size="6.4" fill="#123A6B">Upload and any gain shows here.</text>
+      </svg>
+      <div class="cap"><b>12 · Leaderboard</b>Improvement is the default. <b style="display:inline">Your own row is highlighted</b> — the single change that makes a board feel personal.</div>
+    </div>
+  </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Upload</span><span class="path">(player-tabs)/upload</span></div>
-    <div class="spec-body"><p class="purpose">The core contribution. Also the most expensive action a player takes.</p>
-      <dl>
-        <dt>Steps</dt><dd>Pick clip → choose <em>highlight</em> or <em>AI analysis</em> → tag yourself in one frame → title, match, opponent, tags → publish</dd>
-        <dt>Guards</dt><dd>Size checked before transfer; guardian consent checked before a byte is uploaded; failed row insert deletes the orphaned file</dd>
-        <dt>Watch out</dt><dd class="risk">Self-tagging is the least obvious step and the one the analysis depends on most. If it is skipped or wrong, the rating is wrong and the player blames themselves.</dd>
-      </dl></div></div>
+  <h3>Being scouted, and scouting</h3>
+  <div class="grid">
 
-  <div class="spec"><div class="spec-head"><span class="nm">Discover</span><span class="path">(player-tabs)/discover</span></div>
-    <div class="spec-body"><p class="purpose">Other players, search, trending, news.</p>
-      <dl>
-        <dt>Elements</dt><dd>Search bar, filter chips, sort, player rows, news strip</dd>
-        <dt>Empty</dt><dd>No matches → widen-filters prompt</dd>
-        <dt>Watch out</dt><dd class="risk">Player-to-player browsing is social, not functional. It competes with Reels for the same attention and may not deserve a tab.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <rect width="168" height="96" rx="14" fill="#123A6B"/><rect y="70" width="168" height="26" fill="#123A6B"/>
+        <circle cx="84" cy="46" r="22" fill="#1B4E8C"/>
+        <rect x="10" y="10" width="18" height="18" rx="5" fill="#000" fill-opacity=".42"/><text x="15" y="23" font-family="Poppins" font-size="9" fill="#fff">‹</text>
+        <text x="84" y="114" text-anchor="middle" font-family="Poppins" font-size="11" font-weight="700" fill="#0A1B33">Simeon Odhiambo</text>
+        <text x="84" y="126" text-anchor="middle" font-family="Poppins" font-size="7" fill="#6C7789">RB · Kenya · 21</text>
+        <rect x="12" y="136" width="144" height="40" rx="10" fill="#0A1B33"/>
+        <text x="84" y="152" text-anchor="middle" font-family="Poppins" font-size="6.2" fill="#8C99AE" letter-spacing="1.6">OVERALL</text>
+        <text x="84" y="169" text-anchor="middle" font-family="Poppins" font-size="15" font-weight="800" fill="#FFC53D">25·</text>
+        <text x="14" y="192" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Footage</text>
+        <rect x="12" y="198" width="45" height="36" rx="8" fill="#123A6B"/><circle cx="34" cy="216" r="7" fill="#fff" fill-opacity=".9"/><path d="M32 213 l5 3 -5 3 z" fill="#0A1B33"/>
+        <rect x="61.5" y="198" width="45" height="36" rx="8" fill="#123A6B"/><circle cx="84" cy="216" r="7" fill="#fff" fill-opacity=".9"/><path d="M82 213 l5 3 -5 3 z" fill="#0A1B33"/>
+        <rect x="111" y="198" width="45" height="36" rx="8" fill="#EDF1F6"/>
+        <g font-family="Poppins" font-size="6.6">
+          <text x="14" y="252" fill="#333E52">Pace</text><rect x="46" y="247" width="72" height="4" rx="2" fill="#EDF1F6"/><rect x="46" y="247" width="4" height="4" rx="2" fill="#9AA5B6"/>
+          <text x="124" y="252" fill="#6C7789">1</text><text x="136" y="252" font-size="5.8" font-weight="600" fill="#C0392B">Low</text>
+          <text x="14" y="266" fill="#333E52">Physical</text><rect x="46" y="261" width="72" height="4" rx="2" fill="#EDF1F6"/><rect x="46" y="261" width="24" height="4" rx="2" fill="#123A6B"/>
+          <text x="122" y="266" fill="#0A1B33">34</text><text x="136" y="266" font-size="5.8" font-weight="600" fill="#8A5A00">Med</text>
+        </g>
+        <rect x="12" y="282" width="68" height="26" rx="8" fill="#fff" stroke="#123A6B"/><text x="32" y="299" font-family="Poppins" font-size="7.5" font-weight="600" fill="#123A6B">Save</text>
+        <rect x="88" y="282" width="68" height="26" rx="8" fill="#123A6B"/><text x="103" y="299" font-family="Poppins" font-size="7.5" font-weight="600" fill="#fff">Message</text>
+      </svg>
+      <div class="cap"><b>13 · Player detail (scout)</b>The assessment screen. Footage sits above the attribute detail because watching decides, not reading.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Profile (own)</span><span class="path">(player-tabs)/profile</span></div>
-    <div class="spec-body"><p class="purpose">What a scout sees, plus what is still missing.</p>
-      <dl>
-        <dt>Tabs</dt><dd>About · Videos · AI Ratings · Stats</dd>
-        <dt>Elements</dt><dd>Cover, avatar, stat tiles (OVR, reels, views, invites), profile-strength meter, playable videos</dd>
-        <dt>Watch out</dt><dd class="risk">Views and invites are the numbers players check obsessively. If they are zero for weeks, this screen becomes discouraging rather than motivating.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="26" font-family="Poppins" font-size="11" font-weight="700" fill="#0A1B33">Compare</text>
+        <rect x="12" y="36" width="144" height="34" rx="9" fill="#fff" stroke="#DCE2EA"/>
+        <circle cx="72" cy="53" r="11" fill="#DCE3EC"/><circle cx="112" cy="53" r="11" fill="#DCE3EC"/>
+        <text x="60" y="76" font-family="Poppins" font-size="6.4" fill="#6C7789">Simeon</text><text x="102" y="76" font-family="Poppins" font-size="6.4" fill="#6C7789">Kofi</text>
+        <g font-family="Poppins" font-size="7">
+          <rect x="12" y="86" width="144" height="22" rx="5" fill="#0A1B33"/>
+          <text x="20" y="100" fill="#8C99AE" font-size="6.4">OVERALL</text>
+          <text x="74" y="101" font-size="9" font-weight="800" fill="#FFC53D">25·</text><text x="116" y="101" font-size="9" font-weight="800" fill="#FFC53D">38</text>
+          <rect x="12" y="112" width="144" height="20" rx="4" fill="#fff"/>
+          <text x="20" y="126" fill="#333E52">Pace</text><text x="76" y="126" fill="#6C7789">1·</text><text x="118" y="126" font-weight="700" fill="#0A1B33">44</text>
+          <rect x="12" y="134" width="144" height="20" rx="4" fill="#F7F9FC"/>
+          <text x="20" y="148" fill="#333E52">Physical</text><text x="74" y="148" fill="#0A1B33">34</text><text x="116" y="148" font-weight="800" fill="#1E8449">51</text>
+          <rect x="12" y="156" width="144" height="20" rx="4" fill="#fff"/>
+          <text x="20" y="170" fill="#333E52">Vision</text><text x="74" y="170" font-weight="800" fill="#1E8449">66</text><text x="118" y="170" fill="#0A1B33">40</text>
+        </g>
+        <rect x="12" y="188" width="144" height="42" rx="9" fill="#FFF7E6" stroke="#D99A20"/>
+        <text x="20" y="202" font-family="Poppins" font-size="6.3" fill="#8A6100">· Low-confidence values are shown</text>
+        <text x="20" y="212" font-family="Poppins" font-size="6.3" fill="#8A6100">but not marked as strongest — the</text>
+        <text x="20" y="222" font-family="Poppins" font-size="6.3" fill="#8A6100">comparison would not be sound.</text>
+      </svg>
+      <div class="cap"><b>14 · Compare</b>The bold green marks the winner — <b style="display:inline">except</b> where the winning value is low-confidence, where the app refuses to call it.</div>
+    </div>
 
-  <h3>D · Scout tabs</h3>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="24" font-family="Poppins" font-size="6.6" fill="#6C7789">Good evening</text>
+        <text x="14" y="37" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Elite Scouting</text>
+        <rect x="104" y="22" width="52" height="18" rx="9" fill="#E8F5EC"/>
+        <text x="112" y="34" font-family="Poppins" font-size="6.4" font-weight="600" fill="#1E8449">✓ Verified</text>
+        <rect x="12" y="50" width="144" height="24" rx="12" fill="#fff" stroke="#DCE2EA"/>
+        <text x="24" y="65" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Search players</text>
+        <rect x="12" y="82" width="45" height="34" rx="8" fill="#fff" stroke="#DCE2EA"/>
+        <text x="20" y="97" font-family="Poppins" font-size="10" font-weight="800" fill="#123A6B">24</text><text x="20" y="108" font-family="Poppins" font-size="6" fill="#6C7789">Saved</text>
+        <rect x="61.5" y="82" width="45" height="34" rx="8" fill="#fff" stroke="#DCE2EA"/>
+        <text x="70" y="97" font-family="Poppins" font-size="10" font-weight="800" fill="#123A6B">6</text><text x="70" y="108" font-family="Poppins" font-size="6" fill="#6C7789">Contacted</text>
+        <rect x="111" y="82" width="45" height="34" rx="8" fill="#fff" stroke="#DCE2EA"/>
+        <text x="119" y="97" font-family="Poppins" font-size="10" font-weight="800" fill="#123A6B">2</text><text x="119" y="108" font-family="Poppins" font-size="6" fill="#6C7789">Trials</text>
+        <text x="14" y="136" font-family="Poppins" font-size="8.5" font-weight="600" fill="#0A1B33">Recommended</text>
+        <rect x="12" y="144" width="90" height="120" rx="10" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="12" y="144" width="90" height="52" rx="10" fill="#DCE3EC"/><rect x="12" y="186" width="90" height="10" fill="#DCE3EC"/>
+        <rect x="18" y="150" width="22" height="16" rx="4" fill="#0A1B33"/><text x="22" y="161" font-family="Poppins" font-size="7" font-weight="700" fill="#FFC53D">41</text>
+        <text x="20" y="212" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Amina K.</text>
+        <text x="20" y="222" font-family="Poppins" font-size="6.4" fill="#6C7789">CM · Kenya · 19</text>
+        <rect x="18" y="228" width="78" height="18" rx="5" fill="#E8F5EC"/>
+        <text x="23" y="240" font-family="Poppins" font-size="5.8" fill="#1E8449">✓ Matches your position filter</text>
+        <rect x="110" y="144" width="46" height="120" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".5"/>
+        <text x="14" y="286" font-family="Poppins" font-size="8.5" font-weight="600" fill="#0A1B33">Active trials</text>
+        <rect x="12" y="294" width="144" height="22" rx="7" fill="#fff" stroke="#DCE2EA"/>
+      </svg>
+      <div class="cap"><b>15 · Scout dashboard</b>A working surface. The recommendation reason is real, drawn from their own filters — never invented.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Dashboard</span><span class="path">(scout-tabs)/home</span></div>
-    <div class="spec-body"><p class="purpose">A working surface, not a feed.</p>
-      <dl>
-        <dt>Elements</dt><dd>Verification state, search, overview counts, and four rails — Recommended, Recently Uploaded, Top Performers, Active Trials</dd>
-        <dt>Recommendations</dt><dd>Carry a real reason ("matches your preferred position", "recently active"), never a fabricated one</dd>
-        <dt>Watch out</dt><dd class="risk">Four rails of the same card is a lot of scrolling for little differentiation. Two would probably outperform four.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <rect x="12" y="18" width="112" height="24" rx="12" fill="#fff" stroke="#DCE2EA"/><text x="24" y="34" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Search</text>
+        <rect x="130" y="18" width="26" height="24" rx="8" fill="#123A6B"/><text x="138" y="34" font-family="Poppins" font-size="8" fill="#fff">⚙</text>
+        <rect x="12" y="50" width="40" height="18" rx="9" fill="#123A6B"/><text x="20" y="62" font-family="Poppins" font-size="6.4" fill="#fff">RB · CM</text>
+        <rect x="56" y="50" width="38" height="18" rx="9" fill="#fff" stroke="#DCE2EA"/><text x="63" y="62" font-family="Poppins" font-size="6.4" fill="#6C7789">U21</text>
+        <rect x="98" y="50" width="46" height="18" rx="9" fill="#fff" stroke="#DCE2EA"/><text x="105" y="62" font-family="Poppins" font-size="6.4" fill="#6C7789">Kenya</text>
+        <g>
+          <rect x="12" y="78" width="144" height="42" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <circle cx="34" cy="99" r="13" fill="#DCE3EC"/>
+          <text x="54" y="95" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Amina K.</text>
+          <text x="54" y="106" font-family="Poppins" font-size="6.4" fill="#6C7789">CM · Kenya · 19 · 3 videos</text>
+          <rect x="126" y="88" width="24" height="22" rx="6" fill="#0A1B33"/><text x="131" y="103" font-family="Poppins" font-size="8" font-weight="700" fill="#FFC53D">41</text>
+          <rect x="12" y="126" width="144" height="42" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <circle cx="34" cy="147" r="13" fill="#DCE3EC"/>
+          <text x="54" y="143" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Simeon O.</text>
+          <text x="54" y="154" font-family="Poppins" font-size="6.4" fill="#6C7789">RB · Kenya · 21 · 2 videos</text>
+          <rect x="126" y="136" width="24" height="22" rx="6" fill="#0A1B33"/><text x="131" y="151" font-family="Poppins" font-size="8" font-weight="700" fill="#FFC53D">25</text>
+          <circle cx="152" cy="134" r="3.2" fill="#9AA5B6" stroke="#fff" stroke-width="1.1"/>
+          <rect x="12" y="174" width="144" height="42" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".6"/>
+          <rect x="12" y="222" width="144" height="42" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".35"/>
+        </g>
+        <rect x="12" y="278" width="144" height="26" rx="8" fill="#EDF2F9"/>
+        <text x="20" y="294" font-family="Poppins" font-size="6.4" fill="#123A6B">18 players match · widen to see more</text>
+      </svg>
+      <div class="cap"><b>16 · Scout search</b>The rating badge is navy-and-gold at row scale, and the confidence dot rides on it so a soft number is visible while skimming.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Players</span><span class="path">(scout-tabs)/players</span></div>
-    <div class="spec-body"><p class="purpose">The main search surface — where a scout actually works.</p>
-      <dl>
-        <dt>Elements</dt><dd>Search, filter sheet (position, age, country, foot, height, weight, minimum rating), sort, compare mode</dd>
-        <dt>Empty</dt><dd>No matches → widen filters</dd>
-        <dt>Watch out</dt><dd class="risk">With thin inventory, filters return nothing and the app looks broken rather than empty. Show near-misses instead.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Trials</text>
+        <rect x="12" y="40" width="144" height="70" rx="10" fill="#fff" stroke="#DCE2EA"/>
+        <rect x="12" y="40" width="4" height="70" rx="2" fill="#FFC53D"/>
+        <text x="24" y="58" font-family="Poppins" font-size="8.5" font-weight="600" fill="#0A1B33">U19 Open Trial</text>
+        <text x="24" y="70" font-family="Poppins" font-size="6.6" fill="#6C7789">Nairobi FC · Nairobi</text>
+        <text x="24" y="82" font-family="Poppins" font-size="6.6" fill="#6C7789">RB, CM, ST · Ages 16–19</text>
+        <rect x="24" y="88" width="60" height="14" rx="7" fill="#E8F5EC"/><text x="29" y="98" font-family="Poppins" font-size="5.8" fill="#1E8449">Closes in 9 days</text>
+        <rect x="12" y="118" width="144" height="34" rx="9" fill="#FFF7E6" stroke="#D99A20"/>
+        <text x="20" y="132" font-family="Poppins" font-size="6.4" font-weight="600" fill="#8A6100">Never pay to attend a trial.</text>
+        <text x="20" y="143" font-family="Poppins" font-size="6.2" fill="#8A6100">Report anyone who asks you for money.</text>
+        <rect x="12" y="162" width="144" height="70" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".65"/>
+        <rect x="12" y="242" width="144" height="70" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".4"/>
+      </svg>
+      <div class="cap"><b>17 · Trials</b>The anti-fraud warning sits <b style="display:inline">inline with the listings</b>, not buried in Help. This is where the harm actually happens.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Trials</span><span class="path">(scout-tabs)/trials</span></div>
-    <div class="spec-body"><p class="purpose">Post an opportunity and manage who applies.</p>
-      <dl>
-        <dt>Elements</dt><dd>Trial list, create form (title, club, location, positions, age range, deadline), applicant review</dd>
-        <dt>Watch out</dt><dd class="risk">This is where the platform's safety promise is tested hardest — a trial post is exactly the shape a fraudster wants.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Messages</text>
+        <rect x="12" y="40" width="144" height="36" rx="9" fill="#FFF7E6" stroke="#D99A20"/>
+        <text x="20" y="54" font-family="Poppins" font-size="6.3" font-weight="600" fill="#8A6100">Scouts never ask for money.</text>
+        <text x="20" y="65" font-family="Poppins" font-size="6.2" fill="#8A6100">Report anyone who does.</text>
+        <rect x="12" y="86" width="144" height="40" rx="9" fill="#fff" stroke="#DCE2EA"/>
+        <circle cx="34" cy="106" r="12" fill="#DCE3EC"/>
+        <text x="54" y="102" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Elite Scouting</text>
+        <text x="54" y="113" font-family="Poppins" font-size="6.4" fill="#6C7789">Saw your clip — where are you based?</text>
+        <circle cx="148" cy="98" r="5" fill="#123A6B"/>
+        <rect x="12" y="132" width="144" height="40" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".6"/>
+        <rect x="12" y="178" width="144" height="40" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".35"/>
+      </svg>
+      <div class="cap"><b>18 · Messages</b>The safety notice is pinned above the inbox permanently — not a one-time dismissible tip.</div>
+    </div>
+  </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Messages (scout) · Profile (scout)</span><span class="path">(scout-tabs)/messages · profile</span></div>
-    <div class="spec-body"><p class="purpose">Contact, and the scout's own record.</p>
-      <dl>
-        <dt>Elements</dt><dd>Conversations with the anti-solicitation notice; organisation, bio, verification badge, saved-player counts</dd>
-        <dt>Watch out</dt><dd class="risk">Messaging between an adult and a minor is the highest-risk surface in the product. It deserves more friction than it has.</dd>
-      </dl></div></div>
+  <h3>Trust, control, and leaving</h3>
+  <div class="grid">
 
-  <h3>E · Shared destinations</h3>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#fff"/>
+        <text x="14" y="30" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Parent or guardian</text>
+        <text x="14" y="48" font-family="Poppins" font-size="7" fill="#333E52">Because you are under 18, a parent</text>
+        <text x="14" y="59" font-family="Poppins" font-size="7" fill="#333E52">or guardian has to agree before your</text>
+        <text x="14" y="70" font-family="Poppins" font-size="7" fill="#333E52">videos can be analysed.</text>
+        <text x="14" y="88" font-family="Poppins" font-size="6.6" fill="#6C7789">You can still post highlights without this.</text>
+        <rect x="12" y="102" width="144" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="20" y="119" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Their name</text>
+        <rect x="12" y="134" width="144" height="26" rx="7" fill="#F5F7FA" stroke="#DCE2EA"/><text x="20" y="151" font-family="Poppins" font-size="7.5" fill="#9AA5B6">Their email</text>
+        <rect x="12" y="172" width="144" height="30" rx="9" fill="#123A6B"/>
+        <text x="84" y="191" text-anchor="middle" font-family="Poppins" font-size="8.5" font-weight="600" fill="#fff">Send them the link</text>
+        <rect x="12" y="212" width="144" height="44" rx="9" fill="#EDF2F9"/>
+        <text x="20" y="228" font-family="Poppins" font-size="6.4" fill="#123A6B">They open the link and decide.</text>
+        <text x="20" y="239" font-family="Poppins" font-size="6.4" fill="#123A6B">You cannot approve it yourself —</text>
+        <text x="20" y="250" font-family="Poppins" font-size="6.4" fill="#123A6B">that is the whole point.</text>
+      </svg>
+      <div class="cap"><b>19 · Guardian consent</b>The only screen built for someone who never installs the app. Confirmation happens on the web, not here.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Player detail</span><span class="path">player/[id]</span></div>
-    <div class="spec-body"><p class="purpose">The assessment screen. Everything the scout decides on is here.</p>
-      <dl>
-        <dt>Elements</dt><dd>Cover, name, position/country/age, decision-support disclaimer, overall rating with confidence, attribute bars, <strong>playable videos</strong>, save-to-folder, private notes, follow, message, report</dd>
-        <dt>Empty</dt><dd>No videos → stated plainly; no ratings → "not analysed yet"</dd>
-        <dt>Watch out</dt><dd class="risk">Until this week the videos were not tappable. This screen is the product for a scout; it deserves the most testing.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Notifications</text>
+        <g>
+          <rect x="12" y="40" width="144" height="38" rx="9" fill="#EDF2F9" stroke="#123A6B"/>
+          <circle cx="30" cy="59" r="9" fill="#123A6B"/><text x="26" y="62" font-family="Poppins" font-size="8" fill="#fff">👁</text>
+          <text x="46" y="55" font-family="Poppins" font-size="7.4" font-weight="600" fill="#0A1B33">A scout viewed your profile</text>
+          <text x="46" y="66" font-family="Poppins" font-size="6.4" fill="#6C7789">Keep your highlights up to date</text>
+          <rect x="12" y="84" width="144" height="38" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <circle cx="30" cy="103" r="9" fill="#E8F5EC"/>
+          <text x="46" y="99" font-family="Poppins" font-size="7.4" font-weight="600" fill="#0A1B33">Your rating went up</text>
+          <text x="46" y="110" font-family="Poppins" font-size="6.4" fill="#6C7789">Your overall rating is now 25</text>
+          <rect x="12" y="128" width="144" height="38" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <circle cx="30" cy="147" r="9" fill="#FFF3D6"/>
+          <text x="46" y="143" font-family="Poppins" font-size="7.4" font-weight="600" fill="#0A1B33">Your week on Matobev</text>
+          <text x="46" y="154" font-family="Poppins" font-size="6.4" fill="#6C7789">Rating up 7, and 2 scouts viewed you</text>
+          <rect x="12" y="172" width="144" height="38" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".6"/>
+          <rect x="12" y="216" width="144" height="38" rx="9" fill="#fff" stroke="#DCE2EA" opacity=".35"/>
+        </g>
+      </svg>
+      <div class="cap"><b>20 · Notifications</b>All three retention triggers in one view. Each routes to what it is about; none is decorative.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Compare</span><span class="path">compare</span></div>
-    <div class="spec-body"><p class="purpose">Two or more players, attribute by attribute.</p>
-      <dl>
-        <dt>Rule</dt><dd>A "best" highlight is withheld when the winning value is low-confidence — the app declines to assert what it cannot support</dd>
-        <dt>Watch out</dt><dd class="risk">Comparison invites false precision. Two uncertain numbers side by side look authoritative purely because they are adjacent.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Notification settings</text>
+        <g font-family="Poppins">
+          <rect x="12" y="40" width="144" height="34" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <text x="22" y="55" font-size="7.6" font-weight="600" fill="#0A1B33">Scout interest</text>
+          <text x="22" y="66" font-size="6.2" fill="#6C7789">At most one a day</text>
+          <rect x="126" y="50" width="22" height="12" rx="6" fill="#123A6B"/><circle cx="142" cy="56" r="5" fill="#fff"/>
+          <rect x="12" y="80" width="144" height="34" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <text x="22" y="95" font-size="7.6" font-weight="600" fill="#0A1B33">AI ratings</text>
+          <text x="22" y="106" font-size="6.2" fill="#6C7789">When analysis finishes</text>
+          <rect x="126" y="90" width="22" height="12" rx="6" fill="#123A6B"/><circle cx="142" cy="96" r="5" fill="#fff"/>
+          <rect x="12" y="120" width="144" height="34" rx="9" fill="#fff" stroke="#DCE2EA"/>
+          <text x="22" y="135" font-size="7.6" font-weight="600" fill="#0A1B33">Weekly summary</text>
+          <text x="22" y="146" font-size="6.2" fill="#6C7789">Only when there is something</text>
+          <rect x="126" y="130" width="22" height="12" rx="6" fill="#C8D2DE"/><circle cx="132" cy="136" r="5" fill="#fff"/>
+        </g>
+        <text x="14" y="176" font-family="Poppins" font-size="8" font-weight="600" fill="#0A1B33">Quiet hours</text>
+        <rect x="12" y="184" width="68" height="26" rx="7" fill="#fff" stroke="#DCE2EA"/><text x="22" y="201" font-family="Poppins" font-size="7" fill="#333E52">From 21:00</text>
+        <rect x="88" y="184" width="68" height="26" rx="7" fill="#fff" stroke="#DCE2EA"/><text x="98" y="201" font-family="Poppins" font-size="7" fill="#333E52">Until 07:00</text>
+      </svg>
+      <div class="cap"><b>21 · Notification settings</b>Per-category control and quiet hours. Giving people the off switch is what stops them uninstalling instead.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">AI ratings</span><span class="path">ai-ratings</span></div>
-    <div class="spec-body"><p class="purpose">The full breakdown, and the honest one.</p>
-      <dl>
-        <dt>Elements</dt><dd>Hero rating, every attribute with value and confidence, analysis-job status, recommendations from the real result summary</dd>
-        <dt>States</dt><dd>Queued · processing · completed · skipped · failed, each explained</dd>
-        <dt>Watch out</dt><dd class="risk">This is the screen that justifies the number. It should be reachable from the rating in one tap everywhere the rating appears.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#F1F4F8"/>
+        <text x="14" y="28" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Settings</text>
+        <g font-family="Poppins" font-size="7.6">
+          <rect x="12" y="40" width="144" height="180" rx="10" fill="#fff" stroke="#DCE2EA"/>
+          <text x="24" y="58" fill="#0A1B33">Account</text><line x1="20" y1="68" x2="148" y2="68" stroke="#EDF1F6"/>
+          <text x="24" y="82" fill="#0A1B33">Security</text><line x1="20" y1="92" x2="148" y2="92" stroke="#EDF1F6"/>
+          <text x="24" y="106" fill="#0A1B33">Notifications</text><line x1="20" y1="116" x2="148" y2="116" stroke="#EDF1F6"/>
+          <text x="24" y="130" fill="#0A1B33">Parent or guardian</text>
+          <rect x="118" y="121" width="30" height="12" rx="6" fill="#FFF3D6"/><text x="122" y="130" font-size="5.6" fill="#8A6100">Needed</text>
+          <line x1="20" y1="140" x2="148" y2="140" stroke="#EDF1F6"/>
+          <text x="24" y="154" fill="#0A1B33">Blocked accounts</text><line x1="20" y1="164" x2="148" y2="164" stroke="#EDF1F6"/>
+          <text x="24" y="178" fill="#0A1B33">Language</text><line x1="20" y1="188" x2="148" y2="188" stroke="#EDF1F6"/>
+          <text x="24" y="202" fill="#0A1B33">Help &amp; legal</text>
+        </g>
+        <rect x="12" y="234" width="144" height="30" rx="9" fill="#fff" stroke="#123A6B"/>
+        <text x="84" y="253" text-anchor="middle" font-family="Poppins" font-size="8" font-weight="600" fill="#123A6B">Log out</text>
+        <text x="84" y="284" text-anchor="middle" font-family="Poppins" font-size="7.4" fill="#C0392B">Delete account</text>
+        <text x="84" y="298" text-anchor="middle" font-family="Poppins" font-size="6.2" fill="#6C7789">Immediate and permanent</text>
+      </svg>
+      <div class="cap"><b>22 · Settings</b>The guardian row appears only for under-18s, badged when consent is still outstanding.</div>
+    </div>
 
-  <div class="spec"><div class="spec-head"><span class="nm">Leaderboard</span><span class="path">leaderboard</span></div>
-    <div class="spec-body"><p class="purpose">Ranking someone can actually place in.</p>
-      <dl>
-        <dt>Player scopes</dt><dd><strong>Most improved</strong> (default) · my region · my position · my age group</dd>
-        <dt>Scout scopes</dt><dd>Most improved · top rated · matches my filters</dd>
-        <dt>Empty</dt><dd>Scope-aware — "no movement yet this week" is a different statement from "not enough players here"</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Trials list · Trial detail</span><span class="path">trials · trial/[id]</span></div>
-    <div class="spec-body"><p class="purpose">Find and apply for opportunities.</p>
-      <dl>
-        <dt>Elements</dt><dd>Open trials, club, location, positions, age range, deadline, requirements, apply, application status</dd>
-        <dt>Watch out</dt><dd class="risk">Every trial listing should carry the "never pay to attend" warning inline, not only in Help.</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Messages · Notifications · News</span><span class="path">messages · notifications · news</span></div>
-    <div class="spec-body"><p class="purpose">Contact, signal, and announcements.</p>
-      <dl>
-        <dt>Notification types</dt><dd>Scout viewed your profile · rating went up · weekly summary · trial status · invitation · analysis result · message · moderation</dd>
-        <dt>Behaviour</dt><dd>Every notification routes to what it is about; per-category mutes and quiet hours apply</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Guardian consent</span><span class="path">guardian-consent + web page</span></div>
-    <div class="spec-body"><p class="purpose">Where an under-18 asks a parent to approve analysis.</p>
-      <dl>
-        <dt>In app</dt><dd>Guardian name, email, relationship → generates a link → shared by WhatsApp or SMS</dd>
-        <dt>On web</dt><dd>The guardian opens the link, sees the player's name and the exact scopes, and confirms. Single-use; the token rotates.</dd>
-        <dt>Principle</dt><dd>A child ticking "my parent agrees" is the child consenting to themselves</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Scout verification · Suspended</span><span class="path">scout-verification · suspended</span></div>
-    <div class="spec-body"><p class="purpose">Prove you are real; or find out you are no longer welcome.</p>
-      <dl>
-        <dt>Elements</dt><dd>Document upload, review status; suspension reason and appeal route</dd>
-        <dt>Watch out</dt><dd class="risk">Verification is the platform's core trust claim. If it is a rubber stamp, the badge is worse than no badge.</dd>
-      </dl></div></div>
-
-  <h3>F · Settings, and the way out</h3>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Settings hub</span><span class="path">settings</span></div>
-    <div class="spec-body"><p class="purpose">Everything about the account, and the exit.</p>
-      <dl>
-        <dt>Rows</dt><dd>Account · Security · Notifications · Privacy · Blocked accounts · Language · Theme · Help — plus <strong>Parent or guardian</strong> for under-18 players</dd>
-        <dt>Foot</dt><dd>Log out · Delete account</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Account · Security · Privacy</span><span class="path">account- · security- · privacy-settings</span></div>
-    <div class="spec-body"><p class="purpose">Details, password, visibility, and permanent deletion.</p>
-      <dl>
-        <dt>Delete account</dt><dd>Immediate and irreversible — files removed from storage, rows cascaded. No email, no waiting period.</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Notifications · Blocked · Language · Theme · Help</span><span class="path">notification- · blocked-accounts · language- · theme- · help-settings</span></div>
-    <div class="spec-body"><p class="purpose">Control, and the documents.</p>
-      <dl>
-        <dt>Notifications</dt><dd>Per-category mutes; quiet hours in local time</dd>
-        <dt>Blocked</dt><dd>Enforced in row-level security — a blocked party cannot read the other's rows at all</dd>
-        <dt>Language</dt><dd>English · French · Swahili · Portuguese</dd>
-        <dt>Help</dt><dd>FAQ, safety notice, support email, Privacy Policy and Terms in an in-app browser</dd>
-      </dl></div></div>
-
-  <div class="spec"><div class="spec-head"><span class="nm">Log out</span><span class="path">settings → logout</span></div>
-    <div class="spec-body"><p class="purpose">End the session cleanly on this device.</p>
-      <dl>
-        <dt>Sequence</dt><dd>Unregister this device's push token <strong>first</strong>, while the session still exists, then sign out, then clear local state, then route to Welcome</dd>
-        <dt>Why that order</dt><dd>The token delete is scoped to the signed-in profile. After sign-out it would be rejected and the phone would keep receiving the previous account's notifications.</dd>
-      </dl></div></div>
+    <div class="cell">
+      <svg viewBox="0 0 168 336"><rect width="168" height="336" rx="14" fill="#0A1B33" fill-opacity=".55"/>
+        <rect width="168" height="336" rx="14" fill="#3A4557" fill-opacity=".25"/>
+        <rect x="18" y="112" width="132" height="112" rx="12" fill="#fff"/>
+        <text x="84" y="142" text-anchor="middle" font-family="Poppins" font-size="10" font-weight="700" fill="#0A1B33">Log out?</text>
+        <text x="84" y="160" text-anchor="middle" font-family="Poppins" font-size="7" fill="#6C7789">You can sign back in any time.</text>
+        <text x="84" y="172" text-anchor="middle" font-family="Poppins" font-size="7" fill="#6C7789">Nothing is deleted.</text>
+        <rect x="30" y="184" width="52" height="26" rx="8" fill="#fff" stroke="#DCE2EA"/>
+        <text x="56" y="201" text-anchor="middle" font-family="Poppins" font-size="7.5" fill="#333E52">Cancel</text>
+        <rect x="88" y="184" width="52" height="26" rx="8" fill="#123A6B"/>
+        <text x="114" y="201" text-anchor="middle" font-family="Poppins" font-size="7.5" font-weight="600" fill="#fff">Log out</text>
+      </svg>
+      <div class="cap"><b>23 · Log out</b>Says explicitly that nothing is deleted — the confusion that makes people delete their account instead of signing out.</div>
+    </div>
+  </div>
 </section>
 
-<!-- ======================= PART 4 : DESIGN ======================= -->
+<!-- ===== PRIORITIES ===== -->
 <section class="part">
   <div class="kicker">Part Four</div>
-  <h2>Design direction</h2>
+  <h2>What to do, in order</h2>
+  <table>
+    <tr><th style="width:6%">#</th><th style="width:30%">Action</th><th style="width:14%">Effort</th><th>Why here</th></tr>
+    <tr><td>1</td><td>Walk both roles end to end on a device</td><td>1 day</td><td>Three defects surfaced in ninety seconds this way. This finds more than any audit I can run.</td></tr>
+    <tr><td>2</td><td>Apply the palette: primary, gold, ground</td><td>1–2 days</td><td>Three tokens in <code>colors.ts</code> plus the rating card. Removes the brand incoherence across all 44 screens at once.</td></tr>
+    <tr><td>3</td><td>Redraw the mark, solid gold on navy</td><td>Designer</td><td>The gradient fails at launcher size and forces a light ground. This is the piece I cannot do for you.</td></tr>
+    <tr><td>4</td><td>Highlight the viewer's own row on the leaderboard</td><td>Hours</td><td>Smallest change with the largest retention effect — a board you are on is a board you return to.</td></tr>
+    <tr><td>5</td><td>Move the anti-fraud warning inline with trials and messages</td><td>Hours</td><td>It currently sits in Help, which is not where the harm happens.</td></tr>
+    <tr><td>6</td><td>Seed one segment until a view is likely</td><td>Ongoing</td><td>The real risk. No design fixes an empty marketplace.</td></tr>
+  </table>
 
-  <p class="lede">
-    Argued from what the product is trying to be, not from what the logo
-    currently happens to be.
-  </p>
-
-  <div class="callout warn">
-    <span class="label">Correcting my earlier advice</span>
+  <div class="verdict">
+    <h3>The honest bottom line</h3>
     <p>
-      An earlier version of this document built its whole colour argument on
-      "the logo is the one asset that will not change". I assumed that; it was
-      never established. If the logo can change — and it can — then the right
-      question is not <em>what matches the mark</em> but <em>what should this
-      product look like</em>, and the mark follows.
+      The engineering is stronger than the product. Access control is enforced
+      in the database, no data is fabricated anywhere, confidence is surfaced
+      rather than hidden, and the child-safety work is genuinely ahead of the
+      market. <strong>None of that is visible to a user in the first ten
+      seconds.</strong>
+    </p>
+    <p>
+      What is visible is a palette that disagrees with its own logo, a rating
+      that looks like a statistic rather than something earned, and — until this
+      week — a scout who could not press play. Fix the visible layer, then spend
+      everything else on getting enough scouts into one region that a player's
+      upload is actually seen.
     </p>
   </div>
 
-  <h3>What the visual identity has to do</h3>
-  <ol>
-    <li><strong>Read as trustworthy, not as hype.</strong> The competition is
-      dark, neon and TikTok-styled. In a category where the adjacent industry is
-      fraud, looking like a growth-hacked crypto app is an active liability.</li>
-    <li><strong>Be legible in sunlight on a cheap screen.</strong> Higher
-      contrast than a design-system default, larger body text, no thin weights.</li>
-    <li><strong>Make the rating feel earned but not final.</strong> It must feel
-      worth having and must not read as a verdict.</li>
-    <li><strong>Survive being one of nine icons</strong> in a crowded store
-      listing of blue football apps.</li>
-  </ol>
-
-  <h3>Two credible directions</h3>
-  <table>
-    <tr><th style="width:16%">Direction</th><th style="width:30%">Argument for</th><th style="width:30%">Argument against</th><th>Verdict</th></tr>
-    <tr>
-      <td><strong>Pitch green + gold</strong><br><code>#0B6B3A</code> · <code>#FFC53D</code></td>
-      <td>Football's own colour. Instantly legible in a store listing. Warm, and differentiates hard from a market of dark blue apps. Strong resonance across African flags.</td>
-      <td><strong>Green already means "success" in every interface convention.</strong> Using it for primary actions collides with that meaning, and this app needs a clean success state for applications and consent.</td>
-      <td>Distinctive, but it spends a semantic colour the product needs</td>
-    </tr>
-    <tr>
-      <td><strong>Deep navy + gold</strong><br><code>#123A6B</code> · <code>#FFC53D</code></td>
-      <td>Institutional and calm — the register of a federation, not a startup. Leaves green and red free for outcomes. Gold on navy is the strongest pairing available at 10.93 : 1.</td>
-      <td>Navy is the most crowded palette in app stores. Without a distinctive mark it disappears.</td>
-      <td><strong>Recommended</strong>, on the condition that the logo carries the distinctiveness</td>
-    </tr>
-  </table>
-
-  <h3>Recommendation, and what it means for the logo</h3>
-  <p>
-    <strong>Deep navy as the ground, gold as the single accent, and the logo
-    redrawn in gold on navy.</strong> The reasoning:
-  </p>
-  <ul>
-    <li>Navy is the colour of institutions people trust with children. That is
-      the exact register a platform positioned on safety should occupy.</li>
-    <li>Gold means <em>achievement</em> and nothing else — the rating, a rank, a
-      milestone. One colour, one meaning, never borrowed for a button.</li>
-    <li>It leaves green, red and amber entirely free for outcomes, which a
-      product with applications, consent states and moderation genuinely needs.</li>
-    <li>The current teal is not wrong, but it does two jobs at once — brand
-      <em>and</em> primary action — and it is the reason the app and the mark
-      currently disagree.</li>
-  </ul>
-  <p>
-    <strong>On the mark itself:</strong> the two figures and ball is a good
-    silhouette and works small. The gradient is the weak part — it renders muddy
-    at icon sizes and forces a light background. A single-colour version, gold
-    on navy, would survive a 48px launcher icon far better and finally give the
-    app and its logo the same palette.
-  </p>
-
-  <h3>Palette</h3>
-  <div class="swatches">
-    <div class="sw"><div class="chip" style="background:#0A1B33"></div><div class="nm">Navy — ground</div><div class="hex">#0A1B33</div><div class="use">App bar, rating card, dark surfaces</div></div>
-    <div class="sw"><div class="chip" style="background:#123A6B"></div><div class="nm">Navy — primary</div><div class="hex">#123A6B</div><div class="use">Buttons, links, active states</div></div>
-    <div class="sw"><div class="chip" style="background:#7FB0F0"></div><div class="nm">Primary — dark mode</div><div class="hex">#7FB0F0</div><div class="use">Same role, dark surfaces</div></div>
-    <div class="sw"><div class="chip" style="background:#FFC53D"></div><div class="nm">Gold</div><div class="hex">#FFC53D</div><div class="use">Achievement, on dark only</div></div>
-    <div class="sw"><div class="chip" style="background:#8A5A00"></div><div class="nm">Gold — on light</div><div class="hex">#8A5A00</div><div class="use">Achievement on a light card</div></div>
-    <div class="sw"><div class="chip" style="background:#1E8449"></div><div class="nm">Success</div><div class="hex">#1E8449</div><div class="use">Confirmed, accepted, improved</div></div>
-    <div class="sw"><div class="chip" style="background:#C0392B"></div><div class="nm">Error</div><div class="hex">#C0392B</div><div class="use">Failed, blocked, removed</div></div>
-    <div class="sw"><div class="chip" style="background:#6C7789"></div><div class="nm">Muted</div><div class="hex">#6C7789</div><div class="use">Secondary text, low confidence</div></div>
-  </div>
-
-  <table>
-    <tr><th>Pairing</th><th>Ratio</th><th>Verdict</th></tr>
-    <tr><td>Primary <code>#123A6B</code> on white</td><td>11.39 : 1</td><td>Passes AA as text and as a fill under white text</td></tr>
-    <tr><td>Primary <code>#7FB0F0</code> on <code>#0B1220</code></td><td>8.35 : 1</td><td>Dark-mode equivalent</td></tr>
-    <tr><td>Gold <code>#FFC53D</code> on navy <code>#0A1B33</code></td><td>10.93 : 1</td><td>The rating numeral pairing</td></tr>
-    <tr><td>Gold <code>#FFC53D</code> on white</td><td>1.58 : 1</td><td><strong>Unusable.</strong> On light, gold must darken to <code>#8A5A00</code> (5.93 : 1)</td></tr>
-    <tr><td>Warning <code>#B8860B</code> on white</td><td>3.25 : 1</td><td><strong>Fails</strong> for body text — large text or icons only</td></tr>
-  </table>
-  <p style="font-size:9.2pt">
-    Contrast is symmetric, so foreground and background give the same ratio. The
-    distinction that matters is <em>which surface</em>: gold is 10.93 : 1 on navy
-    and 1.58 : 1 on white — the same colour, unusable in one of them.
-  </p>
-
-  <h3>Typography and depth</h3>
-  <table>
-    <tr><th>Role</th><th>Face</th><th>Size</th><th>Note</th></tr>
-    <tr><td>Rating numeral</td><td>Poppins ExtraBold</td><td>52</td><td>Gold on navy; the hero</td></tr>
-    <tr><td>Screen title</td><td>Poppins Bold</td><td>22–26</td><td></td></tr>
-    <tr><td>Body</td><td>Poppins Regular</td><td>15–17</td><td>Never below 15 for reading text</td></tr>
-    <tr><td>Caption</td><td>Poppins Medium</td><td>10</td><td>The floor; nothing smaller exists</td></tr>
-  </table>
-  <p style="font-size:9.2pt">
-    Depth: in light mode a shadow, in dark mode a progressively lighter surface,
-    because shadows are invisible on a dark ground. The ordering must be checked
-    numerically — hex codes do not sort by perceived lightness, and this exact
-    ordering has been silently inverted twice in this codebase.
-  </p>
-</section>
-
-<!-- ======================= PART 5 : MOCKS ======================= -->
-<section class="part">
-  <div class="kicker">Part Five</div>
-  <h2>Proposed screens</h2>
-  <p class="lede">
-    Navy carries structure and action, gold carries achievement and appears
-    nowhere else, and uncertainty is visible without being alarming.
-  </p>
-
-  <figure>
-    <div class="mocks">
-      <!-- PLAYER HOME -->
-      <svg width="196" height="400" viewBox="0 0 196 400" role="img" aria-label="Player home">
-        <rect width="196" height="400" rx="17" fill="#F1F4F8" stroke="#DCE2EA"/>
-        <text x="14" y="25" font-family="Poppins" font-size="7" fill="#6C7789">Good evening</text>
-        <text x="14" y="39" font-family="Poppins" font-size="13" font-weight="700" fill="#0A1B33">simeon</text>
-        <circle cx="172" cy="31" r="10" fill="#fff" stroke="#DCE2EA"/>
-        <rect x="145" y="21" width="19" height="19" rx="5" fill="#fff" stroke="#DCE2EA"/>
-        <rect x="12" y="52" width="172" height="112" rx="12" fill="#0A1B33"/>
-        <rect x="12" y="52" width="3.5" height="112" fill="#FFC53D"/>
-        <text x="26" y="94" font-family="Poppins" font-size="33" font-weight="800" fill="#FFC53D">25</text>
-        <text x="64" y="86" font-family="Poppins" font-size="10" font-weight="800" fill="#93A0B5">·</text>
-        <text x="26" y="108" font-family="Poppins" font-size="8" font-weight="700" fill="#fff" letter-spacing="1.6">RB</text>
-        <rect x="138" y="63" width="26" height="14" rx="4" fill="none" stroke="#FFC53D" stroke-opacity=".45"/>
-        <text x="144" y="73" font-family="Poppins" font-size="7" font-weight="700" fill="#FFC53D">KE</text>
-        <rect x="112" y="85" width="52" height="17" rx="8.5" fill="#1B3358"/>
-        <text x="120" y="97" font-family="Poppins" font-size="7" font-weight="600" fill="#DCE7F5">Report ↗</text>
-        <line x1="26" y1="118" x2="170" y2="118" stroke="#fff" stroke-opacity=".13"/>
-        <text x="98" y="131" text-anchor="middle" font-family="Poppins" font-size="8" font-weight="700" fill="#fff" letter-spacing="1.7">SIMEON ODHIAMBO</text>
-        <line x1="26" y1="138" x2="170" y2="138" stroke="#fff" stroke-opacity=".13"/>
-        <text x="28" y="152" font-family="Poppins" font-size="11" font-weight="800" fill="#8C99AE">1·</text>
-        <text x="28" y="160" font-family="Poppins" font-size="5.5" fill="#8C99AE">PAC</text>
-        <text x="68" y="152" font-family="Poppins" font-size="11" font-weight="800" fill="#fff">34</text>
-        <text x="68" y="160" font-family="Poppins" font-size="5.5" fill="#8C99AE">PHY</text>
-        <text x="108" y="152" font-family="Poppins" font-size="11" font-weight="800" fill="#fff">66</text>
-        <text x="108" y="160" font-family="Poppins" font-size="5.5" fill="#8C99AE">VIS</text>
-        <rect x="12" y="174" width="172" height="44" rx="11" fill="#123A6B"/>
-        <circle cx="34" cy="196" r="12" fill="#1B4E8C"/>
-        <text x="30" y="200" font-family="Poppins" font-size="11" fill="#fff">↑</text>
-        <text x="54" y="193" font-family="Poppins" font-size="9" font-weight="600" fill="#fff">Upload a highlight</text>
-        <text x="54" y="205" font-family="Poppins" font-size="7" fill="#B9CCE6">Get rated and seen by scouts</text>
-        <rect x="12" y="228" width="54" height="50" rx="10" fill="#fff" stroke="#DCE2EA"/>
-        <rect x="71" y="228" width="54" height="50" rx="10" fill="#fff" stroke="#DCE2EA"/>
-        <rect x="130" y="228" width="54" height="50" rx="10" fill="#fff" stroke="#DCE2EA"/>
-        <circle cx="39" cy="247" r="8.5" fill="#FFF3D6"/><text x="30" y="270" font-family="Poppins" font-size="7" fill="#333E52">Trials</text>
-        <circle cx="98" cy="247" r="8.5" fill="#E7EFFA"/><text x="82" y="270" font-family="Poppins" font-size="7" fill="#333E52">Messages</text>
-        <circle cx="157" cy="247" r="8.5" fill="#E7EFFA"/><text x="144" y="270" font-family="Poppins" font-size="7" fill="#333E52">Ranking</text>
-        <text x="14" y="298" font-family="Poppins" font-size="9" font-weight="600" fill="#0A1B33">Upcoming trials</text>
-        <rect x="12" y="306" width="172" height="32" rx="9" fill="#fff" stroke="#DCE2EA"/>
-        <rect x="12" y="344" width="172" height="18" rx="6" fill="#fff" stroke="#DCE2EA" opacity=".55"/>
-        <rect y="374" width="196" height="26" fill="#fff"/><line x1="0" y1="374" x2="196" y2="374" stroke="#DCE2EA"/>
-        <circle cx="24" cy="387" r="2.5" fill="#123A6B"/><circle cx="61" cy="387" r="2.5" fill="#B4BDCB"/>
-        <rect x="88" y="380" width="20" height="14" rx="5" fill="#123A6B"/>
-        <circle cx="135" cy="387" r="2.5" fill="#B4BDCB"/><circle cx="172" cy="387" r="2.5" fill="#B4BDCB"/>
-      </svg>
-
-      <!-- SCOUT PLAYER DETAIL -->
-      <svg width="196" height="400" viewBox="0 0 196 400" role="img" aria-label="Scout player detail">
-        <rect width="196" height="400" rx="17" fill="#fff" stroke="#DCE2EA"/>
-        <path d="M0 17 A17 17 0 0 1 17 0 H179 A17 17 0 0 1 196 17 V92 H0 Z" fill="#123A6B"/>
-        <circle cx="98" cy="50" r="25" fill="#1B4E8C"/>
-        <rect x="10" y="10" width="20" height="20" rx="6" fill="#000" fill-opacity=".42"/><text x="16" y="24" font-family="Poppins" font-size="9" fill="#fff">‹</text>
-        <rect x="144" y="10" width="20" height="20" rx="6" fill="#000" fill-opacity=".42"/>
-        <rect x="167" y="10" width="20" height="20" rx="6" fill="#000" fill-opacity=".42"/>
-        <text x="98" y="108" text-anchor="middle" font-family="Poppins" font-size="12" font-weight="700" fill="#0A1B33">Simeon Odhiambo</text>
-        <text x="98" y="120" text-anchor="middle" font-family="Poppins" font-size="7.5" fill="#6C7789">RB · Kenya · 21</text>
-        <rect x="12" y="130" width="172" height="19" rx="6" fill="#EDF2F9"/>
-        <text x="19" y="142" font-family="Poppins" font-size="6.4" fill="#123A6B">Decision support, not a verdict — confirm with footage</text>
-        <rect x="12" y="157" width="172" height="50" rx="11" fill="#0A1B33"/>
-        <text x="98" y="174" text-anchor="middle" font-family="Poppins" font-size="6.4" fill="#8C99AE" letter-spacing="1.8">OVERALL</text>
-        <text x="98" y="196" text-anchor="middle" font-family="Poppins" font-size="19" font-weight="800" fill="#FFC53D">25·</text>
-        <text x="14" y="223" font-family="Poppins" font-size="7" fill="#333E52">Pace</text>
-        <rect x="50" y="217" width="98" height="5" rx="2.5" fill="#EDF1F6"/><rect x="50" y="217" width="5" height="5" rx="2.5" fill="#9AA5B6"/>
-        <text x="154" y="223" font-family="Poppins" font-size="7" fill="#6C7789">1·</text><text x="168" y="223" font-family="Poppins" font-size="6" font-weight="600" fill="#C0392B">Low</text>
-        <text x="14" y="239" font-family="Poppins" font-size="7" fill="#333E52">Physical</text>
-        <rect x="50" y="233" width="98" height="5" rx="2.5" fill="#EDF1F6"/><rect x="50" y="233" width="33" height="5" rx="2.5" fill="#123A6B"/>
-        <text x="154" y="239" font-family="Poppins" font-size="7" fill="#0A1B33">34</text><text x="168" y="239" font-family="Poppins" font-size="6" font-weight="600" fill="#8A5A00">Med</text>
-        <text x="14" y="255" font-family="Poppins" font-size="7" fill="#333E52">Vision</text>
-        <rect x="50" y="249" width="98" height="5" rx="2.5" fill="#EDF1F6"/><rect x="50" y="249" width="65" height="5" rx="2.5" fill="#123A6B"/>
-        <text x="154" y="255" font-family="Poppins" font-size="7" fill="#0A1B33">66</text><text x="168" y="255" font-family="Poppins" font-size="6" font-weight="600" fill="#1E8449">High</text>
-        <text x="14" y="278" font-family="Poppins" font-size="8.5" font-weight="600" fill="#0A1B33">Footage</text>
-        <rect x="12" y="284" width="54" height="41" rx="8" fill="#123A6B"/><circle cx="39" cy="304" r="8" fill="#fff" fill-opacity=".92"/><path d="M37 300 l6 4 -6 4 z" fill="#0A1B33"/>
-        <rect x="71" y="284" width="54" height="41" rx="8" fill="#123A6B"/><circle cx="98" cy="304" r="8" fill="#fff" fill-opacity=".92"/><path d="M96 300 l6 4 -6 4 z" fill="#0A1B33"/>
-        <rect x="130" y="284" width="54" height="41" rx="8" fill="#EDF1F6"/>
-        <rect x="12" y="338" width="82" height="29" rx="9" fill="#fff" stroke="#123A6B"/><text x="34" y="357" font-family="Poppins" font-size="8" font-weight="600" fill="#123A6B">Save</text>
-        <rect x="102" y="338" width="82" height="29" rx="9" fill="#123A6B"/><text x="121" y="357" font-family="Poppins" font-size="8" font-weight="600" fill="#fff">Message</text>
-      </svg>
-
-      <!-- LEADERBOARD -->
-      <svg width="196" height="400" viewBox="0 0 196 400" role="img" aria-label="Leaderboard">
-        <rect width="196" height="400" rx="17" fill="#F1F4F8" stroke="#DCE2EA"/>
-        <text x="98" y="29" text-anchor="middle" font-family="Poppins" font-size="11" font-weight="700" fill="#0A1B33">Leaderboard</text>
-        <rect x="12" y="42" width="60" height="21" rx="10.5" fill="#123A6B"/><text x="19" y="56" font-family="Poppins" font-size="7" font-weight="600" fill="#fff">Most improved</text>
-        <rect x="77" y="42" width="47" height="21" rx="10.5" fill="#fff" stroke="#DCE2EA"/><text x="87" y="56" font-family="Poppins" font-size="7" fill="#6C7789">My region</text>
-        <rect x="129" y="42" width="55" height="21" rx="10.5" fill="#fff" stroke="#DCE2EA"/><text x="139" y="56" font-family="Poppins" font-size="7" fill="#6C7789">My position</text>
-        <g font-family="Poppins">
-          <rect x="12" y="74" width="172" height="39" rx="10" fill="#fff" stroke="#DCE2EA"/>
-          <text x="22" y="98" font-size="10" font-weight="800" fill="#8A5A00">1</text><circle cx="47" cy="93" r="11.5" fill="#DCE3EC"/>
-          <text x="64" y="91" font-size="8.5" font-weight="600" fill="#0A1B33">Amina K.</text><text x="64" y="102" font-size="6.5" fill="#6C7789">CM · East Africa</text>
-          <text x="139" y="97" font-size="9" font-weight="700" fill="#1E8449">+9</text>
-          <circle cx="170" cy="93" r="11" fill="#E7EFFA"/><text x="164" y="96" font-size="7.5" font-weight="700" fill="#123A6B">41</text>
-          <rect x="12" y="119" width="172" height="39" rx="10" fill="#fff" stroke="#DCE2EA"/>
-          <text x="22" y="143" font-size="10" font-weight="800" fill="#8892A3">2</text><circle cx="47" cy="138" r="11.5" fill="#DCE3EC"/>
-          <text x="64" y="136" font-size="8.5" font-weight="600" fill="#0A1B33">Simeon O.</text><text x="64" y="147" font-size="6.5" fill="#6C7789">RB · East Africa</text>
-          <text x="139" y="142" font-size="9" font-weight="700" fill="#1E8449">+7</text>
-          <circle cx="170" cy="138" r="11" fill="#E7EFFA"/><text x="164" y="141" font-size="7.5" font-weight="700" fill="#123A6B">25</text>
-          <circle cx="178" cy="130" r="3.3" fill="#9AA5B6" stroke="#fff" stroke-width="1.2"/>
-          <rect x="12" y="164" width="172" height="39" rx="10" fill="#fff" stroke="#DCE2EA"/>
-          <text x="22" y="188" font-size="10" font-weight="800" fill="#A0764B">3</text><circle cx="47" cy="183" r="11.5" fill="#DCE3EC"/>
-          <text x="64" y="181" font-size="8.5" font-weight="600" fill="#0A1B33">Kofi A.</text><text x="64" y="192" font-size="6.5" fill="#6C7789">ST · West Africa</text>
-          <text x="139" y="187" font-size="9" font-weight="700" fill="#1E8449">+5</text>
-          <circle cx="170" cy="183" r="11" fill="#E7EFFA"/><text x="164" y="186" font-size="7.5" font-weight="700" fill="#123A6B">38</text>
-          <rect x="12" y="209" width="172" height="33" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".7"/>
-          <rect x="12" y="248" width="172" height="33" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".45"/>
-          <rect x="12" y="287" width="172" height="33" rx="10" fill="#fff" stroke="#DCE2EA" opacity=".25"/>
-        </g>
-        <rect x="12" y="334" width="172" height="34" rx="9" fill="#EDF2F9"/>
-        <text x="21" y="349" font-family="Poppins" font-size="6.6" fill="#123A6B">Ratings compared against last week.</text>
-        <text x="21" y="360" font-family="Poppins" font-size="6.6" fill="#123A6B">Upload a highlight and any gain shows here.</text>
-      </svg>
-    </div>
-    <figcaption>
-      <strong>Left — Player home.</strong> Gold appears once, on the rating, so
-      it always means achievement. Navy carries the upload action. The middot
-      after <code>25</code> and the muted <code>1· PAC</code> mark
-      low-confidence values without alarm.<br>
-      <strong>Centre — Scout player detail.</strong> Confidence is stated in
-      words as well as colour, because green/amber/red alone excludes red-green
-      colour-blind viewers — around 8% of a scout population that skews male.
-      Footage is prominent and playable.<br>
-      <strong>Right — Leaderboard.</strong> Most improved is the default,
-      because rating-sorted lists tell most users they are nowhere. Gains in
-      green, ratings in navy, gold only for first place.
-    </figcaption>
-  </figure>
-
-  <h3>What I would do first</h3>
-  <table>
-    <tr><th style="width:7%">#</th><th style="width:33%">Action</th><th>Why</th></tr>
-    <tr><td>1</td><td>Walk both roles end to end on a real device</td><td>Three defects surfaced in ninety seconds this way. There will be more, and they are cheap to fix once found.</td></tr>
-    <tr><td>2</td><td>Decide the positioning: safety, not AI</td><td>The AI claim is table stakes and Matobev is behind on it. Safety is unclaimed and largely already built.</td></tr>
-    <tr><td>3</td><td>Unify the palette and redraw the mark</td><td>One token change; the app and its own logo currently disagree.</td></tr>
-    <tr><td>4</td><td>Solve inventory in one segment</td><td>A scouting app with thin inventory is not worth opening twice. Pick one region or age group and fill it.</td></tr>
-    <tr><td>5</td><td>Make the rating breakdown one tap from every rating</td><td>It is the thing that justifies the number, and the thing scouts need to trust it.</td></tr>
-  </table>
-
   <div class="foot">
-    Matobev — Product, Screens &amp; Design · 20 August 2026 · Prepared for Simeon Odhiambo<br>
-    Contrast ratios computed with the WCAG 2.1 relative-luminance formula.<br>
-    Market and safeguarding context drawn from: ISS Africa and ENACT (player
-    trafficking); VICE and Sports&amp;Crime (fake agents); Scout Me Pro,
-    Afriskaut, SOCALOCA, ScoutMe and Scoutfutbol (competing platforms); Google
-    Play "next billion users" and IT News Africa (device and data constraints).
+    Matobev — Design Verdict, Screens &amp; Retention · 20 August 2026 · Prepared for Simeon Odhiambo<br>
+    Contrast computed with the WCAG 2.1 relative-luminance formula; 11 of 11 rendered pairings pass AA.<br>
+    Market and safeguarding context: ISS Africa and ENACT (player trafficking); VICE (fake agents);
+    Scout Me Pro, Afriskaut, SOCALOCA, ScoutMe, Scoutfutbol (competing platforms);
+    Google Play "next billion users" (device and data constraints).
   </div>
 </section>
 
