@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Matobev — Launch Budget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  @page{size:A4;margin:15mm 14mm 16mm}
+  :root{--navy:#0A1B33;--primary:#123A6B;--gold:#FFC53D;--goldD:#8A5A00;
+    --ink:#0E1726;--body:#333E52;--muted:#6C7789;--rule:#DCE2EA;--wash:#F5F7FA;
+    --tint:#EDF2F9;--warn:#FFF7E6;--warnE:#D99A20;--good:#1E8449;--bad:#C0392B}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Source Serif 4",Georgia,serif;font-size:10pt;line-height:1.55;color:var(--body)}
+  h1,h2,h3,th,td,.num,.cap{font-family:Poppins,sans-serif}
+  td{font-family:"Source Serif 4",Georgia,serif}
+  .head{border-top:5mm solid;border-image:linear-gradient(90deg,var(--navy),var(--primary) 55%,var(--gold)) 1;
+        padding-top:7mm;margin-bottom:6mm}
+  h1{font-size:26pt;color:var(--navy);font-weight:800;letter-spacing:-.8px;margin:0 0 2mm}
+  .sub{font-family:Poppins,sans-serif;font-size:11pt;color:var(--primary);font-weight:500;margin-bottom:4mm}
+  .meta{font-family:Poppins,sans-serif;font-size:8.4pt;color:var(--muted);line-height:1.7}
+  h2{font-size:14pt;color:var(--navy);font-weight:700;margin:8mm 0 2.5mm;padding-bottom:2mm;
+     border-bottom:2px solid var(--navy);break-after:avoid}
+  h3{font-size:10.5pt;color:var(--primary);font-weight:600;margin:5mm 0 1.5mm;break-after:avoid}
+  p{margin:0 0 3mm} ul{margin:0 0 3mm;padding-left:5mm} li{margin-bottom:1.3mm}
+  strong{color:var(--ink);font-weight:600} em{color:var(--primary);font-style:italic}
+  table{width:100%;border-collapse:collapse;margin:3mm 0;font-size:8.6pt;break-inside:avoid}
+  th{text-align:left;background:var(--navy);color:#fff;font-weight:600;padding:2mm 2.4mm;font-size:8.2pt;
+     font-family:Poppins,sans-serif}
+  td{padding:2mm 2.4mm;border-bottom:1px solid var(--rule);vertical-align:top}
+  tr:nth-child(even) td{background:var(--wash)}
+  .n{text-align:right;font-family:Poppins,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tot td{background:var(--tint) !important;font-weight:600;color:var(--navy);
+          border-top:1.5px solid var(--primary);border-bottom:none}
+  .req{color:var(--bad);font-weight:600;font-family:Poppins,sans-serif;font-size:7.4pt}
+  .opt{color:var(--muted);font-family:Poppins,sans-serif;font-size:7.4pt}
+  .rec{color:var(--goldD);font-weight:600;font-family:Poppins,sans-serif;font-size:7.4pt}
+  .callout{background:var(--tint);border-left:3px solid var(--primary);padding:3.2mm 4.2mm;margin:4mm 0;break-inside:avoid}
+  .callout.warn{background:var(--warn);border-left-color:var(--warnE)}
+  .callout p:last-child{margin-bottom:0}
+  .callout .label{font-family:Poppins,sans-serif;font-size:7.2pt;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--primary);font-weight:600;display:block;margin-bottom:1.2mm}
+  .callout.warn .label{color:#8A6100}
+  .big{background:var(--navy);color:#fff;border-radius:3mm;padding:5mm 6mm;margin:4mm 0;break-inside:avoid;
+       display:flex;gap:6mm;flex-wrap:wrap}
+  .big div{flex:1;min-width:40mm}
+  .big .k{font-family:Poppins,sans-serif;font-size:7.6pt;letter-spacing:1.4px;text-transform:uppercase;color:#8FA3C0}
+  .big .v{font-family:Poppins,sans-serif;font-size:19pt;font-weight:800;color:var(--gold);line-height:1.2}
+  .big .n2{font-size:8pt;color:#C3D0E2;font-family:Poppins,sans-serif}
+  .foot{margin-top:7mm;padding-top:2.5mm;border-top:1px solid var(--rule);font-family:Poppins,sans-serif;
+        font-size:7.4pt;color:var(--muted);line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>Matobev — Launch Budget</h1>
+  <div class="sub">First release · Kenya · all figures in Kenyan shillings</div>
+  <div class="meta">
+    <strong style="color:var(--navy)">Prepared for</strong> Simeon Odhiambo &nbsp;·&nbsp;
+    <strong style="color:var(--navy)">Date</strong> 20 August 2026<br>
+    <strong style="color:var(--navy)">Exchange rate</strong> KES 134 = USD 1 &nbsp;
+    <span style="color:var(--muted)">(mid-market 129.5 plus ~3.5% Kenyan card FX markup — you pay the card rate, not the mid-market rate)</span>
+  </div>
+</div>
+
+<div class="big">
+  <div><div class="k">Minimum to launch</div><div class="v">KES 65,384</div>
+    <div class="n2">Android + iOS, first 12 months, no company, no legal review</div></div>
+  <div><div class="k">Recommended</div><div class="v">KES 134,014</div>
+    <div class="n2">Incorporated, legally reviewed, 15% contingency</div></div>
+  <div><div class="k">Android only</div><div class="v">KES 52,118</div>
+    <div class="n2">Minimum, deferring the Apple account</div></div>
+</div>
+
+<h2>A · Legal and registration — one-off</h2>
+<table>
+  <tr><th style="width:38%">Item</th><th style="width:13%" class="n">KES</th><th style="width:13%">Status</th><th>Note</th></tr>
+  <tr><td>Business name registration (BRS)</td><td class="n">950</td><td><span class="opt">Likely done</span></td>
+    <td>Your terms already state Matobev is a registered business name. Skip if the certificate exists.</td></tr>
+  <tr><td><strong>ODPC data controller registration</strong></td><td class="n">4,000</td><td><span class="req">Mandatory</span></td>
+    <td>The under-KES-5M turnover exemption <strong>does not apply to you</strong>. Any organisation processing biometric data must register, and pose estimation on a player's body is biometric processing. Renewal is KES 2,000 every two years.</td></tr>
+  <tr><td>Private company incorporation (BRS)</td><td class="n">10,650</td><td><span class="rec">Recommended</span></td>
+    <td>A sole proprietorship puts your personal assets behind a platform holding minors' biometric data. This is the single highest-value legal spend available.</td></tr>
+  <tr><td>CR12 certificate</td><td class="n">500</td><td><span class="opt">Optional</span></td>
+    <td>Needed to open a company bank account.</td></tr>
+  <tr><td>Advocate review — policy and terms</td><td class="n">40,000</td><td><span class="rec">Recommended</span></td>
+    <td>Midpoint of a typical KES 25,000–60,000 range. Both documents carry a "needs legal review" banner for a reason.</td></tr>
+  <tr class="tot"><td>Subtotal</td><td class="n">56,100</td><td colspan="2">4,950 if you only do what is strictly required</td></tr>
+</table>
+
+<h2>B · Store accounts and domain — one-off / year one</h2>
+<table>
+  <tr><th style="width:38%">Item</th><th style="width:13%" class="n">KES</th><th style="width:13%">USD</th><th>Note</th></tr>
+  <tr><td>Google Play developer account</td><td class="n">3,350</td><td>$25</td>
+    <td><strong>One-off, for life.</strong> Requires a physical address, which Play publishes on your listing — the same address still missing from your privacy policy.</td></tr>
+  <tr><td>Apple Developer Program</td><td class="n">13,266</td><td>$99/yr</td>
+    <td><strong>Recurring every year</strong>, and the largest fixed cost in year one. Deferrable if you launch Android first.</td></tr>
+  <tr><td>Domain — matobev.com</td><td class="n">2,010</td><td>$15/yr</td>
+    <td>Assumes a standard .com renewal. A premium name would cost more.</td></tr>
+  <tr class="tot"><td>Subtotal</td><td class="n">18,626</td><td colspan="2">5,360 if Android-only</td></tr>
+</table>
+
+<div class="callout"><span class="label">The cheapest real decision in this budget</span>
+  <p><strong>Launching Android first saves KES 13,266 in year one</strong>, and it is the right call on the
+  evidence: your users are on Infinix, itel and Tecno devices running Android Go. iOS can follow once
+  there is revenue to justify the annual fee. That single choice is a fifth of the minimum launch cost.</p></div>
+
+<h2>C · Running costs — monthly</h2>
+<table>
+  <tr><th style="width:30%">Service</th><th style="width:12%" class="n">KES/mo</th><th style="width:12%">USD</th><th>What you get, and why this tier</th></tr>
+  <tr><td><strong>Supabase Pro</strong></td><td class="n">3,350</td><td>$25</td>
+    <td>8 GB database, <strong>100 GB file storage, 250 GB egress</strong>. The free tier gives 1 GB of storage, which cannot hold video — this is not an upgrade you can defer.</td></tr>
+  <tr><td>Email on the domain</td><td class="n">134</td><td>$1</td>
+    <td>Zoho Mail for support@matobev.com. Google Workspace is ~$7/user and unnecessary at this stage.</td></tr>
+  <tr><td>Sentry — crash reporting</td><td class="n">0</td><td>free</td>
+    <td>Free tier covers 5,000 errors a month. Already configured and working.</td></tr>
+  <tr><td>Expo EAS — builds</td><td class="n">0</td><td>free</td>
+    <td>Free tier gives 15 Android and 15 iOS builds a month. The paid Production plan is $199 and you do not need it.</td></tr>
+  <tr><td>GitHub Pages — legal documents</td><td class="n">0</td><td>free</td>
+    <td>Already live and serving your privacy policy and terms.</td></tr>
+  <tr><td>AI analysis compute</td><td class="n">0</td><td>—</td>
+    <td><strong>Runs on your own machine today.</strong> Hosting it becomes a real per-upload cost — see the note below.</td></tr>
+  <tr class="tot"><td>Monthly</td><td class="n">3,484</td><td colspan="2">KES 41,808 for the first year</td></tr>
+</table>
+
+<h2>D · Launch totals</h2>
+<table>
+  <tr><th style="width:44%">Scenario</th><th style="width:18%" class="n">One-off</th><th style="width:18%" class="n">12 months</th><th class="n">Total</th></tr>
+  <tr><td><strong>Android only, bare minimum</strong><br><span class="opt">business name + ODPC + Play + domain</span></td>
+    <td class="n">10,310</td><td class="n">41,808</td><td class="n">52,118</td></tr>
+  <tr><td><strong>Android + iOS, bare minimum</strong><br><span class="opt">adds the Apple Developer Program</span></td>
+    <td class="n">23,576</td><td class="n">41,808</td><td class="n">65,384</td></tr>
+  <tr><td><strong>Recommended</strong><br><span class="opt">incorporated, CR12, advocate review, both stores</span></td>
+    <td class="n">74,726</td><td class="n">41,808</td><td class="n">116,534</td></tr>
+  <tr class="tot"><td><strong>Recommended + 15% contingency</strong></td><td class="n">—</td><td class="n">—</td><td class="n">134,014</td></tr>
+</table>
+
+<h2>E · What happens as it grows — the number to watch</h2>
+<p>
+  Storage is cheap. <strong>Egress is not.</strong> Egress is bandwidth consumed
+  when someone <em>watches</em> a video, so it scales with how much the app is
+  used, not with how many people sign up — and every player is free forever.
+</p>
+<table>
+  <tr><th style="width:14%" class="n">Players</th><th style="width:16%" class="n">Video views/mo</th><th style="width:14%" class="n">Storage</th><th style="width:14%" class="n">Egress</th><th style="width:14%" class="n">USD/mo</th><th class="n">KES/mo</th></tr>
+  <tr><td class="n">100</td><td class="n">500</td><td class="n">8 GB</td><td class="n">20 GB</td><td class="n">$25</td><td class="n">3,350</td></tr>
+  <tr><td class="n">500</td><td class="n">5,000</td><td class="n">39 GB</td><td class="n">195 GB</td><td class="n">$25</td><td class="n">3,350</td></tr>
+  <tr><td class="n">1,000</td><td class="n">15,000</td><td class="n">78 GB</td><td class="n">586 GB</td><td class="n">$55</td><td class="n">7,401</td></tr>
+  <tr><td class="n">5,000</td><td class="n">75,000</td><td class="n">391 GB</td><td class="n">2,930 GB</td><td class="n">$272</td><td class="n">36,485</td></tr>
+  <tr><td class="n">10,000</td><td class="n">200,000</td><td class="n">781 GB</td><td class="n">7,812 GB</td><td class="n">$720</td><td class="n">96,471</td></tr>
+</table>
+<p style="font-size:8.6pt">
+  Assumes 40 MB per compressed highlight and two videos per player. Supabase Pro
+  includes 100 GB storage and 250 GB egress; overages are $0.021/GB for storage
+  and $0.09/GB for egress.
+</p>
+
+<div class="callout warn"><span class="label">This is the budget's real risk</span>
+  <p>
+    At 10,000 players the bill is roughly <strong>KES 96,000 a month</strong>, and
+    <strong>KES 91,000 of that is people watching videos</strong>. Storage is only
+    about KES 1,900 of it. Success on the player side raises the bill with no
+    revenue attached, because players never pay.
+  </p>
+  <p>
+    Three mitigations, in order of effect: <strong>compress harder</strong> —
+    720p at a lower bitrate can halve 40 MB and halves the entire egress column;
+    <strong>put a CDN in front of video</strong> so repeat views are cached
+    rather than re-served; and <strong>price scout subscriptions to cover
+    egress</strong>, since scouts are the ones doing most of the watching.
+  </p></div>
+
+<h2>F · What this budget does not include</h2>
+<table>
+  <tr><th style="width:32%">Not included</th><th>Why, and roughly what it would cost</th></tr>
+  <tr><td><strong>Your time</strong></td><td>The largest real cost by far, and the one a spreadsheet always omits.</td></tr>
+  <tr><td><strong>Moderation and verification</strong></td><td>The trust positioning depends on a human checking scout documents and handling reports. It cannot be automated away. At any real scale this becomes the biggest line in the budget.</td></tr>
+  <tr><td><strong>Hosted AI compute</strong></td><td>Analysis runs on your machine today. A small always-on CPU instance is roughly $20–40/mo (KES 2,700–5,400); per-upload serverless may be cheaper at low volume.</td></tr>
+  <tr><td><strong>Marketing and seeding</strong></td><td>Zero here. But a scouting app with thin inventory is not worth opening twice, so getting the first players and scouts onto the platform is the spend that decides whether the rest matters.</td></tr>
+  <tr><td><strong>Apple hardware</strong></td><td>Not needed — EAS builds iOS in the cloud. You only need a Mac if you want a local iOS simulator.</td></tr>
+  <tr><td><strong>Trademark registration</strong></td><td>KIPI trademark filing is roughly KES 5,000–10,000 per class. Worth doing before anyone else registers "Matobev".</td></tr>
+  <tr><td><strong>VAT and tax</strong></td><td>Below the VAT registration threshold there is nothing to remit, but income is still taxable. Speak to an accountant when revenue starts.</td></tr>
+</table>
+
+<h2>G · Recommendation</h2>
+<div class="callout"><span class="label">What I would actually spend</span>
+  <p>
+    <strong>Launch Android only, incorporated, legally reviewed.</strong> That is
+    <strong>KES 103,268</strong> for the first year, or
+    <strong>KES 118,758</strong> with a 15% contingency — and it defers
+    KES 13,266 of Apple fees until there is a reason to pay them.
+  </p>
+  <p>
+    Of that, <strong>KES 4,000 is genuinely non-negotiable</strong> (ODPC
+    registration, because you process biometric data) and roughly
+    <strong>KES 50,650 is the legal work</strong> — incorporation plus advocate
+    review. That legal spend is not overhead. On a platform holding minors'
+    biometric data, run by a sole proprietor with no corporate veil, it is the
+    cheapest insurance available.
+  </p></div>
+
+<table>
+  <tr><th style="width:8%" class="n">Order</th><th style="width:36%">Spend</th><th style="width:16%" class="n">KES</th><th>When</th></tr>
+  <tr><td class="n">1</td><td>ODPC data controller registration</td><td class="n">4,000</td><td>Before launch — legally required</td></tr>
+  <tr><td class="n">2</td><td>Google Play developer account</td><td class="n">3,350</td><td>Before submission</td></tr>
+  <tr><td class="n">3</td><td>Domain + email, year one</td><td class="n">3,618</td><td>Before launch — support@ must work</td></tr>
+  <tr><td class="n">4</td><td>Supabase Pro, first month</td><td class="n">3,350</td><td>Before the first real upload</td></tr>
+  <tr><td class="n">5</td><td>Company incorporation + CR12</td><td class="n">11,150</td><td>Before real user numbers</td></tr>
+  <tr><td class="n">6</td><td>Advocate review</td><td class="n">40,000</td><td>Before marketing spend</td></tr>
+  <tr><td class="n">7</td><td>Apple Developer Program</td><td class="n">13,266</td><td>Defer until iOS is justified</td></tr>
+</table>
+
+<div class="foot">
+  Matobev — Launch Budget · 20 August 2026 · Prepared for Simeon Odhiambo<br>
+  Converted at KES 134 = USD 1 (mid-market 129.5 in August 2026, plus a ~3.5% card FX markup).
+  Fees change: verify BRS and ODPC figures on eCitizen and odpc.go.ke before paying.<br>
+  Sources: Kenya BRS fee schedule (business name KES 950, private company KES 10,650, CR12 KES 500);
+  ODPC registration regulations (KES 4,000, renewal KES 2,000, mandatory for biometric processing);
+  Google Play ($25 one-off) and Apple Developer Program ($99/yr) published fees;
+  Supabase Pro published limits and overage rates; Expo EAS free-tier build allowance.
+</div>
+
+</body>
+</html>
