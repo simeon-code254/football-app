@@ -1,16 +1,21 @@
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
+import { UploadTabButton } from '../../src/components/UploadTabButton';
 
-// Matches Matobev v4.dc.html's MAIN APP tab bar: Home | Reels | Upload |
-// Discover | Profile.
+// The tab bar from the design canvas: Home | Reels | Upload | Discover |
+// Profile, with Upload raised into a navy tile rather than sitting flat as
+// the third of five equal icons.
+//
+// The bar is 4px taller than before to give that tile room to sit above the
+// line without being clipped.
 export default function TabsLayout() {
   const colors = useThemeColors();
   const styles = {
     tabBar: {
       backgroundColor: colors.surface,
       borderTopColor: colors.border,
-      height: 60,
+      height: 64,
       paddingBottom: 8,
       paddingTop: 6,
     },
@@ -40,7 +45,10 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="upload"
-        options={{ title: 'Upload', tabBarIcon: ({ color, size }) => <Feather name="plus-square" color={color} size={size} /> }}
+        options={{
+          title: 'Upload',
+          tabBarIcon: () => <UploadTabButton />,
+        }}
       />
       <Tabs.Screen
         name="discover"

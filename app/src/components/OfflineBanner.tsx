@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Feather from '@expo/vector-icons/Feather';
+import Animated from 'react-native-reanimated';
+import { useShake } from '../lib/motion';
 import { fontFamily, fontSize, spacing, useThemeColors, type ThemeColors } from '../theme';
 import { useIsOnline } from '../lib/network';
 import { useTranslation } from '../i18n';
@@ -19,13 +21,19 @@ export function OfflineBanner() {
   if (online) return null;
 
   const styles = makeStyles(colors);
+  const shake = useShake();
   return (
     <View
       style={[styles.bar, { paddingTop: insets.top + spacing.xs }]}
       accessibilityRole="alert"
       accessibilityLabel="You are offline. Showing saved content."
     >
-      <Feather name="wifi-off" size={13} color={colors.white} />
+      {/* Canvas screen 37 shakes the offline icon. Kept to the icon rather
+          than the whole banner: this bar sits under the status bar across
+          every screen, and shaking the text with it makes it unreadable. */}
+      <Animated.View style={shake}>
+        <Feather name="wifi-off" size={13} color={colors.white} />
+      </Animated.View>
       <Text style={styles.text}>{t('offline.banner')}</Text>
     </View>
   );

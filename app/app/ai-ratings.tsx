@@ -15,7 +15,24 @@ import { QueryState } from '../src/components/QueryState';
 import { SkeletonProfile } from '../src/components/Skeleton';
 import { RatingReveal } from '../src/components/RatingReveal';
 import { RatingHistory } from '../src/components/RatingHistory';
+import Animated from 'react-native-reanimated';
+import { useBarGrow, useSpin } from '../src/lib/motion';
 import * as communityRepository from '../src/repositories/communityRepository';
+
+// Canvas barGrow: each attribute bar fills from zero rather than appearing
+// already full. Split into its own component because useBarGrow is a hook and
+// these are rendered in a .map -- calling it inside the loop body would break
+// the rules of hooks the moment the attribute list changes length.
+//
+// The bar is a fraction of the 0-99 scale, matching the number printed beside
+// it. useBarGrow clamps, so a value over the ceiling cannot overflow the
+// track.
+function AttrBar({ value }: { value: number | null }) {
+  const colors = useThemeColors();
+  const styles = makeStyles(colors);
+  const grow = useBarGrow((value ?? 0) / 99);
+  return <Animated.View style={[styles.attrFill, grow]} />;
+}
 
 // Key holds the last job id whose reveal was shown, so it fires once.
 const SEEN_REVEAL_KEY = 'matobev-last-rating-reveal-job';
@@ -39,6 +56,10 @@ const JOB_STATUS_COPY: Record<string, { icon: React.ComponentProps<typeof Feathe
 export default function AiRatings() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  // 1.2s rather than the canvas's 4s: this one signals live work, and at 4s
+  // a loader reads as stalled rather than busy.
+  const spin = useSpin(1200);
+
   const CONFIDENCE_COLOR: Record<string, string> = {
     High: colors.success,
     Medium: colors.goldDark,
@@ -133,7 +154,16 @@ export default function AiRatings() {
 
           {jobStatusInfo && (
             <View style={styles.statusBanner}>
-              <Feather name={jobStatusInfo.icon} size={14} color={colors.goldDark} />
+              {/* Canvas ringSpin. Only while genuinely processing -- a
+                  spinner on a queued job would claim work is happening that
+                  has not started. */}
+              {latestJob?.status === 'processing' ? (
+                <Animated.View style={spin}>
+                  <Feather name={jobStatusInfo.icon} size={14} color={colors.goldDark} />
+                </Animated.View>
+              ) : (
+                <Feather name={jobStatusInfo.icon} size={14} color={colors.goldDark} />
+              )}
               <Text style={styles.statusBannerText}>{jobStatusInfo.text}</Text>
             </View>
           )}
@@ -160,7 +190,7 @@ export default function AiRatings() {
                     </View>
                     <Text style={styles.attrValue}>{attr.value ?? '—'}</Text>
                     <View style={styles.attrTrack}>
-                      <View style={[styles.attrFill, { width: `${attr.value ?? 0}%` }]} />
+                      <AttrBar value={attr.value} />
                     </View>
                   </View>
                 ))}

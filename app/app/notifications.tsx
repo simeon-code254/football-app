@@ -15,6 +15,8 @@ import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
 import { timeAgo } from '../src/lib/time';
+import Animated from 'react-native-reanimated';
+import { usePulse } from '../src/lib/motion';
 
 const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
   trial_status_change: 'clipboard',
@@ -67,6 +69,10 @@ function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | 
 export default function Notifications() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  // Canvas pulse. One shared driver for the whole list: separate hooks per
+  // row would need a hook inside renderItem, and synced unread dots read as
+  // one signal rather than as several competing ones.
+  const pulse = usePulse();
   const userId = useSessionStore((s) => s.session?.user.id);
   const role = useSessionStore((s) => s.role);
   const queryClient = useQueryClient();
@@ -196,7 +202,7 @@ export default function Notifications() {
             {!!item.body && <Text style={styles.body}>{item.body}</Text>}
             <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
           </View>
-          {!read && <View style={styles.dot} />}
+          {!read && <Animated.View style={[styles.dot, pulse]} />}
           {read && (
             <Pressable
               onPress={() => clearOne(item.id)}

@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import Feather from '@expo/vector-icons/Feather';
+import { useCountUp } from '../lib/motion';
 import {
   fontFamily,
   fontFamilyDisplay,
@@ -133,6 +134,11 @@ export function PlayerRatingCard({
     strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
   }));
 
+  // Canvas countUp: the number arrives from 8px above as it fades in, keyed
+  // on the rating so a changed rating animates in again rather than sitting
+  // still. Despite the name it is not a numeric counter in the canvas either.
+  const numeralEntrance = useCountUp(rating);
+
   const arcColor = isDark ? colors.gold : colors.goldDark;
 
   return (
@@ -173,12 +179,12 @@ export function PlayerRatingCard({
               transform="rotate(-90 50 50)"
             />
           </Svg>
-          <View style={styles.ringCentre} pointerEvents="none">
+          <Animated.View style={[styles.ringCentre, numeralEntrance]} pointerEvents="none">
             <Text style={styles.rating} maxFontSizeMultiplier={1.3}>
               {rating != null ? Math.round(rating) : '–'}
             </Text>
             {anyLow && rating != null && <Text style={styles.ratingMark}>{'·'}</Text>}
-          </View>
+          </Animated.View>
         </View>
 
         <View style={styles.details}>

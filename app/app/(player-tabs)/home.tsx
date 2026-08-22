@@ -18,6 +18,8 @@ import { FirstWinCard } from '../../src/components/FirstWinCard';
 import { PlayerRatingCard } from '../../src/components/PlayerRatingCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
 import { timeAgo } from '../../src/lib/time';
+import Animated from 'react-native-reanimated';
+import { usePulse, useSheen } from '../../src/lib/motion';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -100,6 +102,13 @@ export default function Home() {
   });
   const recentNotifications = recentNotificationsPage?.items;
 
+  // Canvas: the unread dot and the scout-viewed dot both pulse. Two separate
+  // hooks rather than one shared style, because they are independent elements
+  // and sharing a driver would visibly sync them into a single heartbeat.
+  const bellPulse = usePulse();
+  const viewDotPulse = usePulse(1400);
+  const bannerSheen = useSheen();
+
   const ACTIVITY_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
     trial_status_change: 'clipboard',
     new_message: 'message-circle',
@@ -154,7 +163,7 @@ export default function Home() {
                 accessibilityLabel={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
               >
                 <Feather name="bell" size={18} color={colors.white} />
-                {!!unreadCount && <View style={styles.dot} />}
+                {!!unreadCount && <Animated.View style={[styles.dot, bellPulse]} />}
               </Pressable>
               <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
             </View>
@@ -195,6 +204,17 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel={`A scout viewed your profile ${timeAgo(latestView.created_at)}. Open notifications.`}
           >
+            {/* The canvas sweeps a gold highlight across this banner. The
+                parent clips it (viewBanner has overflow hidden), and the
+                percentage translation is relative to the band's own width. */}
+            <Animated.View style={[styles.bannerSheen, bannerSheen]} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(255,197,61,0)', 'rgba(255,197,61,0.14)', 'rgba(255,197,61,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ flex: 1 }}
+              />
+            </Animated.View>
             <View style={styles.viewBannerIcon}>
               <Feather name="eye" size={16} color={colors.gold} />
             </View>
@@ -202,7 +222,7 @@ export default function Home() {
               <Text style={styles.viewBannerTitle}>A scout viewed you</Text>
               <Text style={styles.viewBannerMeta}>{timeAgo(latestView.created_at)}</Text>
             </View>
-            {!latestView.read_at && <View style={styles.viewBannerDot} />}
+            {!latestView.read_at && <Animated.View style={[styles.viewBannerDot, viewDotPulse]} />}
           </Pressable>
         )}
 
@@ -436,7 +456,9 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     padding: spacing.md,
     borderRadius: radii.lg,
     backgroundColor: colors.primaryDark,
+    overflow: 'hidden',
   },
+  bannerSheen: { position: 'absolute', top: 0, bottom: 0, left: 0, width: '50%' },
   viewBannerIcon: {
     width: 36,
     height: 36,

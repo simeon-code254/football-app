@@ -19,6 +19,8 @@ import { showAlert } from '../../src/lib/alert';
 import { successFeedback, errorFeedback } from '../../src/lib/haptics';
 import { PushPrimer } from '../../src/components/PushPrimer';
 import { getPushPermission } from '../../src/lib/push';
+import Animated from 'react-native-reanimated';
+import { useFloat } from '../../src/lib/motion';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = {
@@ -110,6 +112,7 @@ function VideoPreviewPlayer({ uri }: { uri: string }) {
 export default function Upload() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  const float = useFloat();
   const userId = useSessionStore((s) => s.session?.user.id);
   const [mode, setMode] = useState<UploadMode>('reel');
   const [video, setVideo] = useState<PickedVideo | null>(null);
@@ -390,9 +393,12 @@ export default function Upload() {
           </>
         ) : (
           <Pressable style={styles.dropZone} onPress={pickVideo}>
-            <View style={styles.dropIconWrap}>
+            {/* Canvas float (screen 14): the empty drop zone's icon drifts,
+                which is what marks it as the thing to act on rather than an
+                illustration. */}
+            <Animated.View style={[styles.dropIconWrap, float]}>
               <Feather name="upload-cloud" size={26} color={colors.primary} />
-            </View>
+            </Animated.View>
             <Text style={styles.dropTitle}>Upload Video</Text>
             <Text style={styles.dropSub}>MP4, MOV up to 100MB</Text>
           </Pressable>
