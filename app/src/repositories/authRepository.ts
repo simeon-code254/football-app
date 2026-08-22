@@ -1,5 +1,27 @@
-import type { Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+
+// Supabase fires the same SIGNED_OUT event whether the user tapped Sign Out
+// or their refresh token expired, and the app needs to tell those apart: one
+// deserves the login screen, the other deserves an explanation. This flag is
+// raised immediately before every deliberate sign-out, so an unflagged
+// SIGNED_OUT is by elimination an involuntary one.
+//
+// It is read destructively (consumeDeliberateSignOut) so a single deliberate
+// sign-out cannot mask a genuine expiry later in the session.
+let deliberateSignOut = false;
+
+/** True if the sign-out now in flight was one the user asked for. Clears on read. */
+export function consumeDeliberateSignOut(): boolean {
+  const was = deliberateSignOut;
+  deliberateSignOut = false;
+  return was;
+}
+
+/** Marks the sign-out about to happen as deliberate. */
+export function markDeliberateSignOut() {
+  deliberateSignOut = true;
+}
 
 export type Role = 'player' | 'scout';
 
@@ -48,8 +70,14 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
+  markDeliberateSignOut();
   const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  // Cleared on failure: nothing signed out, so a later expiry must still be
+  // reported as one.
+  if (error) {
+    consumeDeliberateSignOut();
+    throw error;
+  }
 }
 
 // Calls the delete-account Edge Function (supabase/functions/delete-account)
@@ -61,6 +89,11 @@ export async function signOut() {
 // forwards the current session's Authorization header) — no user id is
 // ever passed explicitly.
 export async function deleteAccount(): Promise<void> {
+  // Deleting the auth user server-side ends the session, so Supabase fires
+  // the same SIGNED_OUT event an expired token would. Flagged as deliberate
+  // so someone who just deleted their account is not then told their session
+  // expired.
+  markDeliberateSignOut();
   const { data, error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
@@ -85,8 +118,12 @@ export async function changePassword(newPassword: string) {
 // current device's -- a real "sign out everywhere" action, distinct from
 // the plain signOut() above which only ends the current session.
 export async function signOutAllDevices() {
+  markDeliberateSignOut();
   const { error } = await supabase.auth.signOut({ scope: 'global' });
-  if (error) throw error;
+  if (error) {
+    consumeDeliberateSignOut();
+    throw error;
+  }
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -101,7 +138,7 @@ export async function isEmailConfirmed(): Promise<boolean> {
   return Boolean(data.user?.email_confirmed_at);
 }
 
-export function onAuthStateChange(cb: (session: Session | null) => void) {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => cb(session));
+export function onAuthStateChange(cb: (session: Session | null, event: AuthChangeEvent) => void) {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => cb(session, event));
   return data.subscription;
 }

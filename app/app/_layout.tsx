@@ -84,8 +84,16 @@ function RootLayout() {
 
   useEffect(() => {
     authRepository.getSession().then(hydrate);
-    const subscription = authRepository.onAuthStateChange((session) => {
+    const subscription = authRepository.onAuthStateChange((session, event) => {
       hydrate(session);
+      // An expired refresh token used to drop the user at the welcome screen
+      // with no explanation -- mid-upload, mid-message, no reason given.
+      // Supabase fires SIGNED_OUT for both a deliberate sign-out and a failed
+      // refresh, so authRepository flags the deliberate ones and an unflagged
+      // SIGNED_OUT is by elimination an expiry worth explaining.
+      if (event === 'SIGNED_OUT' && !authRepository.consumeDeliberateSignOut()) {
+        router.replace('/session-expired');
+      }
     });
     return () => subscription.unsubscribe();
   }, [hydrate]);
