@@ -5,14 +5,19 @@ type Props = {
   /** 'color' = full gradient mark (light backgrounds). 'white' = flat white
    * silhouette (dark/photo backgrounds, same mask used for the Android
    * monochrome adaptive icon). */
-  variant?: 'color' | 'white';
+  variant?: 'color' | 'white' | 'navy';
   size?: number;
   style?: StyleProp<ImageStyle>;
 };
 
 const SOURCES = {
+  // Gold on transparent -- the canvas mark. The white variant is its own
+  // file rather than the Android monochrome icon: that asset is padded to
+  // Android's 66% adaptive safe zone, so reusing it here rendered the mark
+  // noticeably smaller than the colour variant beside it.
   color: require('../../assets/logofree.png'),
-  white: require('../../assets/android-icon-monochrome.png'),
+  white: require('../../assets/logo-white.png'),
+  navy: require('../../assets/logo-navy.png'),
 };
 
 // The Matobev brand mark (uploaded logo, transparent background) — use this

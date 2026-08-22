@@ -9,12 +9,15 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 // anything from it, even just `useFonts`, pulls every one of them into the
 // bundle regardless of which named exports are actually used. Per-weight
 // subpath imports avoid that the same way @expo/vector-icons/Feather does.
-import { useFonts } from '@expo-google-fonts/poppins/useFonts';
-import { Poppins_400Regular } from '@expo-google-fonts/poppins/400Regular';
-import { Poppins_500Medium } from '@expo-google-fonts/poppins/500Medium';
-import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
-import { Poppins_700Bold } from '@expo-google-fonts/poppins/700Bold';
-import { Poppins_800ExtraBold } from '@expo-google-fonts/poppins/800ExtraBold';
+import { useFonts } from '@expo-google-fonts/barlow/useFonts';
+import { Barlow_400Regular } from '@expo-google-fonts/barlow/400Regular';
+import { Barlow_500Medium } from '@expo-google-fonts/barlow/500Medium';
+import { Barlow_600SemiBold } from '@expo-google-fonts/barlow/600SemiBold';
+import { Barlow_700Bold } from '@expo-google-fonts/barlow/700Bold';
+import { BarlowCondensed_500Medium } from '@expo-google-fonts/barlow-condensed/500Medium';
+import { BarlowCondensed_600SemiBold } from '@expo-google-fonts/barlow-condensed/600SemiBold';
+import { BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed/700Bold';
+import { BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed/800ExtraBold';
 import { useThemeColors, useIsDark } from '../src/theme';
 import { queryClient, persistOptions } from '../src/lib/queryClient';
 import { startNetworkWatcher } from '../src/lib/network';
@@ -60,11 +63,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
+    Barlow_400Regular,
+    Barlow_500Medium,
+    Barlow_600SemiBold,
+    Barlow_700Bold,
+    BarlowCondensed_500Medium,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+    BarlowCondensed_800ExtraBold,
   });
 
   const sessionStatus = useSessionStore((s) => s.status);

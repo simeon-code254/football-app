@@ -1,15 +1,35 @@
-// v4.dc.html loads only Poppins (300–900) — no Inter, despite the written
-// brief mentioning both. Matching the primary mockup file, not the brief.
-// Only the weights actually used anywhere in the app are loaded at boot
-// (Poppins_300Light/900Black were being fetched+parsed on every cold start
-// for zero real usages -- pure startup cost, dropped rather than kept
-// "just in case").
+// Barlow, per the Matobev canvas. It loads two families and uses them for
+// different jobs:
+//
+//   Barlow            body, labels, everything read as prose
+//   Barlow Condensed  the .h and .mono classes -- headings, the rating
+//                     numeral, and uppercase letterspaced micro-labels
+//
+// The condensed face is the point. It sets large numbers and short caps
+// labels far tighter than Barlow can, which is what gives the rating card
+// and the section kickers their character. Using regular Barlow for those
+// would technically "apply the design" and lose the thing that makes it
+// look designed.
+//
+// Only the weights the canvas actually uses are loaded, because each one is
+// a separate file fetched and parsed on every cold start -- and this app's
+// users are on 1-2 GB devices over metered data.
 export const fontFamily = {
-  regular: 'Poppins_400Regular',
-  medium: 'Poppins_500Medium',
-  semiBold: 'Poppins_600SemiBold',
-  bold: 'Poppins_700Bold',
-  extraBold: 'Poppins_800ExtraBold',
+  regular: 'Barlow_400Regular',
+  medium: 'Barlow_500Medium',
+  semiBold: 'Barlow_600SemiBold',
+  bold: 'Barlow_700Bold',
+  // Barlow ships no 800; the canvas reaches for Condensed at that weight
+  // anyway, so extraBold maps there rather than to a face that does not exist.
+  extraBold: 'BarlowCondensed_800ExtraBold',
+} as const;
+
+// Display faces -- use these deliberately, not as a default.
+export const fontFamilyDisplay = {
+  medium: 'BarlowCondensed_500Medium',
+  semiBold: 'BarlowCondensed_600SemiBold',
+  bold: 'BarlowCondensed_700Bold',
+  extraBold: 'BarlowCondensed_800ExtraBold',
 } as const;
 
 export const fontSize = {

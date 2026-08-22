@@ -231,24 +231,35 @@ export function PlayerRatingCard({
 // Contrast measured against the worst-case gradient stop of each palette:
 // light gold 4.66:1, light ink 14.33:1, light muted 4.60:1; dark gold
 // 10.89:1, dark name 15.37:1, dark muted 6.75:1. All pass AA.
+// Retargeted to the Matobev canvas palette: navy ground, gold #FFC53D.
+//
+// NOTE: the canvas replaces this component's whole treatment. Its player home
+// draws the rating as a white card carrying a circular gold progress ring,
+// overlapping a navy header, rather than as a football card. That rebuild is
+// screen work and is deliberately not done here -- this pass only retires the
+// old cream/#FFD54F palette so the card does not clash with everything around
+// it in the meantime.
+//
+// The card is navy in BOTH themes now. Gold is 10.93:1 on navy and 1.58:1 on
+// white, so a light-ground version cannot carry the accent at all.
 const PALETTE = {
   light: {
-    ground: ["#FFFBF0", "#EFE3CB"] as const, // warm card stock
-    edge: ["#B8860B", "rgba(184,134,11,0.15)"] as const,
-    accent: "#8A5A00", // deep gold -- #FFD54F is 1.23:1 on this ground
-    ink: "#1C1408",
-    muted: "rgba(0,0,0,0.62)",
-    hairline: "rgba(0,0,0,0.14)",
-    chipBorder: "rgba(138,90,0,0.45)",
+    ground: ["#123A6B", "#0A1B33"] as const,
+    edge: ["#FFC53D", "rgba(255,197,61,0.15)"] as const,
+    accent: "#FFC53D",
+    ink: "#FFFFFF",
+    muted: "rgba(255,255,255,0.66)",
+    hairline: "rgba(255,255,255,0.14)",
+    chipBorder: "rgba(255,197,61,0.42)",
   },
   dark: {
-    ground: ["#2A3A5C", "#1B2537"] as const, // pinned to elevation 'floating'
-    edge: ["#FFD54F", "rgba(255,213,79,0.15)"] as const,
-    accent: "#FFD54F",
-    ink: "#FFFFFF",
-    muted: "rgba(255,255,255,0.62)",
+    ground: ["#20293A", "#141A24"] as const, // pinned to elevation 'floating'
+    edge: ["#FFC53D", "rgba(255,197,61,0.15)"] as const,
+    accent: "#FFC53D",
+    ink: "#F2F0EA",
+    muted: "rgba(242,240,234,0.66)",
     hairline: "rgba(255,255,255,0.12)",
-    chipBorder: "rgba(255,213,79,0.4)",
+    chipBorder: "rgba(255,197,61,0.4)",
   },
 } as const;
 
