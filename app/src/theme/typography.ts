@@ -60,3 +60,21 @@ export const fontSize = {
   hero: 28,
   splash: 34,
 } as const;
+
+// The canvas's .mono kicker:
+//   .mono { font-family:'Barlow Condensed'; letter-spacing:1.2px;
+//           text-transform:uppercase }
+//
+// It labels sections and states all over the design -- "GOOD EVENING",
+// "THIS WEEK", "PENDING REVIEW" -- always small, always caps, always in the
+// condensed face. Named here rather than left to each screen because the
+// tracking is what makes it read as a kicker rather than as shouting, and a
+// value repeated by hand across dozens of screens drifts.
+//
+// Not a component: it is three properties, and every site needs to compose it
+// with its own colour and size anyway.
+export const kicker = {
+  fontFamily: fontFamilyDisplay.semiBold,
+  letterSpacing: 1.2,
+  textTransform: 'uppercase',
+} as const;

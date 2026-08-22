@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
 import {
   fontFamily,
+  fontFamilyDisplay,
   fontSize,
   radii,
   spacing,
@@ -282,11 +283,14 @@ function makeStyles(c: Palette) {
       alignItems: "flex-start",
     },
     rating: {
-      fontFamily: fontFamily.extraBold,
+      // The canvas sets the rating in Barlow Condensed. The -2.5 tracking
+      // below was tuned for Poppins, which is a wide face; on a condensed
+      // one it closes the counters up until 16 reads as a single glyph.
+      fontFamily: fontFamilyDisplay.extraBold,
       fontSize: 52,
       lineHeight: 54,
       color: c.accent,
-      letterSpacing: -2.5,
+      letterSpacing: -1,
     },
     position: {
       fontFamily: fontFamily.bold,
@@ -330,7 +334,7 @@ function makeStyles(c: Palette) {
       marginVertical: spacing.sm,
     },
     name: {
-      fontFamily: fontFamily.bold,
+      fontFamily: fontFamilyDisplay.bold,
       fontSize: fontSize.bodyLg,
       color: c.ink,
       letterSpacing: 2.5,
@@ -353,7 +357,7 @@ function makeStyles(c: Palette) {
     attr: { alignItems: "flex-start", width: "25%" },
     ratingRow: { flexDirection: "row", alignItems: "flex-start" },
     ratingMark: {
-      fontFamily: fontFamily.extraBold,
+      fontFamily: fontFamilyDisplay.extraBold,
       fontSize: 30,
       lineHeight: 34,
       color: c.muted,
@@ -365,7 +369,7 @@ function makeStyles(c: Palette) {
     // means "hard to read".
     attrValueLow: { color: c.muted },
     attrMark: {
-      fontFamily: fontFamily.extraBold,
+      fontFamily: fontFamilyDisplay.extraBold,
       fontSize: fontSize.bodySm,
       color: c.muted,
       marginLeft: 1,
@@ -380,7 +384,7 @@ function makeStyles(c: Palette) {
       paddingHorizontal: spacing.sm,
     },
     attrValue: {
-      fontFamily: fontFamily.extraBold,
+      fontFamily: fontFamilyDisplay.extraBold,
       fontSize: fontSize.headingLg,
       color: c.ink,
     },

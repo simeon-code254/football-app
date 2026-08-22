@@ -8,6 +8,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
+import { VerificationBadge } from '../src/components/VerificationBadge';
 import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
@@ -199,7 +200,7 @@ export default function Messages() {
             <View style={styles.convoNameRow}>
               <Text style={styles.convoName}>{scout?.profiles?.full_name || 'Scout'}</Text>
               {scout?.verification_status === 'verified' && (
-                <Feather name="check-circle" size={13} color={colors.success} />
+                <VerificationBadge role="scout" size={14} />
               )}
             </View>
             {!!scout?.organization && <Text style={styles.convoOrg}>{scout.organization}</Text>}
@@ -320,7 +321,7 @@ export default function Messages() {
                 <View style={styles.convoNameRow}>
                   <Text style={styles.threadName}>{activeConversation?.scouts?.profiles?.full_name || 'Scout'}</Text>
                   {activeConversation?.scouts?.verification_status === 'verified' && (
-                    <Feather name="check-circle" size={13} color={colors.success} />
+                    <VerificationBadge role="scout" size={15} />
                   )}
                 </View>
                 <Text style={styles.threadMeta}>{activeConversation?.scouts?.organization || ''}</Text>
