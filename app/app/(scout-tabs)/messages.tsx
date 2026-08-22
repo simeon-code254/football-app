@@ -18,18 +18,10 @@ import { QueryState } from '../../src/components/QueryState';
 import { SkeletonRow } from '../../src/components/Skeleton';
 import { showAlert } from '../../src/lib/alert';
 import { ReportModal } from '../../src/components/ReportModal';
+import { timeAgo } from '../../src/lib/time';
 
 function isImagePath(path: string) {
   return /\.(jpe?g|png|webp)$/i.test(path);
-}
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
 }
 
 // Messaging (spec §24): conversation list + a simple thread. Contacting a
@@ -208,7 +200,7 @@ export default function Messages() {
             <Text style={styles.convoLast} numberOfLines={1}>{preview?.lastMessage || 'Say hello!'}</Text>
           </View>
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            {!!preview?.lastMessageAt && <Text style={styles.convoTime}>{timeAgo(preview.lastMessageAt)}</Text>}
+            {!!preview?.lastMessageAt && <Text style={styles.convoTime}>{timeAgo(preview.lastMessageAt, 'compact')}</Text>}
             {!!preview?.unreadCount && (
               <View style={styles.unreadDot}>
                 <Text style={styles.unreadText}>{preview.unreadCount}</Text>
@@ -269,7 +261,7 @@ export default function Messages() {
             {!!item.body && <Text style={mine ? styles.bubbleTextMine : styles.bubbleText}>{item.body}</Text>}
           </View>
           <Text style={styles.bubbleMeta}>
-            {timeAgo(item.created_at)}
+            {timeAgo(item.created_at, 'compact')}
             {mine ? (item.read_at ? ' · Read' : ' · Sent') : ''}
           </Text>
         </View>

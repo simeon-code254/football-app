@@ -14,6 +14,7 @@ import type { NotificationRow, NotificationPage } from '../src/repositories/noti
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
+import { timeAgo } from '../src/lib/time';
 
 const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
   trial_status_change: 'clipboard',
@@ -58,16 +59,6 @@ function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | 
     default:
       return null;
   }
-}
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 // Bell icons existed on both dashboards with a static badge and nowhere to

@@ -83,3 +83,28 @@ export function subscribeToNotifications(profileId: string, onInsert: (n: Notifi
     supabase.removeChannel(channel);
   };
 }
+
+// The most recent "a scout viewed your profile", for the home banner.
+//
+// Asked for on its own rather than filtered out of the recent-notifications
+// preview, because that preview is three rows deep: a player with three newer
+// notifications would lose the banner even though a scout looked at them an
+// hour ago, and this is the one signal on the whole screen that says somebody
+// is interested in them.
+//
+// The row carries no viewer_id by design -- see 20260820100000, constraint 1.
+// Most players here are minors, so naming the scout would create a contact
+// path nobody has vetted. "A scout" is all this can ever say, and all it
+// should.
+export async function getLatestProfileView(profileId: string) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, created_at, read_at')
+    .eq('profile_id', profileId)
+    .eq('type', 'profile_view')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}

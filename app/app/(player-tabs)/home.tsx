@@ -5,17 +5,19 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import { fontFamily, fontFamilyDisplay, fontSize, kicker, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as profileRepository from '../../src/repositories/profileRepository';
 import * as trialsRepository from '../../src/repositories/trialsRepository';
 import * as notificationsRepository from '../../src/repositories/notificationsRepository';
+import * as communityRepository from '../../src/repositories/communityRepository';
 import { QueryState } from '../../src/components/QueryState';
 import { SkeletonHome } from '../../src/components/Skeleton';
 import { FirstWinCard } from '../../src/components/FirstWinCard';
 import { PlayerRatingCard } from '../../src/components/PlayerRatingCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
+import { timeAgo } from '../../src/lib/time';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -24,13 +26,22 @@ function getGreeting() {
   return 'Good evening';
 }
 
-// Header matches Matobev v4.dc.html's HOME block exactly (greeting, name,
-// notification bell w/ dot, avatar). The stat summary / quick actions/trials
-// below use the same hard-coded PAC/SHO/DRI/OVR values the mockup's
-// Profile+Reels tabs already established (78/85/90/82) — the rest of Home
-// wasn't captured in the source read, so this section is a reasonable
-// reconstruction in the established visual language rather than a pixel
-// trace, filled out with the Trials feature from the product brief.
+// Home, following the design canvas (Matobev.dc.html screen 10): a navy
+// header carrying the greeting, with the rating card lifted to overlap its
+// lower edge, then a week summary and the trials/activity sections.
+//
+// TWO THINGS THE CANVAS ASKS FOR THAT ARE NOT HERE.
+//
+// A streak counter ("4" beside a flame in the header). Nothing in this
+// database records consecutive days of activity, so the number would have to
+// be invented. Left out rather than faked -- it can ship the day something
+// actually counts days.
+//
+// A radial gold glow behind the header. React Native has no radial gradient;
+// expo-linear-gradient is linear only. The diagonal below is the closest
+// honest approximation, running from the same top-right corner at the same
+// opacity.
+
 export default function Home() {
   const colors = useThemeColors();
   const isDark = useIsDark();
@@ -63,6 +74,22 @@ export default function Home() {
     queryFn: () => notificationsRepository.getUnreadCount(userId!),
   });
 
+  // The three numbers behind the "This week" strip. Each is read from a real
+  // table, and each is nullable because null means "we do not know" -- on a
+  // screen whose job is to tell a young player whether they are getting
+  // anywhere, "no improvement" and "no history yet" are opposite messages.
+  const { data: week } = useQuery({
+    queryKey: ['playerWeekSummary', userId],
+    enabled: !!userId,
+    queryFn: () => communityRepository.getWeekSummary(userId!),
+  });
+
+  const { data: latestView } = useQuery({
+    queryKey: ['playerLatestProfileView', userId],
+    enabled: !!userId,
+    queryFn: () => notificationsRepository.getLatestProfileView(userId!),
+  });
+
   const { data: recentNotificationsPage } = useQuery({
     queryKey: ['playerRecentNotifications', userId],
     enabled: !!userId,
@@ -89,34 +116,50 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
       >
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            {/* First name only. The rating card directly below already
-                prints the full name in caps, so spelling it out twice cost
-                the header its space and truncated to "simeon odhiam...".
-                Shrinking the type would have been the wrong fix -- the name
-                is meant to be the largest thing up here. */}
-            <Text style={styles.name} numberOfLines={1}>
-              {data?.profile.full_name?.trim().split(/\s+/)[0] || 'Welcome'}
-            </Text>
+        <LinearGradient
+          colors={[colors.primaryDark, colors.primary]}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.header}
+        >
+          {/* The canvas's radial gold glow at 85% 0%, as close as a linear
+              gradient gets: same corner, same opacity, same falloff point. */}
+          <LinearGradient
+            colors={['rgba(255,197,61,0.20)', 'rgba(255,197,61,0)']}
+            start={{ x: 0.85, y: 0 }}
+            end={{ x: 0.2, y: 0.9 }}
+            style={styles.headerGlow}
+            pointerEvents="none"
+          />
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              <Text style={styles.greeting}>{getGreeting()}</Text>
+              {/* First name only. The rating card directly below already
+                  prints the full name, so spelling it out twice cost the
+                  header its space and truncated to "simeon odhiam...".
+                  Shrinking the type would have been the wrong fix -- the name
+                  is meant to be the largest thing up here. */}
+              <Text style={styles.name} numberOfLines={1}>
+                {data?.profile.full_name?.trim().split(/\s+/)[0] || 'Welcome'}
+              </Text>
+            </View>
+            <View style={styles.headerActions}>
+              <Pressable style={styles.iconBtn} onPress={() => router.push('/news')} accessibilityRole="button" accessibilityLabel="News">
+                <Feather name="file-text" size={18} color={colors.white} />
+              </Pressable>
+              <Pressable
+                style={styles.iconBtn}
+                onPress={() => router.push('/notifications')}
+                accessibilityRole="button"
+                accessibilityLabel={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+              >
+                <Feather name="bell" size={18} color={colors.white} />
+                {!!unreadCount && <View style={styles.dot} />}
+              </Pressable>
+              <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
+            </View>
           </View>
-          <View style={styles.headerActions}>
-            <Pressable style={styles.iconBtn} onPress={() => router.push('/news')} accessibilityRole="button" accessibilityLabel="News">
-              <Feather name="file-text" size={18} color={colors.textPrimary} />
-            </Pressable>
-            <Pressable
-              style={styles.iconBtn}
-              onPress={() => router.push('/notifications')}
-              accessibilityRole="button"
-              accessibilityLabel={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-            >
-              <Feather name="bell" size={18} color={colors.textPrimary} />
-              {!!unreadCount && <View style={styles.dot} />}
-            </Pressable>
-            <Image source={{ uri: data?.profile.avatar_url ?? images.avatarMale }} style={styles.avatar} />
-          </View>
-        </View>
+        </LinearGradient>
 
         {/* Only while there is genuinely nothing to show yet. Once any
             attribute has a real value the player has been rated, and the
@@ -126,6 +169,7 @@ export default function Home() {
           <FirstWinCard primaryPosition={data.player.primary_position} />
         )}
 
+        <View style={styles.cardLift}>
         <PlayerRatingCard
           name={data?.profile.full_name || 'Player'}
           rating={data?.player.overall_rating ?? null}
@@ -136,6 +180,62 @@ export default function Home() {
           totalCount={data?.attributes.length ?? 0}
           onPressReport={() => router.push('/ai-ratings')}
         />
+        </View>
+
+        {/* The canvas captions this banner with the scouting organisation
+            ("ELITE SCOUTING - 2M AGO"). That is not shown, and cannot be:
+            notify_profile_view deliberately omits viewer_id from the payload
+            because most players here are minors and naming the scout creates
+            an unvetted contact path around the app's own messaging. "A scout"
+            is the honest and safe amount of detail. */}
+        {!!latestView && (
+          <Pressable
+            style={styles.viewBanner}
+            onPress={() => router.push('/notifications')}
+            accessibilityRole="button"
+            accessibilityLabel={`A scout viewed your profile ${timeAgo(latestView.created_at)}. Open notifications.`}
+          >
+            <View style={styles.viewBannerIcon}>
+              <Feather name="eye" size={16} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.viewBannerTitle}>A scout viewed you</Text>
+              <Text style={styles.viewBannerMeta}>{timeAgo(latestView.created_at)}</Text>
+            </View>
+            {!latestView.read_at && <View style={styles.viewBannerDot} />}
+          </Pressable>
+        )}
+
+        <Text style={styles.weekLabel}>This week</Text>
+        <View style={styles.weekStrip}>
+          <WeekStat
+            styles={styles}
+            label="Rating"
+            // rating_delta is null until a player has a snapshot from a
+            // previous week. Showing 0 there would tell someone in their
+            // first week that they failed to improve.
+            value={
+              week?.ratingDelta == null
+                ? null
+                : `${week.ratingDelta > 0 ? '+' : ''}${Math.round(week.ratingDelta)}`
+            }
+            up={(week?.ratingDelta ?? 0) > 0}
+            hint={week?.ratingDelta == null ? 'No history yet' : undefined}
+          />
+          <WeekStat
+            styles={styles}
+            label="Region"
+            value={week?.regionRank == null ? null : `#${week.regionRank}`}
+            hint={
+              week?.regionRank == null
+                ? 'Needs a rating'
+                : week.regionSize
+                  ? `of ${week.regionSize}`
+                  : undefined
+            }
+          />
+          <WeekStat styles={styles} label="Trials" value={String(week?.trialsApplied ?? 0)} />
+        </View>
 
         {/* Uploading is the entire point of the product, and it used to be
             one of three identical tiles. It now leads: full width, its own
@@ -240,37 +340,134 @@ export default function Home() {
   );
 }
 
+// One tile of the week strip. Split out because the null handling is the
+// whole point of it and repeating that three times inline invites one of the
+// three to quietly grow a `?? 0`.
+function WeekStat({
+  styles,
+  label,
+  value,
+  up,
+  hint,
+}: {
+  styles: ReturnType<typeof makeStyles>;
+  label: string;
+  /** Null renders an em dash, never a zero. */
+  value: string | null;
+  up?: boolean;
+  hint?: string;
+}) {
+  return (
+    <View
+      style={styles.weekCard}
+      accessible
+      accessibilityLabel={value == null ? `${label}: ${hint ?? 'not available'}` : `${label}: ${value}${hint ? `, ${hint}` : ''}`}
+    >
+      <Text
+        style={[
+          styles.weekValue,
+          value == null ? styles.weekValueUnknown : up ? styles.weekValueUp : null,
+        ]}
+      >
+        {value ?? '—'}
+      </Text>
+      {/* The label is what the tile is; the hint only ever stands in for it
+          when there is no value, because a bare em dash with nothing under
+          it is a dead end -- it has to say why. When there IS a value the
+          label stays, so "#12" is never left captioned "of 240" with no
+          word saying what it ranks. */}
+      <Text style={styles.weekKey} numberOfLines={1}>
+        {value == null ? (hint ?? label) : label}
+      </Text>
+    </View>
+  );
+}
+
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surfaceMuted },
+  root: { flex: 1, backgroundColor: colors.background },
   headerText: { flex: 1, minWidth: 0, marginRight: spacing.md },
+  // Deep enough that the rating card can be pulled up over its lower edge
+  // without covering the greeting.
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.huge + spacing.xxl,
+    overflow: 'hidden',
   },
-  // The name is the largest thing in the header and the greeting is a
-  // caption above it, rather than the two competing at similar weight.
-  greeting: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 0.3 },
-  name: { fontFamily: fontFamily.extraBold, fontSize: fontSize.headingLg, color: colors.textPrimary, letterSpacing: -0.4, marginTop: 1 },
+  headerGlow: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  // The name is the largest thing in the header and the greeting is a kicker
+  // above it, rather than the two competing at similar weight. Steel blue
+  // #7FB0F0 is the canvas's own on-navy caption colour: 6.79:1 there.
+  greeting: { ...kicker, fontSize: fontSize.caption, color: colors.primary },
+  name: {
+    fontFamily: fontFamilyDisplay.extraBold,
+    fontSize: fontSize.hero,
+    color: colors.white,
+    letterSpacing: -0.4,
+    marginTop: 1,
+  },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  // On navy the icon buttons are translucent white rather than raised
+  // surfaces -- a white tile with a drop shadow on a navy header reads as a
+  // sticker sitting on top of the design instead of part of it.
   iconBtn: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: radii.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
   },
-  dot: { position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.notificationDot, borderWidth: 1.5, borderColor: colors.surface },
-  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: colors.primary },
+  dot: { position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold, borderWidth: 1.5, borderColor: colors.primaryDark },
+  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' },
+  // Lifts the rating card over the header's lower edge, as the canvas does.
+  cardLift: { marginTop: -(spacing.huge + spacing.md) },
+  // Navy, because this is the one row on the screen that is about somebody
+  // else being interested in the player -- the canvas gives it the same hero
+  // treatment as the header for exactly that reason.
+  viewBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: colors.primaryDark,
+  },
+  viewBannerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,197,61,0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewBannerTitle: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.bodyLg, color: colors.white },
+  // 6.79:1 on primaryDark.
+  viewBannerMeta: { ...kicker, fontSize: fontSize.caption, color: '#7FB0F0', marginTop: 1 },
+  viewBannerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold },
+  weekStrip: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  weekLabel: { ...kicker, fontSize: fontSize.caption, color: colors.textMuted, paddingHorizontal: spacing.lg, marginTop: spacing.xl },
+  weekCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  weekValue: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.display, color: colors.textPrimary },
+  weekValueUp: { color: colors.success },
+  // A value we do not have is shown as an em dash in the muted tone, never
+  // as a zero. "We have no history for you yet" and "you did not improve"
+  // are different things to tell a 16-year-old.
+  weekValueUnknown: { color: colors.textMuted },
+  weekKey: { ...kicker, fontSize: fontSize.caption, color: colors.textMuted, marginTop: 2 },
   primaryAction: {
     flexDirection: 'row',
     alignItems: 'center',

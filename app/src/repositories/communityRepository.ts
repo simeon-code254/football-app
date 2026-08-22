@@ -117,3 +117,76 @@ export async function getEndorsements(playerId: string, viewerId?: string) {
   }
   return { counts, mine };
 }
+
+// The three numbers behind the home screen's "THIS WEEK" strip.
+//
+// Every one of them is read from a real table. There is deliberately no
+// fourth: the design canvas also puts a streak counter in the header, and
+// nothing in this database records consecutive days of activity, so a streak
+// would have to be invented. It is left out rather than faked.
+//
+// Each field is nullable and null means "we do not know", never zero. On a
+// screen whose whole job is to tell a young player whether they are getting
+// anywhere, "no improvement this week" and "we have no history for you yet"
+// are opposite messages, and a coalesce to 0 would show the discouraging one
+// to every player in their first week.
+export type WeekSummary = {
+  /** Points gained since last week's snapshot. Null: no prior snapshot. */
+  ratingDelta: number | null;
+  /** 1-based rank within the player's own region. Null: no region or rating. */
+  regionRank: number | null;
+  /** How many rated players share that region, so the rank has a denominator. */
+  regionSize: number | null;
+  /** Trial applications this player has submitted. */
+  trialsApplied: number;
+};
+
+export async function getWeekSummary(playerId: string): Promise<WeekSummary> {
+  const [{ data: me, error: meError }, { count: trialsApplied, error: trialsError }] =
+    await Promise.all([
+      supabase
+        .from('player_leaderboard')
+        .select('overall_rating, region, rating_delta')
+        .eq('id', playerId)
+        .maybeSingle(),
+      supabase
+        .from('trial_applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('player_id', playerId),
+    ]);
+  if (meError) throw meError;
+  if (trialsError) throw trialsError;
+
+  const summary: WeekSummary = {
+    ratingDelta: me?.rating_delta ?? null,
+    regionRank: null,
+    regionSize: null,
+    trialsApplied: trialsApplied ?? 0,
+  };
+
+  // player_leaderboard has no rank column and cannot get one -- it is a view,
+  // and `create or replace view` can only append columns, never reorder them
+  // (see 20260820130000). Rank is therefore counted rather than selected:
+  // two head-only counts move no rows, which matters because the alternative
+  // is pulling an entire region's board to find one index.
+  if (me?.region && me.overall_rating != null) {
+    const [{ count: ahead, error: aheadError }, { count: size, error: sizeError }] =
+      await Promise.all([
+        supabase
+          .from('player_leaderboard')
+          .select('id', { count: 'exact', head: true })
+          .eq('region', me.region)
+          .gt('overall_rating', me.overall_rating),
+        supabase
+          .from('player_leaderboard')
+          .select('id', { count: 'exact', head: true })
+          .eq('region', me.region),
+      ]);
+    if (aheadError) throw aheadError;
+    if (sizeError) throw sizeError;
+    summary.regionRank = (ahead ?? 0) + 1;
+    summary.regionSize = size ?? null;
+  }
+
+  return summary;
+}
