@@ -248,7 +248,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: 'rgba(255,255,255,0.78)', marginTop: 4 },
 
   statusBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.warningTint, borderRadius: radii.md, padding: 12, alignItems: 'center' },
-  statusBannerText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: '#7A5C00' },
+  statusBannerText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.goldDark },
   errorBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.dangerTint, borderRadius: radii.md, padding: 12, alignItems: 'flex-start' },
   errorBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.error, lineHeight: 18 },
 

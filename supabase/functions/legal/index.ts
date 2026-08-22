@@ -124,18 +124,25 @@ const shell = (title: string, body: string) => `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} &middot; Matobev</title>
 <style>
+  /* The Matobev design canvas palette, matching the app these pages are
+     linked from. They were still on the old blue/cool-grey scheme, which is
+     the most visible place a stale palette can survive: a user reaches them
+     from inside the app, so a different-looking page reads as a different
+     company's site asking for their consent. */
   :root { color-scheme: light dark; }
-  body { margin:0; background:#F4F6F9; color:#0B1220;
+  body { margin:0; background:#F4F2EC; color:#1D1F20;
          font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
          display:flex; justify-content:center; padding:24px 16px 64px; }
   main { max-width:720px; width:100%; background:#fff; border-radius:16px; padding:32px 28px;
-         box-shadow:0 8px 24px rgba(11,18,32,.08); }
+         border:1px solid #E7E2D3;
+         box-shadow:0 8px 24px rgba(42,36,24,.08); }
   @media (prefers-color-scheme: dark) {
-    body { background:#0A1628; color:#F5F7FA; }
-    main { background:#131B2E; box-shadow:none; border:1px solid #22304A; }
-    blockquote { background:#1B2537 !important; }
-    th, td { border-color:#2A3A57 !important; }
-    code { background:#1B2537 !important; }
+    body { background:#0A0F17; color:#F2F0EA; }
+    main { background:#141A24; box-shadow:none; border:1px solid #2A3340; }
+    blockquote { background:#10161F !important; border-left-color:#FFC53D !important; }
+    th, td { border-color:#2A3340 !important; }
+    code { background:#10161F !important; }
+    a { color:#7FB0F0 !important; }
   }
   h1 { font-size:26px; line-height:1.25; margin:0 0 6px; }
   h2 { font-size:19px; margin:32px 0 10px; }
@@ -143,13 +150,14 @@ const shell = (title: string, body: string) => `<!doctype html>
   p, li { line-height:1.65; font-size:15px; }
   ul { padding-left:22px; }
   hr { border:0; border-top:1px solid rgba(127,127,127,.25); margin:28px 0; }
-  blockquote { background:#FFF8E1; border-left:3px solid #FFAB00; margin:20px 0;
+  blockquote { background:#FBF3DF; border-left:3px solid #8A5A00; margin:20px 0;
                padding:12px 16px; border-radius:8px; }
   blockquote p { font-size:14px; margin:6px 0; }
   table { border-collapse:collapse; width:100%; margin:14px 0; font-size:14px; }
   th, td { text-align:left; padding:9px 10px; border:1px solid rgba(127,127,127,.28); }
-  code { background:#EEF1F5; padding:2px 5px; border-radius:4px; font-size:13px; }
-  a { color:#1A6DFF; }
+  code { background:#EDEAE1; padding:2px 5px; border-radius:4px; font-size:13px; }
+  /* navy2, 11.39:1 on white. The old #1A6DFF measured 4.49:1, just under AA. */
+  a { color:#123A6B; }
   nav { margin-bottom:22px; font-size:14px; }
   nav a { margin-right:16px; }
 </style></head>

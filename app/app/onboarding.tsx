@@ -56,7 +56,7 @@ export default function Onboarding() {
               key={i}
               style={[
                 styles.dot,
-                { width: i === slide ? 24 : 8, backgroundColor: i === slide ? colors.primary : '#E0E0E0' },
+                { width: i === slide ? 24 : 8, backgroundColor: i === slide ? colors.primary : colors.border },
               ]}
             />
           ))}

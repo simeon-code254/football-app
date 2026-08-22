@@ -20,13 +20,15 @@ export default function Welcome() {
       <View style={styles.hero}>
         <Image source={localImages.welcomeHero} style={styles.heroImage} contentFit="cover" />
         <LinearGradient
-          colors={['rgba(26,109,255,0.1)', 'rgba(255,255,255,0.7)', '#ffffff']}
+          colors={['rgba(18,58,107,0.10)', 'rgba(244,242,236,0.7)', colors.background]}
           locations={[0, 0.85, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.badge}>
           <View style={styles.badgeCard}>
-            <Logo size={38} />
+            {/* Navy: this card is white, and the gold mark measures
+                1.58:1 on it -- effectively invisible. */}
+            <Logo variant="navy" size={38} />
           </View>
         </View>
       </View>
@@ -57,7 +59,9 @@ export default function Welcome() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  // Paper, not white. The hero gradient below fades into this, so a white
+  // root against a paper app made the seam visible.
+  root: { flex: 1, backgroundColor: colors.background },
   // Same relative-weight fix as onboarding.tsx: 9:11 = 45:55, matching the
   // mockup's intended split instead of the ~31:69 the old 0.45-vs-1 gave.
   hero: { flex: 9, overflow: 'visible' },

@@ -23,17 +23,17 @@ const LIGHT: Record<ElevationLevel, ViewStyle> = {
   raised: Platform.select({
     ios: { shadowColor: '#2A2418', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
     android: { elevation: 2 },
-    default: { boxShadow: '0 2px 8px rgba(11,18,32,0.06)' } as ViewStyle,
+    default: { boxShadow: '0 2px 8px rgba(42,36,24,0.06)' } as ViewStyle,
   })!,
   floating: Platform.select({
     ios: { shadowColor: '#2A2418', shadowOpacity: 0.14, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
     android: { elevation: 8 },
-    default: { boxShadow: '0 8px 20px rgba(11,18,32,0.14)' } as ViewStyle,
+    default: { boxShadow: '0 8px 20px rgba(42,36,24,0.14)' } as ViewStyle,
   })!,
   overlay: Platform.select({
     ios: { shadowColor: '#2A2418', shadowOpacity: 0.22, shadowRadius: 28, shadowOffset: { width: 0, height: 12 } },
     android: { elevation: 16 },
-    default: { boxShadow: '0 12px 28px rgba(11,18,32,0.22)' } as ViewStyle,
+    default: { boxShadow: '0 12px 28px rgba(42,36,24,0.22)' } as ViewStyle,
   })!,
 };
 

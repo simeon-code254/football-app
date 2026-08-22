@@ -32,7 +32,15 @@ const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 function page(title: string, body: string, tone: 'ok' | 'error' | 'ask' = 'ask') {
-  const accent = tone === 'ok' ? '#15803D' : tone === 'error' ? '#B91C1C' : '#1A6DFF';
+  // Canvas palette. This page is where a parent decides whether their child
+  // may use the app, reached from an email link with no other branding around
+  // it -- so looking like Matobev is part of it being trustworthy.
+  //
+  // All three are chosen against white AND used as a button fill under white
+  // text, which is the same ratio either way: success 5.44:1, danger 5.44:1,
+  // navy2 11.39:1. The old #1A6DFF measured 4.49:1 -- under the 4.5:1 AA
+  // threshold by a hair, so it failed in both roles.
+  const accent = tone === 'ok' ? '#1B7943' : tone === 'error' ? '#C0392B' : '#123A6B';
   return new Response(
     `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -40,10 +48,12 @@ function page(title: string, body: string, tone: 'ok' | 'error' | 'ask' = 'ask')
 <style>
   :root { color-scheme: light dark; }
   body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-         background:#F4F6F9; color:#0B1220; display:flex; justify-content:center; padding:24px; }
-  @media (prefers-color-scheme: dark) { body { background:#0A1628; color:#F5F7FA; } .card { background:#131B2E !important; } }
+         background:#F4F2EC; color:#1D1F20; display:flex; justify-content:center; padding:24px; }
+  @media (prefers-color-scheme: dark) { body { background:#0A0F17; color:#F2F0EA; }
+    .card { background:#141A24 !important; border-color:#2A3340 !important; } }
   .card { background:#fff; border-radius:16px; padding:28px; max-width:520px; width:100%;
-          box-shadow:0 8px 24px rgba(11,18,32,.10); }
+          border:1px solid #E7E2D3;
+          box-shadow:0 8px 24px rgba(42,36,24,.10); }
   h1 { font-size:20px; margin:0 0 12px; }
   p { line-height:1.55; margin:0 0 14px; }
   ul { line-height:1.7; padding-left:20px; }

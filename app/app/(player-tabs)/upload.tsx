@@ -643,7 +643,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     marginTop: -14,
     borderWidth: 3,
     borderColor: colors.primary,
-    backgroundColor: 'rgba(26,109,255,0.25)',
+    backgroundColor: 'rgba(18,58,107,0.25)',
   },
   tagModalActions: { flexDirection: 'row', gap: 10, padding: 20, alignItems: 'center' },
   tagSkipBtn: { paddingVertical: 14, paddingHorizontal: 12 },

@@ -499,7 +499,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   bellDotText: { fontFamily: fontFamily.bold, fontSize: fontSize.caption, color: colors.white },
   verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.warningTint, marginHorizontal: 20, borderRadius: radii.md, padding: 12, marginBottom: 14 },
   verifyBannerRejected: { backgroundColor: colors.dangerTint },
-  verifyBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: '#7A5C00' },
+  verifyBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.goldDark },
   verifyBannerCta: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.goldDark },
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, height: 46, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: 14, marginBottom: 16 },
   searchPlaceholder: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPlaceholder },

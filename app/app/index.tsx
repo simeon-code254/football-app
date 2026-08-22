@@ -4,6 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { localImages } from '../src/constants/images';
+// Aliased: this screen already uses React Native's own Animated for the
+// progress bar, and the two libraries' Animated.View are not interchangeable
+// -- a Reanimated style handed to an RN Animated.View is silently ignored.
+import Reanimated from 'react-native-reanimated';
+import { useFloat } from '../src/lib/motion';
 import { Logo } from '../src/components/Logo';
 import { useSessionStore } from '../src/store/useSessionStore';
 
@@ -13,6 +18,8 @@ const SPLASH_DURATION_MS = 3000;
 // wash, gold badge + football icon, wordmark, tagline, filling progress bar.
 export default function SplashScreen() {
   const colors = useThemeColors();
+  // Canvas screen 01 floats the mark at 3.2s.
+  const logoFloat = useFloat();
   const styles = makeStyles(colors);
   const progress = useRef(new Animated.Value(0)).current;
   const status = useSessionStore((s) => s.status);
@@ -54,14 +61,16 @@ export default function SplashScreen() {
     <View style={styles.root}>
       <ImageBackground source={localImages.splashHero} style={styles.bg} resizeMode="cover">
         <LinearGradient
-          colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.4)', 'rgba(10,22,40,0.85)']}
+          colors={['rgba(10,27,51,0.15)', 'rgba(10,27,51,0.4)', 'rgba(10,27,51,0.85)']}
           locations={[0, 0.55, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.content}>
-          <View style={styles.badgeWrap}>
-            <Logo variant="white" size={72} />
-          </View>
+          {/* Canvas screen 01: the gold mark, floating. It was white here,
+              which is not a tint the canvas has at all. */}
+          <Reanimated.View style={[styles.badgeWrap, logoFloat]}>
+            <Logo variant="gold" size={96} />
+          </Reanimated.View>
           <Text style={styles.wordmark}>MATOBEV</Text>
           <Text style={styles.tagline}>DISCOVER · ANALYZE · CONNECT</Text>
           <View style={styles.progressTrack}>
@@ -77,7 +86,10 @@ export default function SplashScreen() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0A1628' },
+  // Canvas navy, and the same value app.json paints behind the native
+  // splash -- so the handoff from the OS splash to this screen is seamless
+  // rather than a visible colour jump.
+  root: { flex: 1, backgroundColor: '#0A1B33' },
   bg: { flex: 1, width: '100%', height: '100%' },
   content: {
     flex: 1,

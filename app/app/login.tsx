@@ -64,7 +64,7 @@ export default function Login() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.hero}>
         <Image source={{ uri: images.authHero }} style={styles.heroImage} contentFit="cover" />
-        <LinearGradient colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.75)']} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(10,27,51,0.15)', 'rgba(10,27,51,0.75)']} style={StyleSheet.absoluteFill} />
         <View style={styles.heroTop}>
           <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
         </View>
@@ -106,6 +106,9 @@ export default function Login() {
 
         <View style={styles.socialRow}>
           <Pressable style={styles.socialBtn}>
+            {/* Google's own brand red, not a palette value. Their brand
+                guidelines require the mark be shown in its own colours,
+                so this deliberately does not follow the theme. */}
             <AntDesign name="google" size={20} color="#EA4335" />
           </Pressable>
           <Pressable style={styles.socialBtn}>
