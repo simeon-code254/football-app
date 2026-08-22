@@ -14,6 +14,8 @@ import * as videosRepository from '../src/repositories/videosRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonProfile } from '../src/components/Skeleton';
 import { RatingReveal } from '../src/components/RatingReveal';
+import { RatingHistory } from '../src/components/RatingHistory';
+import * as communityRepository from '../src/repositories/communityRepository';
 
 // Key holds the last job id whose reveal was shown, so it fires once.
 const SEEN_REVEAL_KEY = 'matobev-last-rating-reveal-job';
@@ -43,6 +45,13 @@ export default function AiRatings() {
     Low: colors.error,
   };
   const userId = useSessionStore((s) => s.session?.user.id);
+
+  const { data: history } = useQuery({
+    queryKey: ['ratingHistory', userId],
+    enabled: !!userId,
+    queryFn: () => communityRepository.getRatingHistory(userId!),
+  });
+
   const role = useSessionStore((s) => s.role);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -119,6 +128,8 @@ export default function AiRatings() {
               <Text style={styles.heroSub}>Updates automatically as new highlights are analyzed</Text>
             )}
           </LinearGradient>
+
+          <RatingHistory snapshots={history ?? []} />
 
           {jobStatusInfo && (
             <View style={styles.statusBanner}>

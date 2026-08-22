@@ -190,3 +190,28 @@ export async function getWeekSummary(playerId: string): Promise<WeekSummary> {
 
   return summary;
 }
+
+export type RatingSnapshot = { week_start: string; overall_rating: number | null };
+
+// A player's weekly rating history, oldest first for charting.
+//
+// player_rating_snapshots has recorded this since 20260820120000 and nothing
+// has ever shown it. It is the only record in the whole system of what a
+// rating used to be -- players.overall_rating is a single mutable column, so
+// without these rows a player's own progress is invisible to them even though
+// improving is the entire thing the app is asking them to do.
+//
+// Weeks with a null rating are kept rather than filtered: a gap in the series
+// is real information (no analysis ran that week), and dropping those rows
+// would silently join two non-adjacent weeks into a straight line that looks
+// like steady progress nobody made.
+export async function getRatingHistory(playerId: string, weeks = 12): Promise<RatingSnapshot[]> {
+  const { data, error } = await supabase
+    .from('player_rating_snapshots')
+    .select('week_start, overall_rating')
+    .eq('player_id', playerId)
+    .order('week_start', { ascending: false })
+    .limit(weeks);
+  if (error) throw error;
+  return (data ?? []).reverse() as RatingSnapshot[];
+}
