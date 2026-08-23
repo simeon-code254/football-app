@@ -12,7 +12,7 @@ Three states, and the distinction matters:
 
 Everything below is verified against the working tree, not assumed.
 
-## Built (52)
+## Built (73)
 
 | # | Screen | Where |
 |---|---|---|
@@ -37,7 +37,23 @@ Everything below is verified against the working tree, not assumed.
 | 14 | Upload | `app/(player-tabs)/upload.tsx` |
 | 23 | Player detail | `app/player/[id].tsx` (disclaimer only) |
 | 24 | Compare | `app/compare.tsx` |
+| 32 | Notification settings | `app/notification-settings.tsx` |
 | 33 | Settings | `app/settings.tsx` |
+| 47 | Scout path · organisation | `app/scout-onboarding.tsx` |
+| 48 | Scout path · ID check | `app/scout-verification.tsx` |
+| 56 / 58 | Full-screen trial / news alert | `src/components/FullScreenAlert.tsx` |
+| 57 | Trial detail | `app/trial/[id].tsx` |
+| 59 | News feed | `app/news.tsx` |
+| 61 | Player edit profile | `app/profile-complete.tsx` (edit mode) |
+| 62 | Scout edit profile | `app/scout-edit-profile.tsx` |
+| 63 | Settings · account | `app/account-settings.tsx` |
+| 64 | Settings · security | `app/security-settings.tsx` |
+| 65 | Settings · blocked | `app/blocked-accounts.tsx` |
+| 66 | Settings · language | `app/language-settings.tsx` |
+| 67 | Settings · help & legal | `app/help-settings.tsx` |
+| 68 | Forgot password | `app/forgot-password.tsx` |
+| 72 | Search filters | `app/(scout-tabs)/players.tsx` |
+| 79 | Permissions primer | `src/components/PushPrimer.tsx` |
 | 39 | Empty · search | `app/(scout-tabs)/players.tsx` |
 | 40 | Empty · messages | `app/messages.tsx` |
 | 27 / 50 | Club home / dashboard | `app/(club-tabs)/home.tsx` |
@@ -77,22 +93,24 @@ Plus a login screen the canvas never drew (it offers "Sign in" on 02 and a
 forgotten-password flow on 68, but no sign-in form), designed from the canvas's
 own vocabulary.
 
-## Routed, not rebuilt (27)
+## Routed, not rebuilt (10)
 
-These work. They are still on the pre-canvas design and are the remaining
-visual debt: 07, 13, 22, 25, 26, 28, 29, 31, 32, 34, 35, 57, 59, 61–69, 72, 79.
+These work and are on the paper ground, but their internals still follow the
+older design: 07, 13, 22, 25, 26, 28, 29, 34, 35, 69.
 
-Notable ones: `13 Reels` and `22 Scout search` are the highest-traffic
-remaining, and the settings detail screens (63–67) are still the old design
-even though the hub above them (33) is not.
+- `13 Reels` deliberately keeps its black ground -- it is a full-bleed video
+  surface and paper behind a player would be wrong. Only its overlay chrome is
+  unported.
+- `26`, `28`, `29` are covered in substance by `premium.tsx`, `checkout.tsx`
+  and `verification-badge.tsx`; the canvas draws them as separate screens.
+- `34 Log out` and `35 Session expired` are the shared alert and StatusScreen.
+- `69 Chat conversation` is the thread inside `messages.tsx`, not its own route.
 
-## Absent (4)
+## Absent (2)
 
 | # | Screen | Why |
 |---|---|---|
-| 47 | Scout path · organisation | Scout signup collects org at 05; the canvas's dedicated step is not built |
-| 48 | Scout path · ID check | Partially covered by `app/scout-verification.tsx`, not rebuilt |
-| 56 / 58 | Full-screen trial / news alerts | `NewsPopup` is adjacent but is not these |
+| 31 | Lock screen push | **Not an app screen.** It is the OS notification shade. The payload behind it is real (`send-push` Edge Function); the rendering is Android's. |
 | 77 | Guardian approval (guardian's view) | **Not an app screen.** The guardian has no app — this is the public page served by `supabase/functions/guardian-consent`. Its design should be updated there, not here. |
 
 ## Where the canvas was deliberately not followed
@@ -111,6 +129,10 @@ produce. Each is commented at the site.
 | "Players who post monthly gain twice as fast" (71) | Unmeasured causal claim about our own data |
 | Bare attribute numbers (12) | Confidence label added — a 0–99 on the FIFA scale is a verdict |
 | Entry fee field (30) | Locked free, structurally: no fee column exists |
+| "Verified scouts get replies 4× more often" (47) | Nothing measures reply rate |
+| "FULLY TRANSLATED" as static text (66) | Measured against English, nested keys walked |
+| Hardcoded build "2.4.1" (67) | Read from expo-constants, or it drifts on first ship |
+| Role row with a chevron (63) | `prevent_role_change` is a trigger; roles are fixed at signup |
 
 Two further deviations are ergonomic rather than evidential: touch targets keep
 platform sizes instead of scaling (rule 5 in `theme/canvas.ts`), and the
