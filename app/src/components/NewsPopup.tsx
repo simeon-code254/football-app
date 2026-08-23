@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
-import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../theme';
 import * as newsRepository from '../repositories/newsRepository';
 import { getPublicStorageUrl } from '../lib/publicUrl';
+import { FullScreenAlert } from './FullScreenAlert';
 
 const LAST_SEEN_KEY = 'matobev-last-seen-news-id';
 
@@ -15,10 +13,13 @@ const LAST_SEEN_KEY = 'matobev-last-seen-news-id';
 // Home mounts after it's published. Never re-shows the same post twice
 // (tracked locally, same AsyncStorage pattern as useThemeStore), and never
 // competes with the News screen itself, which stays the full list.
+/** Same 200wpm estimate the feed and the article use. */
+function readingMinutes(body: string | null | undefined): number {
+  if (!body) return 1;
+  return Math.max(1, Math.round(body.trim().split(/\s+/).length / 200));
+}
+
 export function NewsPopup() {
-  const colors = useThemeColors();
-  const isDark = useIsDark();
-  const styles = makeStyles(colors);
   const [visible, setVisible] = useState(false);
 
   const { data: latest } = useQuery({
@@ -51,44 +52,24 @@ export function NewsPopup() {
 
   if (!latest) return null;
   const coverUrl = getPublicStorageUrl('post-images', latest.cover_image_path);
+  const isTrial = !!latest.trial_id;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
-      <Pressable accessibilityViewIsModal style={styles.backdrop} onPress={dismiss} accessibilityRole="button" accessibilityLabel="Dismiss announcement">
-        <Pressable style={[styles.card, elevation('overlay', isDark)]} onPress={(e) => e.stopPropagation()} accessible={false}>
-          {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cover} contentFit="contain" />}
-          <View style={styles.body}>
-            <Text style={styles.eyebrow}>{latest.trial_id ? 'New trial' : "What's new"}</Text>
-            <Text style={styles.title}>{latest.title}</Text>
-            <Text style={styles.excerpt} numberOfLines={3}>{latest.body}</Text>
-            <View style={styles.actions}>
-              <Pressable onPress={dismiss} style={styles.dismissBtn} accessibilityRole="button" accessibilityLabel="Dismiss">
-                <Text style={styles.dismissText}>Not now</Text>
-              </Pressable>
-              <Pressable onPress={readMore} style={styles.readBtn}>
-                <Text style={styles.readText}>{latest.trial_id ? 'View Trial' : 'Read more'}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <FullScreenAlert
+      visible={visible}
+      kicker={isTrial ? 'Trial near you' : 'Matobev news'}
+      tag={isTrial ? undefined : 'Scouting'}
+      title={latest.title}
+      body={isTrial ? undefined : latest.body}
+      meta={
+        isTrial
+          ? undefined
+          : `${new Date(latest.published_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} · ${readingMinutes(latest.body)} min read`
+      }
+      imageUri={coverUrl}
+      primaryLabel={isTrial ? 'Read more' : 'Read more'}
+      onPrimary={readMore}
+      onClose={dismiss}
+    />
   );
-}
-
-function makeStyles(colors: ReturnType<typeof useThemeColors>) {
-  return StyleSheet.create({
-    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 28 },
-    card: { width: '100%', maxWidth: 380, backgroundColor: colors.surface, borderRadius: radii.xl, overflow: 'hidden' },
-    cover: { width: '100%', height: 150, backgroundColor: colors.surfaceMuted },
-    body: { padding: 20, gap: 6 },
-    eyebrow: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.primary, letterSpacing: 0.5, textTransform: 'uppercase' },
-    title: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary },
-    excerpt: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody, lineHeight: 20, marginTop: 2 },
-    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 14 },
-    dismissBtn: { paddingVertical: 8, paddingHorizontal: 4 },
-    dismissText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted },
-    readBtn: { backgroundColor: colors.primary, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 18 },
-    readText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.white },
-  });
 }
