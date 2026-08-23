@@ -142,12 +142,12 @@ function RootLayout() {
   // folder name, not the screen inside it -- expo-router includes group
   // segments as-is, so a scout on /(player-tabs)/profile needs the group
   // check, not just the named-screen one).
-  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete', 'upload-success', 'player-verification', 'trial-applied']);
-  const SCOUT_ONLY_SCREENS = new Set(['scout-edit-profile', 'scout-verification']);
+  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete', 'upload-success', 'player-verification', 'trial-applied', 'milestones', 'rating-history', 'analysis-progress']);
+  const SCOUT_ONLY_SCREENS = new Set(['scout-edit-profile', 'scout-verification', 'scout-onboarding', 'shortlist']);
   // Billing and verification outcomes belong to the two paying roles, so they
   // are not in either single-role set -- a player must never reach checkout.
   const PAID_ROLE_SCREENS = new Set(['checkout', 'billing', 'premium', 'verification-pending', 'verification-rejected']);
-  const CLUB_ONLY_SCREENS = new Set(['club-edit-profile', 'club-verification', 'club-team']);
+  const CLUB_ONLY_SCREENS = new Set(['club-edit-profile', 'club-verification', 'club-team', 'club-onboarding', 'trial-post']);
   // Where each role belongs when it lands somewhere it should not be. Keyed by
   // role so adding a fourth one fails loudly here rather than defaulting a
   // stranger into the player tabs.
