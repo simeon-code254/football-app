@@ -5,7 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Logo } from '../../src/components/Logo';
+import { Kicker } from '../../src/components/Kicker';
+import { StatTile } from '../../src/components/StatTile';
+import { VerificationBadge } from '../../src/components/VerificationBadge';
 import { images } from '../../src/constants/images';
 import { ScoutPlayerCard } from '../../src/components/ScoutPlayerCard';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -215,51 +221,83 @@ export default function ScoutDashboard() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={profileRefetching} onRefresh={refetchProfile} colors={[colors.primary]} tintColor={colors.primary} />}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Image source={{ uri: profile?.avatar_url ?? images.avatarMale }} style={styles.avatar}
-          cachePolicy="memory-disk"
-          transition={200}
-        />
-            <View>
-              <Text style={styles.greeting}>{getGreeting()}{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}</Text>
-              {scoutVerified ? (
-                <View style={styles.verifiedRow}>
-                  <Feather name="check-circle" size={12} color={colors.success} />
-                  <Text style={styles.verifiedText}>Verified Scout</Text>
-                </View>
-              ) : scout?.verification_status === 'rejected' ? (
-                <Text style={[styles.pendingText, { color: colors.error }]}>Verification Rejected</Text>
-              ) : (
-                <Text style={styles.pendingText}>Verification Pending</Text>
-              )}
+        {/*
+          Canvas screen 21 SCOUT HOME. A navy header carrying the org name and
+          its verification hexagon, with a steel radial glow at 88% 4% -- the
+          scout counterpart to the player home's gold one. The search bar lives
+          inside the header rather than under it, and the counters lift over
+          its lower edge.
+        */}
+        <LinearGradient
+          colors={[colors.primary, colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Defs>
+              <RadialGradient id="scoutGlow" cx="88%" cy="4%" r="58%">
+                <Stop offset="0" stopColor="#4F94D4" stopOpacity={0.32} />
+                <Stop offset="1" stopColor="#4F94D4" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#scoutGlow)" />
+          </Svg>
+
+          <View style={styles.headerRow}>
+            <Logo variant="gold" size={20} />
+            <View style={{ flex: 1 }}>
+              <Kicker size={fontSize.caption} tone="onNavy">
+                {getGreeting()}
+              </Kicker>
+              <View style={styles.orgRow}>
+                <Text style={styles.orgName} numberOfLines={1}>
+                  {scout?.organization || profile?.full_name || 'Scout'}
+                </Text>
+                {scoutVerified && <VerificationBadge role="scout" size={17} glyph="mark" />}
+              </View>
             </View>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
-              style={styles.bellBtn}
-              onPress={() => router.push('/news')}
-              accessibilityRole="button"
-              accessibilityLabel="News"
-            >
-              <Feather name="file-text" size={18} color={colors.textPrimary} />
-            </Pressable>
-            <Pressable
-              style={styles.bellBtn}
               onPress={() => router.push('/notifications')}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
             >
-              <Feather name="bell" size={18} color={colors.textPrimary} />
-              {!!unreadCount && (
-                <View style={styles.bellDot}>
-                  <Text style={styles.bellDotText}>{unreadCount}</Text>
-                </View>
-              )}
+              <Feather name="bell" size={18} color="rgba(255,255,255,0.7)" />
+              {!!unreadCount && <View style={styles.headerDot} />}
             </Pressable>
           </View>
+
+          <Pressable
+            style={styles.headerSearch}
+            onPress={() => router.push('/(scout-tabs)/players')}
+            accessibilityRole="button"
+            accessibilityLabel="Search players"
+          >
+            <Feather name="search" size={14} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.headerSearchText}>Search position, age, region…</Text>
+          </Pressable>
+        </LinearGradient>
+
+        {/* The three counters ride up over the header's lower edge. */}
+        <View style={styles.counters}>
+          <StatTile value={overview?.saved ?? null} label="Saved" />
+          <StatTile value={overview?.contacted ?? null} label="Contacted" />
+          {/* Reply rate needs per-conversation response tracking that
+              `conversations` does not keep -- blank rather than invented. */}
+          <StatTile value={null} label="Replies" />
         </View>
+
+        {/* Canvas 21's premium banner: a warm dark gradient with the club
+            hexagon, sitting between the counters and the matches list. */}
+        <Pressable style={styles.premium} onPress={() => router.push('/premium')} accessibilityRole="button">
+          <VerificationBadge role="club" size={26} glyph="mark" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.premiumTitle}>Go Premium</Text>
+            <Text style={styles.premiumSub}>Unlimited contacts · priority search</Text>
+          </View>
+          <Feather name="chevron-right" size={13} color={colors.goldDark} />
+        </Pressable>
 
         {!scoutVerified && scout?.verification_status === 'rejected' ? (
           <Pressable style={[styles.verifyBanner, styles.verifyBannerRejected]} onPress={() => router.push('/scout-verification')}>
@@ -280,12 +318,6 @@ export default function ScoutDashboard() {
             </Pressable>
           )
         )}
-
-        {/* Global search */}
-        <Pressable style={styles.searchBar} onPress={() => router.push('/(scout-tabs)/players')}>
-          <Feather name="search" size={16} color={colors.textPlaceholder} />
-          <Text style={styles.searchPlaceholder}>Search players, positions, clubs...</Text>
-        </Pressable>
 
         {/* Quick actions */}
         <View style={styles.quickGrid}>
@@ -486,23 +518,49 @@ function QuickAction({
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surfaceMuted },
+  root: { flex: 1, backgroundColor: colors.background },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  orgRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  orgName: { flexShrink: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.title, color: colors.white },
+  headerDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.gold,
+  },
+  headerSearch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    paddingHorizontal: 12,
+    marginTop: 14,
+  },
+  headerSearchText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: 'rgba(255,255,255,0.6)' },
+  counters: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginTop: -28 },
+  premium: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 20,
+    marginTop: 11,
+    padding: 11,
+    borderRadius: radii.lg,
+    backgroundColor: '#3E2A0A',
+  },
+  premiumTitle: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.white },
+  premiumSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.55)' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 44, height: 44, borderRadius: 22 },
-  greeting: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.textPrimary },
-  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  verifiedText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.success },
-  pendingText: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.goldDark, marginTop: 2 },
   bellBtn: { width: 38, height: 38, borderRadius: radii.sm, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-  bellDot: { position: 'absolute', top: -4, right: -4, backgroundColor: colors.notificationDot, borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3, borderWidth: 1.5, borderColor: colors.surface },
-  bellDotText: { fontFamily: fontFamily.bold, fontSize: fontSize.caption, color: colors.white },
   verifyBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.warningTint, marginHorizontal: 20, borderRadius: radii.md, padding: 12, marginBottom: 14 },
   verifyBannerRejected: { backgroundColor: colors.dangerTint },
   verifyBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.goldDark },
   verifyBannerCta: { fontFamily: fontFamily.bold, fontSize: fontSize.xs, color: colors.goldDark },
-  searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, height: 46, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: 14, marginBottom: 16 },
-  searchPlaceholder: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPlaceholder },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 10, marginBottom: 8 },
   quickAction: { width: '47.5%', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 12 },
   quickIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
