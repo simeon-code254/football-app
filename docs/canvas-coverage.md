@@ -12,7 +12,7 @@ Three states, and the distinction matters:
 
 Everything below is verified against the working tree, not assumed.
 
-## Built (46)
+## Built (52)
 
 | # | Screen | Where |
 |---|---|---|
@@ -33,7 +33,13 @@ Everything below is verified against the working tree, not assumed.
 | 19 | Messages | `app/messages.tsx` |
 | 20 | Notifications | `app/notifications.tsx` |
 | 21 | Scout home | `app/(scout-tabs)/home.tsx` |
+| 12 | AI ratings · FIFA attrs | `app/ai-ratings.tsx` |
+| 14 | Upload | `app/(player-tabs)/upload.tsx` |
 | 23 | Player detail | `app/player/[id].tsx` (disclaimer only) |
+| 24 | Compare | `app/compare.tsx` |
+| 33 | Settings | `app/settings.tsx` |
+| 39 | Empty · search | `app/(scout-tabs)/players.tsx` |
+| 40 | Empty · messages | `app/messages.tsx` |
 | 27 / 50 | Club home / dashboard | `app/(club-tabs)/home.tsx` |
 | 30 | Trial posting | `app/trial-post.tsx` |
 | 36 | 404 | `app/+not-found.tsx` |
@@ -71,15 +77,14 @@ Plus a login screen the canvas never drew (it offers "Sign in" on 02 and a
 forgotten-password flow on 68, but no sign-in form), designed from the canvas's
 own vocabulary.
 
-## Routed, not rebuilt (33)
+## Routed, not rebuilt (27)
 
 These work. They are still on the pre-canvas design and are the remaining
-visual debt: 07, 12, 13, 14, 22, 24, 25, 26, 28, 29, 31–35, 39, 40, 57, 59,
-61–69, 72, 79.
+visual debt: 07, 13, 22, 25, 26, 28, 29, 31, 32, 34, 35, 57, 59, 61–69, 72, 79.
 
-Notable ones: `12 AI ratings` and `14 Upload` are the two highest-traffic
-player screens still unported, and the settings cluster (63–67) is seven
-screens of the old design.
+Notable ones: `13 Reels` and `22 Scout search` are the highest-traffic
+remaining, and the settings detail screens (63–67) are still the old design
+even though the hub above them (33) is not.
 
 ## Absent (4)
 
