@@ -9,6 +9,7 @@ import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
+import { NoticeBox } from '../../src/components/NoticeBox';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -346,19 +347,45 @@ export default function Upload() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Upload</Text>
-        <Text style={styles.sub}>Share your highlights or get AI analysis</Text>
+        <Text style={styles.title}>New upload</Text>
 
+        {/*
+          Canvas screen 14 puts AI ANALYSIS first and HIGHLIGHT ONLY second,
+          which is the right default: analysis is the product, and a player who
+          picks highlight-only by accident gets no rating and no explanation.
+          The order was reversed here before.
+        */}
         <View style={styles.toggleRow}>
-          <Pressable style={[styles.toggleBtn, mode === 'reel' && styles.toggleBtnActive]} onPress={() => setMode('reel')}>
-            <Feather name="film" size={14} color={mode === 'reel' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.toggleText, mode === 'reel' && styles.toggleTextActive]}>Highlight Reel</Text>
+          <Pressable
+            style={[styles.toggleBtn, mode === 'ai' && styles.toggleBtnActive]}
+            onPress={() => setMode('ai')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: mode === 'ai' }}
+          >
+            <Text style={[styles.toggleText, mode === 'ai' && styles.toggleTextActive]}>
+              AI analysis
+            </Text>
           </Pressable>
-          <Pressable style={[styles.toggleBtn, mode === 'ai' && styles.toggleBtnActive]} onPress={() => setMode('ai')}>
-            <Feather name="cpu" size={14} color={mode === 'ai' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.toggleText, mode === 'ai' && styles.toggleTextActive]}>AI Analysis</Text>
+          <Pressable
+            style={[styles.toggleBtn, mode === 'reel' && styles.toggleBtnActive]}
+            onPress={() => setMode('reel')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: mode === 'reel' }}
+          >
+            <Text style={[styles.toggleText, mode === 'reel' && styles.toggleTextActive]}>
+              Highlight only
+            </Text>
           </Pressable>
         </View>
+
+        {/* Canvas 14's framing tip. It is not decoration: camera shake and the
+            player leaving frame are the two things that most often make the
+            pipeline fail calibration or lose the subject. */}
+        {mode === 'ai' && (
+          <NoticeBox style={styles.framingTip}>
+            Keep the camera still and stay in frame — it lifts every attribute score.
+          </NoticeBox>
+        )}
 
         {video ? (
           <>
@@ -563,12 +590,12 @@ export default function Upload() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
+  framingTip: { marginBottom: 20 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary },
-  sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 20 },
-  toggleRow: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, padding: 4, marginBottom: 20 },
-  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: radii.pill },
+  toggleRow: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 4, marginBottom: 16 },
+  toggleBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, borderRadius: radii.md },
   toggleBtnActive: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   toggleText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   toggleTextActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },

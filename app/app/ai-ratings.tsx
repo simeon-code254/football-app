@@ -6,7 +6,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { cx, fontFamily, fontFamilyDisplay, fontSize, radii, spacing, useThemeColors } from '../src/theme';
+import { Kicker } from '../src/components/Kicker';
+import { AttributeBar } from '../src/components/AttributeBar';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
@@ -16,24 +18,13 @@ import { SkeletonProfile } from '../src/components/Skeleton';
 import { RatingReveal } from '../src/components/RatingReveal';
 import { RatingHistory } from '../src/components/RatingHistory';
 import Animated from 'react-native-reanimated';
-import { useBarGrow, useSpin } from '../src/lib/motion';
+import { useSpin, useSheen } from '../src/lib/motion';
 import * as communityRepository from '../src/repositories/communityRepository';
 
 // Canvas barGrow: each attribute bar fills from zero rather than appearing
 // already full. Split into its own component because useBarGrow is a hook and
 // these are rendered in a .map -- calling it inside the loop body would break
 // the rules of hooks the moment the attribute list changes length.
-//
-// The bar is a fraction of the 0-99 scale, matching the number printed beside
-// it. useBarGrow clamps, so a value over the ceiling cannot overflow the
-// track.
-function AttrBar({ value }: { value: number | null }) {
-  const colors = useThemeColors();
-  const styles = makeStyles(colors);
-  const grow = useBarGrow((value ?? 0) / 99);
-  return <Animated.View style={[styles.attrFill, grow]} />;
-}
-
 // Key holds the last job id whose reveal was shown, so it fires once.
 const SEEN_REVEAL_KEY = 'matobev-last-rating-reveal-job';
 
@@ -60,11 +51,6 @@ export default function AiRatings() {
   // a loader reads as stalled rather than busy.
   const spin = useSpin(1200);
 
-  const CONFIDENCE_COLOR: Record<string, string> = {
-    High: colors.success,
-    Medium: colors.goldDark,
-    Low: colors.error,
-  };
   const userId = useSessionStore((s) => s.session?.user.id);
 
   const { data: history } = useQuery({
@@ -125,6 +111,8 @@ export default function AiRatings() {
     setRevealJobId(null);
   };
 
+  const heroSheen = useSheen(4000); // canvas 12: sheen 4s
+
   const presentAttrCount = data?.attributes.filter((a) => a.value != null).length ?? 0;
   const totalAttrCount = data?.attributes.length ?? 0;
   const isProvisionalRating = presentAttrCount > 0 && presentAttrCount < totalAttrCount;
@@ -140,15 +128,40 @@ export default function AiRatings() {
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <LinearGradient colors={[colors.primary, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-            <Text style={styles.heroLabel}>OVERALL RATING</Text>
-            <Text style={styles.heroValue}>{data?.publicView.overall_rating ?? '—'}</Text>
-            {isProvisionalRating ? (
-              <Text style={styles.heroSub}>Provisional — {presentAttrCount} of {totalAttrCount} attributes assessed</Text>
-            ) : (
-              <Text style={styles.heroSub}>Updates automatically as new highlights are analyzed</Text>
+          {/*
+            Canvas screen 12: a navy card with the overall in gold at 40px on
+            the left and the position on the right, swept by the sheen. The
+            provisional line sits under it -- the canvas does not draw one, but
+            a rating computed from part of the attribute set is a different
+            claim from a complete one.
+          */}
+          <View style={styles.hero}>
+            <Animated.View style={[styles.heroSheen, heroSheen]} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(255,197,61,0)', 'rgba(255,197,61,0.16)', 'rgba(255,197,61,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ flex: 1 }}
+              />
+            </Animated.View>
+            <View style={styles.heroRow}>
+              <View>
+                <Kicker size={fontSize.caption} tone="onNavy">Overall</Kicker>
+                <Text style={styles.heroValue}>{data?.publicView.overall_rating ?? '—'}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Kicker size={fontSize.caption} style={{ color: 'rgba(255,255,255,0.5)' }}>Position</Kicker>
+                <Text style={styles.heroPosition}>
+                  {data?.publicView.primary_position ?? '—'}
+                </Text>
+              </View>
+            </View>
+            {isProvisionalRating && (
+              <Text style={styles.heroSub}>
+                Provisional — {presentAttrCount} of {totalAttrCount} attributes assessed
+              </Text>
             )}
-          </LinearGradient>
+          </View>
 
           <RatingHistory snapshots={history ?? []} />
 
@@ -178,23 +191,17 @@ export default function AiRatings() {
 
           {hasAnyRatings && (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Performance Attributes</Text>
-              <View style={styles.attrGrid}>
-                {(data?.attributes ?? []).map((attr) => (
-                  <View key={attr.key} style={styles.attrCell}>
-                    <View style={styles.attrTopRow}>
-                      <Text style={styles.attrName} numberOfLines={1}>{attr.displayName}</Text>
-                      {attr.confidence && (
-                        <Text style={[styles.confText, { color: CONFIDENCE_COLOR[attr.confidence] }]}>{attr.confidence}</Text>
-                      )}
-                    </View>
-                    <Text style={styles.attrValue}>{attr.value ?? '—'}</Text>
-                    <View style={styles.attrTrack}>
-                      <AttrBar value={attr.value} />
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <Kicker style={styles.sectionKicker}>Fifa attributes</Kicker>
+              {(data?.attributes ?? []).map((attr, i) => (
+                <AttributeBar
+                  key={attr.key}
+                  code={attr.key.slice(0, 3).toUpperCase()}
+                  name={attr.displayName}
+                  value={attr.value}
+                  confidence={attr.confidence}
+                  index={i}
+                />
+              ))}
             </View>
           )}
 
@@ -243,8 +250,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   content: { padding: 20, paddingTop: 8, gap: 20, paddingBottom: 40 },
 
+  heroSheen: { position: 'absolute', top: 0, left: '-40%', width: '50%', height: '100%' },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  heroPosition: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.bodyLg, color: colors.white, marginTop: 2 },
+  sectionKicker: { marginBottom: spacing.md },
   hero: { borderRadius: radii.lg, paddingVertical: 18, paddingHorizontal: 20 },
-  heroLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: 'rgba(255,255,255,0.72)', letterSpacing: 1.2 },
   heroValue: { fontFamily: fontFamily.extraBold, fontSize: 42, color: colors.white, lineHeight: 48, marginTop: 2 },
   heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: 'rgba(255,255,255,0.78)', marginTop: 4 },
 
@@ -256,14 +266,6 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   section: { gap: 12 },
   sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
 
-  attrGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20, rowGap: 16 },
-  attrCell: { width: '43%', flexGrow: 1 },
-  attrTopRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  attrName: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted },
-  confText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.caption },
-  attrValue: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 2 },
-  attrTrack: { height: 4, borderRadius: 2, backgroundColor: colors.divider, overflow: 'hidden', marginTop: 6 },
-  attrFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
 
   recoSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: -6 },
   recoList: { gap: 10 },

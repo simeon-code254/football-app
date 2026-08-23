@@ -272,10 +272,12 @@ export default function DiscoverPlayers() {
             <View style={styles.empty}>
               <Feather name={savedOnly ? 'heart' : 'users'} size={28} color={colors.textPlaceholder} />
               <Text style={styles.emptyTitle}>
-                {savedOnly ? "You haven't saved any players yet" : 'No players match these filters'}
+                {savedOnly ? "You haven't saved any players yet" : 'No movement this week'}
               </Text>
               <Text style={styles.emptySub}>
-                {savedOnly ? 'Save a player from their profile to find them here.' : 'Try widening your search or clearing a filter.'}
+                {savedOnly
+                  ? 'Save a player from their profile to find them here.'
+                  : 'Not "no players" — just none matching right now. Widen the filters.'}
               </Text>
             </View>
           </QueryState>

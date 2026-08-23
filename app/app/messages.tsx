@@ -315,8 +315,10 @@ export default function Messages() {
       {!conversations.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />
-          <Text style={styles.emptyTitle}>No conversations yet.</Text>
-          <Text style={styles.emptySub}>Scouts who message you will show up here.</Text>
+          <Text style={styles.emptyTitle}>Nothing yet</Text>
+          <Text style={styles.emptySub}>
+            Upload a highlight — scouts message players they&apos;ve seen, not the other way around.
+          </Text>
         </View>
       ) : (
         <FlashList
