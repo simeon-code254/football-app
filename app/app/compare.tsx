@@ -1,11 +1,10 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { fontFamily, fontSize, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
-import { images } from '../src/constants/images';
+import { InitialsAvatar } from '../src/components/InitialsAvatar';
 import * as profileRepository from '../src/repositories/profileRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
@@ -99,7 +98,7 @@ export default function ComparePlayers() {
             <View style={styles.labelCol} />
             {players.map((p) => (
               <View key={p.id} style={styles.playerCol}>
-                <Image source={{ uri: p.avatar_url ?? images.avatarMale }} style={styles.avatar} />
+                <InitialsAvatar name={p.full_name} uri={p.avatar_url} size={44} />
                 <Text style={styles.playerName} numberOfLines={1}>{p.full_name || 'Unnamed'}</Text>
                 <Text style={styles.playerMeta}>{p.primary_position} · {p.nationality_name}</Text>
               </View>
@@ -171,7 +170,7 @@ const LABEL_WIDTH = 130;
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
   notFound: { textAlign: 'center', marginTop: 40, fontFamily: fontFamily.regular, color: colors.textMuted },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
