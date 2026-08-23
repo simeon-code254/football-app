@@ -2,49 +2,70 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, useThemeColors } from '../src/theme';
-import { PrimaryButton } from '../src/components/PrimaryButton';
-import { IconButton } from '../src/components/IconButton';
-import { AppTextField } from '../src/components/AppTextField';
+import {
+  cx,
+  fontFamily,
+  fontFamilyDisplay,
+  fontSize,
+  spacing,
+  useThemeColors,
+} from '../src/theme';
+import { Field } from '../src/components/Field';
+import { Button, LinkButton } from '../src/components/Button';
+import { SuccessCheck } from '../src/components/SuccessCheck';
 import * as authRepository from '../src/repositories/authRepository';
+import { showAlert } from '../src/lib/alert';
 
-// Login's "Forgot Password?" was dead text — now wired to a real
-// supabase.auth.resetPasswordForEmail call.
+// Canvas screen 68 FORGOT PASSWORD.
+//
+//   BACK TO SIGN IN
+//   "Reset your password"
+//   "Enter the email on your account. We'll send a link that works for one hour."
+//   EMAIL
+//   [Send reset link]
+//
+// -- THE CONFIRMATION DOES NOT SAY WHETHER THE ACCOUNT EXISTS --
+//
+// Supabase deliberately does not error on resetPasswordForEmail for an unknown
+// address, and this screen must not undo that: telling someone "no account with
+// that email" turns the reset form into an account-enumeration oracle. So the
+// success state is the same either way, and says "if that address has an
+// account" rather than "we sent you a link".
 export default function ForgotPassword() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
   const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
-  const send = async () => {
-    if (!email.trim()) return;
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const submit = async () => {
+    if (!valid || sending) return;
     setSending(true);
     try {
       await authRepository.sendPasswordReset(email.trim());
+      setSent(true);
     } catch {
-      // Deliberately swallow: don't reveal whether an account exists for
-      // this email — the success screen's copy already says "if an account
-      // exists", so failure and success look identical to the user.
+      showAlert('Could not send the link', 'Check your connection and try again.');
     } finally {
       setSending(false);
-      setSent(true);
     }
   };
 
   if (sent) {
     return (
-      <SafeAreaView style={styles.root}>
-        <View style={styles.successWrap}>
-          <View style={styles.successBadge}>
-            <Feather name="mail" size={32} color={colors.primary} />
-          </View>
-          <Text style={styles.successTitle}>Check Your Email</Text>
-          <Text style={styles.successSub}>
-            If an account exists for <Text style={styles.email}>{email}</Text>, we've sent a link to reset your password.
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <View style={styles.done}>
+          <SuccessCheck replayKey={email} size={64} />
+          <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+            Check your email
           </Text>
-          <PrimaryButton label="Back to Login" onPress={() => router.replace('/login')} style={{ width: '100%', marginTop: 24 }} />
+          <Text style={[styles.lede, styles.ledeCentered]}>
+            If {email.trim()} has an account, a reset link is on its way. It works for one hour.
+          </Text>
+          <View style={{ flex: 1 }} />
+          <Button label="Back to sign in" variant="navy" onPress={() => router.replace('/login')} />
         </View>
       </SafeAreaView>
     );
@@ -52,33 +73,45 @@ export default function ForgotPassword() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-      </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.sub}>Enter the email address linked to your account and we'll send you a reset link.</Text>
-        <AppTextField
-          label="Email"
-          icon="mail"
-          placeholder="you@email.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <PrimaryButton
-          label={sending ? 'Sending…' : 'Send Reset Link'}
-          onPress={send}
-          disabled={!email.trim()}
-          loading={sending}
-          style={{ marginTop: 20 }}
-        />
-        {!email.trim() && !sending && (
-          <Text style={styles.submitHint}>Enter your email address to get a reset link.</Text>
-        )}
-      </View>
+        <View style={styles.body}>
+          <LinkButton
+            label="Back to sign in"
+            tone="onPaper"
+            onPress={() => router.replace('/login')}
+            style={styles.back}
+          />
+
+          <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+            Reset your password
+          </Text>
+          <Text style={styles.lede}>
+            Enter the email on your account. We&apos;ll send a link that works for one hour.
+          </Text>
+
+          <Field
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+            autoComplete="email"
+            onSubmitEditing={submit}
+            returnKeyType="send"
+            style={styles.field}
+          />
+
+          <View style={{ flex: 1 }} />
+
+          <Button
+            label="Send reset link"
+            variant="navy"
+            loading={sending}
+            disabled={!valid}
+            onPress={submit}
+          />
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -86,16 +119,24 @@ export default function ForgotPassword() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  header: { paddingHorizontal: 20, paddingTop: 4 },
-  content: { paddingHorizontal: 28, paddingTop: 20 },
-  title: { fontFamily: fontFamily.bold, fontSize: fontSize.displayLg, color: colors.textPrimary, marginBottom: 4 },
-  sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 28, lineHeight: 20 },
-  submitHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
-  successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  successBadge: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  successTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginBottom: 8 },
-  successSub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
-  email: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
+    root: { flex: 1, backgroundColor: colors.background },
+    body: { flex: 1, paddingHorizontal: cx(24), paddingBottom: spacing.md },
+    done: { flex: 1, alignItems: 'center', paddingHorizontal: cx(24), paddingTop: cx(48), paddingBottom: spacing.md },
+    back: { alignSelf: 'flex-start' },
+    title: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.display,
+      color: colors.textPrimary,
+      marginTop: spacing.lg,
+    },
+    lede: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.body,
+      lineHeight: fontSize.body * 1.5,
+      color: colors.textMuted,
+      marginTop: spacing.sm,
+    },
+    ledeCentered: { textAlign: 'center' },
+    field: { marginTop: spacing.xxl, alignSelf: 'stretch' },
   });
 }

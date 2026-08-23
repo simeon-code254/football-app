@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { openLegal } from '../src/lib/legal';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -103,6 +104,13 @@ export default function HelpSettings() {
             );
           })}
         </View>
+
+        <Text style={styles.buildStamp}>
+          Matobev {Constants.expoConfig?.version ?? '—'}
+          {Constants.expoConfig?.android?.versionCode
+            ? ` · build ${Constants.expoConfig.android.versionCode}`
+            : ''}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -110,7 +118,16 @@ export default function HelpSettings() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.surface },
+    root: { flex: 1, backgroundColor: colors.background },
+    buildStamp: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.caption,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      color: colors.textPlaceholder,
+      textAlign: 'center',
+      marginTop: 24,
+    },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
     headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
     content: { padding: 20 },
