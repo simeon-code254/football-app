@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import Svg, { Polygon, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Feather from '@expo/vector-icons/Feather';
+import { Logo } from './Logo';
 
 // The hexagonal verification mark from the design canvas (.mv / .mv-in).
 //
@@ -51,6 +52,8 @@ const ROLES = {
     gradient: ['#8FBFEA', '#4F94D4', '#1D4E7A'] as const,
     fill: '#12233D',
     icon: 'search',
+    // The badge is drawn on its own dark fill in both themes, so this is the
+    // literal canvas value rather than a themed token -- see the note above.
     iconColor: '#7FB0F0',
     label: 'Verified scout',
   },
@@ -63,20 +66,42 @@ const ROLES = {
   },
 } as const;
 
+// The canvas swaps what sits inside the hexagon by size, not by role.
+//
+// At the hero size (38x42) it draws a per-role glyph -- a person, a magnifier,
+// a building -- because there is room to read one. At the inline sizes it
+// actually ships at (12x14 beside a name, 16x18 clipped to an avatar corner) it
+// drops the glyph and draws the gold Matobev mark at 64% instead: a person icon
+// at 5px is mud, whereas the mark stays recognisable because it is the same
+// silhouette the user already knows from the app icon.
+//
+// So this is a legibility rule, not a stylistic one, which is why the default
+// switches on size rather than being left to each call site.
+const MARK_BELOW = 20;
+
 export function VerificationBadge({
   role,
   size = 38,
   label,
+  glyph,
 }: {
   role: VerificationRole;
   /** Width in px; height follows the canvas 38:42 proportion. */
   size?: number;
   /** Overrides the spoken label, e.g. to name the verifying body. */
   label?: string;
+  /**
+   * What sits inside the hexagon. Defaults to the canvas rule: the brand mark
+   * below 20px wide, the role glyph at or above it.
+   */
+  glyph?: 'role' | 'mark';
 }) {
   const r = ROLES[role];
   const height = size * (42 / 38);
   const iconSize = Math.round(size * (16 / 38));
+  const inner = glyph ?? (size < MARK_BELOW ? 'mark' : 'role');
+  // The canvas sizes the inner mark at 64% of the inner hexagon.
+  const markSize = Math.round(size * INNER_SCALE * 0.64);
 
   return (
     <View
@@ -102,7 +127,11 @@ export function VerificationBadge({
         />
       </Svg>
       <View style={{ position: 'absolute' }}>
-        <Feather name={r.icon} size={iconSize} color={r.iconColor} />
+        {inner === 'mark' ? (
+          <Logo variant="gold" size={markSize} />
+        ) : (
+          <Feather name={r.icon} size={iconSize} color={r.iconColor} />
+        )}
       </View>
     </View>
   );

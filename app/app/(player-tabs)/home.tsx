@@ -19,6 +19,8 @@ import { PlayerRatingCard } from '../../src/components/PlayerRatingCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
 import { timeAgo } from '../../src/lib/time';
 import Animated from 'react-native-reanimated';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { Logo } from '../../src/components/Logo';
 import { usePulse, useSheen } from '../../src/lib/motion';
 
 function getGreeting() {
@@ -39,10 +41,10 @@ function getGreeting() {
 // be invented. Left out rather than faked -- it can ship the day something
 // actually counts days.
 //
-// A radial gold glow behind the header. React Native has no radial gradient;
-// expo-linear-gradient is linear only. The diagonal below is the closest
-// honest approximation, running from the same top-right corner at the same
-// opacity.
+// (The radial gold glow behind the header used to be listed here too, as
+// unbuildable -- expo-linear-gradient is linear only. It is now drawn properly
+// with react-native-svg's RadialGradient, at the canvas's own 85% 0% origin
+// and 58% falloff, so only the streak remains outstanding.)
 
 export default function Home() {
   const colors = useThemeColors();
@@ -131,16 +133,22 @@ export default function Home() {
           end={{ x: 0, y: 1 }}
           style={styles.header}
         >
-          {/* The canvas's radial gold glow at 85% 0%, as close as a linear
-              gradient gets: same corner, same opacity, same falloff point. */}
-          <LinearGradient
-            colors={['rgba(255,197,61,0.20)', 'rgba(255,197,61,0)']}
-            start={{ x: 0.85, y: 0 }}
-            end={{ x: 0.2, y: 0.9 }}
-            style={styles.headerGlow}
-            pointerEvents="none"
-          />
+          {/*
+            The canvas's radial gold glow, drawn as an actual radial gradient:
+            `radial-gradient(circle at 85% 0%, rgba(255,197,61,.2), transparent 58%)`.
+          */}
+          <Svg style={styles.headerGlow} pointerEvents="none">
+            <Defs>
+              <RadialGradient id="homeGlow" cx="85%" cy="0%" r="58%">
+                <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.2} />
+                <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#homeGlow)" />
+          </Svg>
           <View style={styles.headerRow}>
+            {/* The canvas leads the header with the gold mark at 20px. */}
+            <Logo variant="gold" size={20} style={{ marginRight: 9 }} />
             <View style={styles.headerText}>
               <Text style={styles.greeting}>{getGreeting()}</Text>
               {/* First name only. The rating card directly below already
@@ -418,9 +426,13 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   headerGlow: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   // The name is the largest thing in the header and the greeting is a kicker
-  // above it, rather than the two competing at similar weight. Steel blue
-  // #7FB0F0 is the canvas's own on-navy caption colour: 6.79:1 there.
-  greeting: { ...kicker, fontSize: fontSize.caption, color: colors.primary },
+  // above it, rather than the two competing at similar weight.
+  //
+  // colors.accentOnNavy, not colors.primary: this sits on the navy gradient,
+  // and in the light theme primary IS navy2 -- the gradient's own light end --
+  // so the greeting was rendering navy-on-navy at about 1.4:1. The accent is
+  // the canvas's on-navy caption colour and measures 6.31:1 there.
+  greeting: { ...kicker, fontSize: fontSize.caption, color: colors.accentOnNavy },
   name: {
     fontFamily: fontFamilyDisplay.extraBold,
     fontSize: fontSize.hero,
@@ -469,7 +481,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   viewBannerTitle: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.bodyLg, color: colors.white },
   // 6.79:1 on primaryDark.
-  viewBannerMeta: { ...kicker, fontSize: fontSize.caption, color: '#7FB0F0', marginTop: 1 },
+  viewBannerMeta: { ...kicker, fontSize: fontSize.caption, color: colors.accentOnNavy, marginTop: 1 },
   viewBannerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold },
   weekStrip: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginTop: spacing.md },
   weekLabel: { ...kicker, fontSize: fontSize.caption, color: colors.textMuted, paddingHorizontal: spacing.lg, marginTop: spacing.xl },

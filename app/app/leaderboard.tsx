@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
@@ -10,12 +9,12 @@ import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors 
 import { IconButton } from '../src/components/IconButton';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
-import { RatingBadge } from '../src/components/RatingBadge';
+import { RatingChip } from '../src/components/RatingChip';
+import { InitialsAvatar } from '../src/components/InitialsAvatar';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as communityRepository from '../src/repositories/communityRepository';
 import * as scoutingRepository from '../src/repositories/scoutingRepository';
 import * as profileRepository from '../src/repositories/profileRepository';
-import { images } from '../src/constants/images';
 import type { LeaderboardScope } from '../src/repositories/communityRepository';
 
 // 'Most improved' first for players, deliberately. The rating-sorted boards
@@ -153,43 +152,54 @@ export default function Leaderboard() {
               </Text>
             </View>
           }
-          renderItem={({ item, index }) => (
-            <Pressable
-              style={styles.row}
-              onPress={() => item.id && router.push({ pathname: '/player/[id]', params: { id: item.id } })}
-              accessibilityRole="button"
-              accessibilityLabel={`${index + 1}. ${item.full_name ?? 'Player'}, rating ${Math.round(item.overall_rating ?? 0)}`}
-            >
-              <Text style={[styles.rank, index < 3 && styles.rankTop]}>{index + 1}</Text>
-              <Image
-                source={{ uri: item.avatar_url ?? images.avatarMale }}
-                style={styles.avatar}
-                cachePolicy="memory-disk"
-                recyclingKey={item.id ?? undefined}
-                transition={200}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name} numberOfLines={1}>
-                  {item.full_name ?? 'Player'}
+          renderItem={({ item, index }) => {
+            // Canvas screen 16 lifts the viewer's own row out of the list: a
+            // navy card with gold rank, avatar and rating, and a slow glow.
+            // Finding yourself on a leaderboard is the reason to open one, and
+            // scanning a column of near-identical rows for your own name is
+            // the failure this avoids.
+            const isMe = !!item.id && item.id === userId;
+            return (
+              <Pressable
+                style={[styles.row, isMe && styles.rowMe]}
+                onPress={() => item.id && router.push({ pathname: '/player/[id]', params: { id: item.id } })}
+                accessibilityRole="button"
+                accessibilityLabel={`${index + 1}. ${item.full_name ?? 'Player'}${isMe ? ', you' : ''}, rating ${Math.round(item.overall_rating ?? 0)}`}
+              >
+                <Text style={[styles.rank, index < 3 && styles.rankTop, isMe && styles.rankMe]}>
+                  {index + 1}
                 </Text>
-                <Text style={styles.meta}>
-                  {[item.primary_position, item.region].filter(Boolean).join(' · ')}
-                  {item.endorsement_count ? ` · ${item.endorsement_count} endorsements` : ''}
-                </Text>
-              </View>
-              {/* On the improvement board the ranking is by movement, so the
-                  gain has to be visible -- otherwise the order looks arbitrary
-                  next to a column of ratings. */}
-              {scope === 'improved' && item.rating_delta != null && (
-                <Text style={styles.delta}>+{Math.round(item.rating_delta)}</Text>
-              )}
-              <RatingBadge
-                rating={Math.round(item.overall_rating ?? 0)}
-                size="sm"
-                lowConfidence={item.rating_has_low_confidence ?? false}
-              />
-            </Pressable>
-          )}
+                <InitialsAvatar
+                  name={item.full_name}
+                  uri={item.avatar_url}
+                  size={32}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.name, isMe && styles.nameMe]} numberOfLines={1}>
+                    {item.full_name ?? 'Player'}
+                    {isMe && <Text style={styles.youTag}> — you</Text>}
+                  </Text>
+                  <Text style={[styles.meta, isMe && styles.metaMe]}>
+                    {[item.primary_position, item.region].filter(Boolean).join(' · ')}
+                    {item.endorsement_count ? ` · ${item.endorsement_count} endorsements` : ''}
+                  </Text>
+                </View>
+                {/* On the improvement board the ranking is by movement, so the
+                    gain has to be visible -- otherwise the order looks arbitrary
+                    next to a column of ratings. */}
+                {scope === 'improved' && item.rating_delta != null && (
+                  <Text style={[styles.delta, isMe && styles.deltaMe]}>
+                    +{Math.round(item.rating_delta)}
+                  </Text>
+                )}
+                <RatingChip
+                  value={item.overall_rating == null ? null : Math.round(item.overall_rating)}
+                  variant={isMe ? 'gold' : 'navy'}
+                  size="sm"
+                />
+              </Pressable>
+            );
+          }}
         />
       </QueryState>
     </SafeAreaView>
@@ -225,7 +235,13 @@ function makeStyles(colors: ThemeColors) {
       paddingBottom: spacing.md,
     },
     list: { paddingBottom: spacing.xxl },
-    row: {
+    rowMe: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+  rankMe: { color: colors.gold },
+  nameMe: { color: colors.white },
+  youTag: { color: colors.accentOnNavy, fontSize: fontSize.caption },
+  metaMe: { color: colors.accentOnNavy },
+  deltaMe: { color: colors.gold },
+  row: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,

@@ -320,18 +320,14 @@ export default function Upload() {
         })
         .catch(() => {});
 
-      // Previously this always force-navigated to Profile on OK, regardless
-      // of mode -- for a highlight-only upload nothing new shows up there
-      // (it's on Reels), and even for AI mode the analysis hasn't finished
-      // yet, so jumping away felt arbitrary rather than useful. Just reset
-      // the form and let the user decide where to go next.
-      showAlert(
-        mode === 'ai' ? 'Uploaded — Queued for Analysis' : 'Uploaded',
-        mode === 'ai'
-          ? "Your video was submitted successfully and is queued for AI analysis. You'll see your ratings in AI Ratings once processing completes."
-          : 'Your video has been published to your highlights.',
-        [{ text: 'OK', onPress: resetForm }]
-      );
+      // Canvas screen 15 gives the upload its own success screen rather than
+      // an OS alert. The form is reset first so returning here via "Upload
+      // another" lands on a clean one.
+      resetForm();
+      router.push({
+        pathname: '/upload-success',
+        params: { videoId, title: title.trim() || 'Your highlight', mode },
+      });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // The user asked to stop; anything already written is cleaned up

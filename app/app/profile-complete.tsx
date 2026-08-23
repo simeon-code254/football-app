@@ -11,6 +11,7 @@ import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { SelectField } from '../src/components/SelectField';
+import { PositionPicker } from '../src/components/PositionPicker';
 import { TypeaheadField } from '../src/components/TypeaheadField';
 import { POSITIONS, GENDERS } from '../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
@@ -367,10 +368,23 @@ export default function ProfileComplete() {
 
         {step === 2 && (
           <View style={styles.stepBody}>
-            <View style={styles.row}>
-              <SelectField label="Primary Position" value={form.primaryPosition} options={[...POSITIONS]} onChange={(v) => set('primaryPosition', v)} />
-              <SelectField label="Secondary Position" value={form.secondaryPosition} options={[...POSITIONS]} onChange={(v) => set('secondaryPosition', v)} />
-            </View>
+            {/*
+              Canvas screen 46 draws this step as a pitch, not two dropdowns.
+              A player knows where they play by standing there, and the choice
+              feeds attribute weighting (attribute_position_weights) -- so a
+              position picked wrongly from an alphabetical list produces a wrong
+              overall rating for as long as it stands.
+            */}
+            <PositionPicker
+              value={form.primaryPosition}
+              onChange={(v) => set('primaryPosition', v)}
+            />
+            <SelectField
+              label="Secondary Position"
+              value={form.secondaryPosition}
+              options={[...POSITIONS]}
+              onChange={(v) => set('secondaryPosition', v)}
+            />
             <View>
               <Text style={styles.label}>Preferred Foot</Text>
               <View style={styles.footRow}>

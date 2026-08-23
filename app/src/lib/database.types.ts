@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admins: {
@@ -142,6 +117,120 @@ export type Database = {
           {
             foreignKeyName: "blocked_users_blocker_id_fkey"
             columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_members: {
+        Row: {
+          club_id: string
+          id: string
+          invited_at: string
+          joined_at: string | null
+          member_role: string
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          club_id: string
+          id?: string
+          invited_at?: string
+          joined_at?: string | null
+          member_role?: string
+          profile_id: string
+          status?: string
+        }
+        Update: {
+          club_id?: string
+          id?: string
+          invited_at?: string
+          joined_at?: string | null
+          member_role?: string
+          profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_members_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          about: string | null
+          city: string | null
+          created_at: string
+          crest_path: string | null
+          founded: number | null
+          id: string
+          league: string | null
+          name: string | null
+          registration_no: string | null
+          seat_limit: number
+          updated_at: string
+          verification_notes: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          about?: string | null
+          city?: string | null
+          created_at?: string
+          crest_path?: string | null
+          founded?: number | null
+          id: string
+          league?: string | null
+          name?: string | null
+          registration_no?: string | null
+          seat_limit?: number
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          about?: string | null
+          city?: string | null
+          created_at?: string
+          crest_path?: string | null
+          founded?: number | null
+          id?: string
+          league?: string | null
+          name?: string | null
+          registration_no?: string | null
+          seat_limit?: number
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clubs_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clubs_verified_by_fkey"
+            columns: ["verified_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1324,6 +1413,7 @@ export type Database = {
           age_min: number | null
           application_deadline: string
           club: string
+          club_id: string | null
           cover_image_path: string | null
           created_at: string
           description: string | null
@@ -1341,6 +1431,7 @@ export type Database = {
           age_min?: number | null
           application_deadline: string
           club: string
+          club_id?: string | null
           cover_image_path?: string | null
           created_at?: string
           description?: string | null
@@ -1358,6 +1449,7 @@ export type Database = {
           age_min?: number | null
           application_deadline?: string
           club?: string
+          club_id?: string | null
           cover_image_path?: string | null
           created_at?: string
           description?: string | null
@@ -1371,6 +1463,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "trials_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "trials_scout_id_fkey"
             columns: ["scout_id"]
@@ -1759,6 +1858,7 @@ export type Database = {
       increment_video_view: { Args: { p_video_id: string }; Returns: undefined }
       is_admin: { Args: { uid?: string }; Returns: boolean }
       is_blocked_between: { Args: { a: string; b: string }; Returns: boolean }
+      is_verified_club: { Args: { uid?: string }; Returns: boolean }
       is_verified_scout: { Args: { uid?: string }; Returns: boolean }
       match_score: {
         Args: { p_player_id: string; p_scout_id: string }
@@ -1918,9 +2018,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       position_code: [

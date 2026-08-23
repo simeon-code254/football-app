@@ -23,7 +23,14 @@ export function markDeliberateSignOut() {
   deliberateSignOut = true;
 }
 
-export type Role = 'player' | 'scout';
+export type Role = 'player' | 'scout' | 'club';
+
+/**
+ * The two ID-checked roles. Both must supply an organisation name at signup,
+ * and both are gated behind verification before they can see under-18 players
+ * -- which is the rule canvas screen 03 states to the user in as many words.
+ */
+export const ID_CHECKED_ROLES: readonly Role[] = ['scout', 'club'];
 
 export type SignUpInput = {
   email: string;
@@ -35,7 +42,7 @@ export type SignUpInput = {
 
 // Shape here is load-bearing: handle_new_user() (DB trigger) reads
 // raw_user_meta_data.role/full_name/organization to create the profiles row
-// and matching skeleton players/scouts row.
+// and matching skeleton players/scouts/clubs row.
 export async function signUp({ email, password, role, fullName, organization }: SignUpInput) {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -44,7 +51,9 @@ export async function signUp({ email, password, role, fullName, organization }: 
       data: {
         role,
         full_name: fullName,
-        ...(role === 'scout' ? { organization } : {}),
+        // A club's name arrives in the same field as a scout's organisation;
+        // handle_new_user() reads it into clubs.name.
+        ...(ID_CHECKED_ROLES.includes(role) ? { organization } : {}),
       },
     },
   });
@@ -102,6 +111,33 @@ export async function deleteAccount(): Promise<void> {
 export async function resendVerificationEmail(email: string) {
   const { error } = await supabase.auth.resend({ type: 'signup', email });
   if (error) throw error;
+}
+
+/**
+ * Confirm a signup with the 6-digit code from the email.
+ *
+ * -- REQUIRES A SUPABASE EMAIL TEMPLATE CHANGE --
+ *
+ * Canvas screen 06 draws a six-box OTP field with a resend countdown, not a
+ * "tap the link in your email" screen. Supabase can do either, but which one
+ * the user receives is decided by the "Confirm signup" email template, not by
+ * this code: the default template interpolates {{ .ConfirmationURL }}, and the
+ * code path needs {{ .Token }} in the template.
+ *
+ * Until that template is updated in the Supabase dashboard, the email will
+ * still contain only a link and this call will fail with "Token has expired or
+ * is invalid" for every code the user types -- because there is no code to
+ * type. The verify screen therefore keeps the link path working alongside it
+ * (it polls isEmailConfirmed), so the flow is not broken while the template
+ * says what it currently says.
+ *
+ * Adding {{ .Token }} to the template is safe for the link path: a template can
+ * contain both, and many do.
+ */
+export async function verifyEmailOtp(email: string, token: string) {
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
+  if (error) throw error;
+  return data;
 }
 
 export async function sendPasswordReset(email: string) {

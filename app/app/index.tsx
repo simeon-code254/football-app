@@ -1,44 +1,48 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ImageBackground, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { router } from 'expo-router';
-import { fontFamily, fontSize, useThemeColors } from '../src/theme';
-import { localImages } from '../src/constants/images';
-// Aliased: this screen already uses React Native's own Animated for the
-// progress bar, and the two libraries' Animated.View are not interchangeable
-// -- a Reanimated style handed to an RN Animated.View is silently ignored.
-import Reanimated from 'react-native-reanimated';
-import { useFloat } from '../src/lib/motion';
+import Animated from 'react-native-reanimated';
+import { cx, fontFamilyDisplay, fontSize, kicker, useThemeColors } from '../src/theme';
+import { useFloat, usePing } from '../src/lib/motion';
 import { Logo } from '../src/components/Logo';
 import { useSessionStore } from '../src/store/useSessionStore';
 
 const SPLASH_DURATION_MS = 3000;
 
-// Matches Matobev v4.dc.html's SPLASH block: full-bleed photo, dark gradient
-// wash, gold badge + football icon, wordmark, tagline, filling progress bar.
+// Canvas screen 01 SPLASH.
+//
+//   <div class="di" style="background:radial-gradient(circle at 50% 45%,
+//                          #123A6B,#0A1B33 60%,#050D1D)">
+//     <div style="position:absolute;inset:-14px;border-radius:50%;
+//                 border:1px solid rgba(255,197,61,.25);animation:ping 2.4s"/>
+//     <div class="logoG" style="width:110px;height:110px;animation:float 3.2s"/>
+//     MATOBEV        .h 32px w800 #fff letter-spacing:5px
+//     GET SEEN · GET RATED   .mono 9px var(--gold)
+//
+// This replaced a splash built from the superseded `Matobev v4.dc.html`, which
+// drew a full-bleed photo behind a dark wash, the tagline "DISCOVER · ANALYZE ·
+// CONNECT", and a filling progress bar -- none of which the current canvas has.
+//
+// The progress bar going is the one change worth justifying: a 3s hold with no
+// indicator normally reads as a frozen app. It does not here because the mark
+// floats and the ring pings the whole time, which is what those two animations
+// are for. Motion is the progress indicator.
 export default function SplashScreen() {
   const colors = useThemeColors();
-  // Canvas screen 01 floats the mark at 3.2s.
-  const logoFloat = useFloat();
+  const logoFloat = useFloat(); // canvas: float 3.2s
+  const ringPing = usePing(2400); // canvas: ping 2.4s
   const styles = makeStyles(colors);
-  const progress = useRef(new Animated.Value(0)).current;
+
   const status = useSessionStore((s) => s.status);
   const role = useSessionStore((s) => s.role);
   const player = useSessionStore((s) => s.player);
 
   useEffect(() => {
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: SPLASH_DURATION_MS,
-      useNativeDriver: false,
-    }).start();
-
     const timer = setTimeout(() => {
-      // A persisted session should resume straight into the app, not force
-      // an already-signed-in user back through onboarding/welcome/login —
-      // that previously meant the only way back in was re-entering
-      // credentials on Login, which happened to be the one place that
-      // checked profile completion correctly.
+      // A persisted session resumes straight into the app rather than being
+      // sent back through onboarding/welcome/login -- unchanged from before,
+      // and the reason this screen is not purely presentational.
       if (status === 'signed-in') {
         if (role === 'scout') {
           router.replace('/(scout-tabs)/home');
@@ -50,77 +54,91 @@ export default function SplashScreen() {
       } else {
         router.replace('/onboarding');
       }
-    }, SPLASH_DURATION_MS + 300);
+    }, SPLASH_DURATION_MS);
 
     return () => clearTimeout(timer);
   }, [status, role, player]);
 
-  const barWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-
   return (
     <View style={styles.root}>
-      <ImageBackground source={localImages.splashHero} style={styles.bg} resizeMode="cover">
-        <LinearGradient
-          colors={['rgba(10,27,51,0.15)', 'rgba(10,27,51,0.4)', 'rgba(10,27,51,0.85)']}
-          locations={[0, 0.55, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.content}>
-          {/* Canvas screen 01: the gold mark, floating. It was white here,
-              which is not a tint the canvas has at all. */}
-          <Reanimated.View style={[styles.badgeWrap, logoFloat]}>
-            <Logo variant="gold" size={96} />
-          </Reanimated.View>
-          <Text style={styles.wordmark}>MATOBEV</Text>
-          <Text style={styles.tagline}>DISCOVER · ANALYZE · CONNECT</Text>
-          <View style={styles.progressTrack}>
-            <Animated.View style={[styles.progressFill, { width: barWidth }]}>
-              <LinearGradient colors={[colors.gold, colors.goldDark]} style={StyleSheet.absoluteFill} />
-            </Animated.View>
-          </View>
+      {/*
+        A true radial gradient, which expo-linear-gradient cannot draw. The
+        canvas centres it at 50% 45% with the mid stop at 60%, so the navy
+        lifts behind the mark and falls away to near-black at the corners.
+      */}
+      <Svg style={StyleSheet.absoluteFill}>
+        <Defs>
+          <RadialGradient id="splash" cx="50%" cy="45%" r="75%">
+            <Stop offset="0" stopColor="#123A6B" />
+            <Stop offset="0.6" stopColor="#0A1B33" />
+            <Stop offset="1" stopColor="#050D1D" />
+          </RadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#splash)" />
+      </Svg>
+
+      <View style={styles.content}>
+        <View style={styles.markWrap}>
+          <Animated.View style={[styles.pingRing, ringPing]} pointerEvents="none" />
+          <Animated.View style={logoFloat}>
+            <Logo variant="gold" size={cx(110)} />
+          </Animated.View>
         </View>
-      </ImageBackground>
+
+        <View style={styles.wordmarkBlock}>
+          <Text style={styles.wordmark} maxFontSizeMultiplier={1.2}>
+            MATOBEV
+          </Text>
+          <Text style={styles.tagline}>GET SEEN · GET RATED</Text>
+        </View>
+      </View>
     </View>
   );
 }
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
+  const MARK = cx(110);
+  // The canvas insets the ring -14px on every side of the 110px mark.
+  const RING = MARK + cx(14) * 2;
+
   return StyleSheet.create({
-  // Canvas navy, and the same value app.json paints behind the native
-  // splash -- so the handoff from the OS splash to this screen is seamless
-  // rather than a visible colour jump.
-  root: { flex: 1, backgroundColor: '#0A1B33' },
-  bg: { flex: 1, width: '100%', height: '100%' },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingHorizontal: 32,
-    paddingBottom: 100,
-  },
-  badgeWrap: { marginBottom: 16 },
-  wordmark: {
-    fontFamily: fontFamily.extraBold,
-    fontSize: fontSize.hero,
-    color: colors.white,
-    letterSpacing: 6,
-    textTransform: 'uppercase',
-  },
-  tagline: {
-    fontFamily: fontFamily.regular,
-    fontSize: fontSize.xs,
-    color: 'rgba(255,255,255,0.5)',
-    letterSpacing: 3,
-    marginTop: 4,
-  },
-  progressTrack: {
-    width: 120,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 1,
-    overflow: 'hidden',
-    marginTop: 32,
-  },
-  progressFill: { height: '100%', borderRadius: 1 },
+    // Canvas navy, and the same value app.json paints behind the native splash
+    // -- so the handoff from the OS splash to this screen is seamless rather
+    // than a visible colour jump. Change these together.
+    root: { flex: 1, backgroundColor: '#0A1B33' },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      // The canvas centres this block rather than dropping it to the bottom.
+      justifyContent: 'center',
+      gap: cx(20),
+    },
+    markWrap: {
+      width: MARK,
+      height: MARK,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pingRing: {
+      position: 'absolute',
+      width: RING,
+      height: RING,
+      borderRadius: RING / 2,
+      borderWidth: 1,
+      borderColor: 'rgba(255,197,61,0.25)',
+    },
+    wordmarkBlock: { alignItems: 'center' },
+    wordmark: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.splash,
+      color: colors.white,
+      letterSpacing: 6,
+    },
+    tagline: {
+      ...kicker,
+      fontSize: fontSize.caption,
+      color: colors.gold,
+      marginTop: 6,
+    },
   });
 }

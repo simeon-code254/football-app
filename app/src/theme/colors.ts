@@ -38,6 +38,21 @@ export const lightColors = {
   surfaceMuted: '#EDEAE1', // paper, one step down: chips, tracks, recessed rows
   inputBackground: '#FAF9F5',
 
+  // The canvas's two most-used colours that its own :root block never declares
+  // -- #7FB0F0 appears 45 times and #EDE8D9 39 times across the 87 screens.
+  // Named here because 84 undeclared literals is how a palette drifts, and
+  // because both already existed in this codebase as hardcoded hex.
+  //
+  // accentOnNavy is the light blue that labels things ON navy grounds -- the
+  // "GOOD EVENING" kicker, section counts, the scout badge glyph. It is a dark-
+  // ground colour only: 2.28:1 on white, so it must never label paper. On the
+  // navy hero it measures 6.31:1.
+  accentOnNavy: '#7FB0F0',
+  // The warm rail behind a progress bar or rating arc, and the hairline under a
+  // tab bar. One step warmer and darker than surfaceMuted so a track reads as
+  // recessed even when it sits on a white card.
+  track: '#EDE8D9',
+
   // Borders. Warm to match paper; a cool grey border on this ground reads
   // as a rendering artefact.
   border: '#E7E2D3', // the canvas .card border
@@ -97,6 +112,14 @@ export const darkColors: typeof lightColors = {
   surface: '#141A24',
   surfaceMuted: '#10161F',
   inputBackground: '#161D28',
+
+  // Unchanged from light: it was authored to sit on navy, and the dark theme's
+  // surfaces are darker still (8.42:1 on surface), so it only gets safer.
+  accentOnNavy: '#7FB0F0',
+  // The warm paper rail inverts to a lifted one -- a track must read as
+  // recessed against a dark card, which on dark means slightly lighter, not
+  // darker. Sits between surface and border so a filled bar still separates.
+  track: '#232B37',
 
   border: '#2A3340',
   borderDashed: '#3A4553',

@@ -9,7 +9,10 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { VerificationBadge } from '../src/components/VerificationBadge';
-import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
+import { AvatarWithBadge } from '../src/components/AvatarWithBadge';
+import { Kicker } from '../src/components/Kicker';
+import { NoticeBox } from '../src/components/NoticeBox';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -182,30 +185,50 @@ export default function Messages() {
     ({ item }: { item: (typeof conversations)[number] }) => {
       const scout = item.scouts;
       const preview = previews?.[item.id];
+      const unread = !!preview?.unreadCount;
       return (
-        <Pressable style={[styles.convoRow, elevation('raised', isDark)]} onPress={() => setActiveConversationId(item.id)}>
-          <Image source={{ uri: scout?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar}
-          cachePolicy="memory-disk"
-          transition={200}
-        />
-          <View style={{ flex: 1 }}>
+        <Pressable
+          style={[styles.convoRow, unread ? styles.convoRowUnread : null]}
+          onPress={() => setActiveConversationId(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            (unread ? 'Unread. ' : '') +
+            (scout?.profiles?.full_name || 'Scout') +
+            '. ' + (preview?.lastMessage || 'New conversation')
+          }
+        >
+          {/* Canvas 19 clips the verification hexagon to the avatar's corner,
+              so who is verified is legible without reading a second line. */}
+          <AvatarWithBadge
+            name={scout?.profiles?.full_name}
+            uri={scout?.profiles?.avatar_url}
+            size={38}
+            role={scout?.verification_status === 'verified' ? 'scout' : null}
+          />
+          <View style={{ flex: 1, overflow: 'hidden' }}>
             <View style={styles.convoNameRow}>
-              <Text style={styles.convoName}>{scout?.profiles?.full_name || 'Scout'}</Text>
-              {scout?.verification_status === 'verified' && (
-                <VerificationBadge role="scout" size={14} />
+              <Text style={styles.convoName} numberOfLines={1}>
+                {scout?.profiles?.full_name || 'Scout'}
+              </Text>
+              {!!preview?.lastMessageAt && (
+                <Kicker size={fontSize.caption} tone={unread ? 'inherit' : 'muted'}
+                  style={unread ? { color: colors.goldDark } : undefined}>
+                  {timeAgo(preview.lastMessageAt, 'compact')}
+                </Kicker>
               )}
             </View>
-            {!!scout?.organization && <Text style={styles.convoOrg}>{scout.organization}</Text>}
-            <Text style={styles.convoLast} numberOfLines={1}>{preview?.lastMessage || 'New conversation'}</Text>
+            <Text
+              style={[styles.convoLast, unread && styles.convoLastUnread]}
+              numberOfLines={1}
+            >
+              {preview?.lastMessage || 'New conversation'}
+            </Text>
           </View>
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            {!!preview?.lastMessageAt && <Text style={styles.convoTime}>{timeAgo(preview.lastMessageAt, 'compact')}</Text>}
-            {!!preview?.unreadCount && (
-              <View style={styles.unreadDot}>
-                <Text style={styles.unreadText}>{preview.unreadCount}</Text>
-              </View>
-            )}
-          </View>
+          {!!preview?.unreadCount && (
+            <View style={styles.unreadDot}>
+              <Text style={styles.unreadText}>{preview.unreadCount}</Text>
+            </View>
+          )}
         </Pressable>
       );
     },
@@ -276,6 +299,17 @@ export default function Messages() {
         <Text style={styles.headerTitle}>Messages</Text>
         <View style={{ width: 36 }} />
       </View>
+
+      {/*
+        Canvas 19 puts this above the thread list, in navy with the mark. It is
+        the counterpart to the trial screen's "never pay to attend": the two
+        places money fraud reaches a player are a fake trial and a fake scout.
+        Shown on the list rather than inside a thread, so it is read before the
+        first message rather than after.
+      */}
+      <NoticeBox tone="info" style={styles.safety}>
+        <Text style={styles.safetyStrong}>Scouts never ask for money.</Text> Report anyone who does.
+      </NoticeBox>
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations} skeleton={<SkeletonRow />}>
       {!conversations.length ? (
@@ -408,10 +442,25 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 40 },
   emptyTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8, textAlign: 'center' },
   emptySub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
-  convoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 12 },
+  convoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: 12,
+  },
+  // Canvas 19 outlines an unread thread in gold rather than tinting its fill,
+  // so the row still reads as the same object -- just flagged.
+  convoRowUnread: { borderColor: colors.gold },
+  safety: { marginHorizontal: 20, marginBottom: 12 },
+  safetyStrong: { fontFamily: fontFamily.bold },
+  convoLastUnread: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
   convoAvatar: { width: 46, height: 46, borderRadius: 23 },
-  convoNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  convoName: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  convoNameRow: { justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center', gap: 5 },
+  convoName: { flex: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   convoOrg: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
   convoLast: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   convoTime: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder },

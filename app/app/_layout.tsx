@@ -4,11 +4,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-// The package's own root barrel (`@expo-google-fonts/poppins`) requires
-// all 18 weight/style .ttf files unconditionally in one module -- importing
-// anything from it, even just `useFonts`, pulls every one of them into the
-// bundle regardless of which named exports are actually used. Per-weight
-// subpath imports avoid that the same way @expo/vector-icons/Feather does.
+// The packages' own root barrels (`@expo-google-fonts/barlow`,
+// `.../barlow-condensed`) require every weight/style .ttf unconditionally in
+// one module -- importing anything from them, even just `useFonts`, pulls all
+// of them into the bundle regardless of which named exports are actually used.
+// Per-weight subpath imports avoid that the same way @expo/vector-icons/Feather does.
 import { useFonts } from '@expo-google-fonts/barlow/useFonts';
 import { Barlow_400Regular } from '@expo-google-fonts/barlow/400Regular';
 import { Barlow_500Medium } from '@expo-google-fonts/barlow/500Medium';
@@ -142,8 +142,26 @@ function RootLayout() {
   // folder name, not the screen inside it -- expo-router includes group
   // segments as-is, so a scout on /(player-tabs)/profile needs the group
   // check, not just the named-screen one).
-  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete']);
+  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete', 'upload-success', 'player-verification', 'trial-applied']);
   const SCOUT_ONLY_SCREENS = new Set(['scout-edit-profile', 'scout-verification']);
+  // Billing and verification outcomes belong to the two paying roles, so they
+  // are not in either single-role set -- a player must never reach checkout.
+  const PAID_ROLE_SCREENS = new Set(['checkout', 'billing', 'premium', 'verification-pending', 'verification-rejected']);
+  const CLUB_ONLY_SCREENS = new Set(['club-edit-profile', 'club-verification', 'club-team']);
+  // Where each role belongs when it lands somewhere it should not be. Keyed by
+  // role so adding a fourth one fails loudly here rather than defaulting a
+  // stranger into the player tabs.
+  const HOME_FOR: Record<Exclude<typeof role, null>, string> = {
+    player: '/(player-tabs)/home',
+    scout: '/(scout-tabs)/home',
+    club: '/(club-tabs)/home',
+  };
+  // The tab group each role owns; every other group is off-limits to it.
+  const GROUP_FOR: Record<Exclude<typeof role, null>, string> = {
+    player: '(player-tabs)',
+    scout: '(scout-tabs)',
+    club: '(club-tabs)',
+  };
   useEffect(() => {
     if (!ready || sessionStatus !== 'signed-in') return;
     const top = segments[0] ?? '';
@@ -156,11 +174,21 @@ function RootLayout() {
       if (!AUTH_STACK_SCREENS.has(top)) router.replace('/profile-complete');
       return;
     }
-    if (role === 'scout' && (PLAYER_ONLY_SCREENS.has(top) || top === '(player-tabs)')) {
-      router.replace('/(scout-tabs)/home');
-    } else if (role === 'player' && (SCOUT_ONLY_SCREENS.has(top) || top === '(scout-tabs)')) {
-      router.replace('/(player-tabs)/home');
-    }
+    if (!role) return;
+
+    // A role may be in its own group, or on any screen that is not claimed by
+    // another role. Expressed as "is this somewhere else's" rather than a pair
+    // of hardcoded comparisons, so three roles do not need six branches.
+    const ownGroup = GROUP_FOR[role];
+    const inForeignGroup =
+      (top === '(player-tabs)' || top === '(scout-tabs)' || top === '(club-tabs)') && top !== ownGroup;
+    const onForeignScreen =
+      (role !== 'player' && PLAYER_ONLY_SCREENS.has(top)) ||
+      (role !== 'scout' && SCOUT_ONLY_SCREENS.has(top)) ||
+      (role !== 'club' && CLUB_ONLY_SCREENS.has(top)) ||
+      (role === 'player' && PAID_ROLE_SCREENS.has(top));
+
+    if (inForeignGroup || onForeignScreen) router.replace(HOME_FOR[role]);
   }, [ready, sessionStatus, role, player, profile, segments]);
 
   const onLayoutRootView = useCallback(async () => {

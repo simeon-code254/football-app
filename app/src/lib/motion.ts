@@ -3,6 +3,7 @@ import {
   Easing,
   ReduceMotion,
   cancelAnimation,
+  useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -273,4 +274,175 @@ export function useGlow(duration = 2400) {
     opacity: reduced ? 0 : 0.4 + 0.15 * t.value,
     transform: [{ scale: 1 + 0.18 * t.value }],
   }));
+}
+
+/**
+ * fadeUp: a one-shot entrance -- fade in from 8px *below*.
+ *
+ * The mirror of useCountUp, which arrives from above. The canvas uses this one
+ * for content rising into place and countUp for a number landing on it; they
+ * are not interchangeable even though the distance matches.
+ */
+export function useFadeUp(duration = 500, delay = 0) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(reduced ? 1 : 0);
+
+  useEffect(() => {
+    if (reduced) {
+      t.value = 1;
+      return;
+    }
+    t.value = withDelay(delay, withTiming(1, { duration, easing: Easing.inOut(Easing.ease) }));
+  }, [reduced, duration, delay, t]);
+
+  return useAnimatedStyle(() => ({
+    opacity: t.value,
+    transform: [{ translateY: 8 * (1 - t.value) }],
+  }));
+}
+
+/**
+ * badgePop: scale .4 -> 1.14 (at 55%) -> 1, fading in over the first 55%.
+ *
+ * The canvas drives this with cubic-bezier(.16,1.2,.6,1) -- a curve whose
+ * control point above 1 means the *easing* already overshoots. Reproducing
+ * both that curve and the 1.14 keyframe would overshoot twice, so the
+ * overshoot is expressed once, as the explicit scale sequence the canvas
+ * draws, on a plain out-cubic.
+ *
+ * `key` restarts it, so a badge that changes tier pops again.
+ */
+export function useBadgePop(key: unknown, duration = 700) {
+  const reduced = useReducedMotion();
+  // The shared value IS the scale, so the keyframes read straight off it.
+  const scale = useSharedValue(reduced ? 1 : 0.4);
+
+  useEffect(() => {
+    if (reduced) {
+      scale.value = 1;
+      return;
+    }
+    scale.value = 0.4;
+    scale.value = withSequence(
+      withTiming(1.14, { duration: duration * 0.55, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: duration * 0.45, easing: Easing.inOut(Easing.quad) })
+    );
+  }, [key, reduced, duration, scale]);
+
+  return useAnimatedStyle(() => ({
+    // Full opacity by the 1.14 peak, which is the keyframe's 55% stop.
+    opacity: Math.min((scale.value - 0.4) / 0.74, 1),
+    transform: [{ scale: scale.value }],
+  }));
+}
+
+/** flame: scale 1 -> 1.15 while rocking rotate -3deg -> 3deg. The streak icon. */
+export function useFlame(duration = 1400) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduced) return;
+    t.value = withRepeat(
+      withTiming(1, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    return () => cancelAnimation(t);
+  }, [reduced, duration, t]);
+
+  return useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + 0.15 * t.value }, { rotate: `${-3 + 6 * t.value}deg` }],
+  }));
+}
+
+/**
+ * confetti: one particle falling 85px while rotating 280deg and fading out.
+ *
+ * The canvas scatters nine of these over a success screen, each with its own
+ * delay (.1s to 1s) so they do not fall in lockstep -- so this hook takes the
+ * delay per particle rather than owning the whole burst. Give each particle its
+ * own start offset; identical delays produce a single visual clump.
+ *
+ * Purely decorative, so under reduced motion it renders nothing at all rather
+ * than settling on a frame.
+ */
+export function useConfetti(delay = 0, duration = 2200) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduced) return;
+    t.value = withDelay(
+      delay,
+      withRepeat(withTiming(1, { duration, easing: Easing.in(Easing.quad) }), -1, false)
+    );
+    return () => cancelAnimation(t);
+  }, [reduced, delay, duration, t]);
+
+  return useAnimatedStyle(() => ({
+    opacity: reduced ? 0 : 1 - t.value,
+    transform: [{ translateY: 85 * t.value }, { rotate: `${280 * t.value}deg` }],
+  }));
+}
+
+// -- SVG STROKE ANIMATIONS --
+//
+// The two below animate `strokeDashoffset`, which is an SVG *attribute*, not a
+// style. They return `animatedProps`, so the target must be a react-native-svg
+// primitive wrapped with Reanimated.createAnimatedComponent -- a plain
+// <Circle> or <Path> will silently ignore them.
+//
+// Both are `forwards` in the canvas: they hold their end state. Under reduced
+// motion they jump straight to it rather than rendering nothing, because in
+// both cases the end state carries the meaning -- a rating arc's length *is*
+// the rating, and an undrawn tick reads as "not finished".
+
+/**
+ * progressRing: sweeps a circular stroke from empty to `fraction`.
+ *
+ * `circumference` must be the circle's own 2*pi*r, and the same <Circle> needs
+ * strokeDasharray set to it, so the dash is one full lap and the offset is what
+ * hides the remainder.
+ */
+export function useProgressRing(fraction: number, circumference: number, duration = 1400) {
+  const reduced = useReducedMotion();
+  const target = Math.max(0, Math.min(1, Number.isFinite(fraction) ? fraction : 0));
+  const t = useSharedValue(reduced ? 1 : 0);
+
+  useEffect(() => {
+    if (reduced) {
+      t.value = 1;
+      return;
+    }
+    t.value = 0;
+    t.value = withTiming(1, { duration, easing: Easing.inOut(Easing.ease) });
+  }, [target, reduced, duration, t]);
+
+  return useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - target * t.value),
+  }));
+}
+
+/**
+ * checkDraw: draws a tick on, from nothing to whole.
+ *
+ * `length` is the path's own getTotalLength(); the same <Path> needs
+ * strokeDasharray set to it. The canvas delays this ~.35s so the tick lands
+ * after the circle behind it has popped.
+ */
+export function useCheckDraw(key: unknown, length: number, duration = 500, delay = 350) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(reduced ? 1 : 0);
+
+  useEffect(() => {
+    if (reduced) {
+      t.value = 1;
+      return;
+    }
+    t.value = 0;
+    t.value = withDelay(delay, withTiming(1, { duration, easing: Easing.inOut(Easing.ease) }));
+  }, [key, reduced, duration, delay, t]);
+
+  return useAnimatedProps(() => ({ strokeDashoffset: length * (1 - t.value) }));
 }

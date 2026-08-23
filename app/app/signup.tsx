@@ -11,18 +11,52 @@ import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { Checkbox } from '../src/components/Checkbox';
 import * as authRepository from '../src/repositories/authRepository';
+import { ID_CHECKED_ROLES, type Role } from '../src/repositories/authRepository';
 import { showAlert } from '../src/lib/alert';
 
-// Matches Matobev v4.dc.html's SIGNUP FORM block, including the scout-only
-// Organization/Club field — redesigned with a role-colored header (the flat
-// white-on-white version read as visually flat) and password visibility
-// toggles, which a static HTML mockup can't express.
+// Canvas screen 05 SIGN UP.
+//
+// One form, three roles. Scouts and clubs both get the organisation field and
+// both are ID-checked; players get neither. The copy below is the only thing
+// that differs between them, so it is a lookup rather than three branches
+// scattered through the JSX.
+const ROLE_COPY: Record<Role, {
+  title: string;
+  subtitle: string;
+  noun: string;
+  icon: React.ComponentProps<typeof Feather>['name'];
+}> = {
+  player: {
+    title: 'Player Sign Up',
+    subtitle: 'Create your football profile in minutes',
+    noun: 'Player',
+    icon: 'user',
+  },
+  scout: {
+    title: 'Scout Sign Up',
+    subtitle: 'Start discovering talent across Africa',
+    noun: 'Scout',
+    icon: 'search',
+  },
+  club: {
+    title: 'Club Sign Up',
+    subtitle: 'Post trials and manage your scouting team',
+    noun: 'Club',
+    icon: 'home',
+  },
+};
 export default function Signup() {
   const colors = useThemeColors();
   const isDark = useIsDark();
   const styles = makeStyles(colors);
-  const { role } = useLocalSearchParams<{ role?: 'player' | 'scout' }>();
-  const isScout = role === 'scout';
+  const { role: roleParam } = useLocalSearchParams<{ role?: Role }>();
+  // Anything unrecognised falls back to player, which is the only role that
+  // needs no verification -- never silently up-ranking someone into an
+  // ID-checked role because a param was malformed.
+  const role: Role = roleParam === 'scout' || roleParam === 'club' ? roleParam : 'player';
+  // Scouts and clubs both supply an organisation name and both are ID-checked.
+  const needsOrg = ID_CHECKED_ROLES.includes(role);
+  const copy = ROLE_COPY[role];
   const submitLock = useRef(false);
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fullName, setFullName] = useState('');
@@ -51,7 +85,7 @@ export default function Signup() {
     isEmailValid &&
     password.length >= 8 &&
     password === confirmPassword &&
-    (!isScout || organization.trim()) &&
+    (!needsOrg || organization.trim()) &&
     (!retryAt || Date.now() >= retryAt);
 
   const retryLabel = retryAt ? `Try again in ${Math.max(1, Math.ceil((retryAt - Date.now()) / 1000))}s` : null;
@@ -68,11 +102,11 @@ export default function Signup() {
       await authRepository.signUp({
         email: email.trim(),
         password,
-        role: isScout ? 'scout' : 'player',
+        role,
         fullName: fullName.trim(),
-        organization: isScout ? organization.trim() : undefined,
+        organization: needsOrg ? organization.trim() : undefined,
       });
-      router.push({ pathname: '/verify-email', params: { email: email.trim(), role: isScout ? 'scout' : 'player' } });
+      router.push({ pathname: '/verify-email', params: { email: email.trim(), role } });
     } catch (err) {
       const status = typeof err === 'object' && err && 'status' in err ? Number((err as { status?: unknown }).status) : null;
       if (status === 429) {
@@ -98,11 +132,11 @@ export default function Signup() {
           <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
         </View>
         <View style={styles.roleBadge}>
-          <Feather name={isScout ? 'search' : 'user'} size={22} color={colors.white} />
+          <Feather name={copy.icon} size={22} color={colors.white} />
         </View>
-        <Text style={styles.headerTitle}>{isScout ? 'Scout Sign Up' : 'Player Sign Up'}</Text>
+        <Text style={styles.headerTitle}>{copy.title}</Text>
         <Text style={styles.headerSub}>
-          {isScout ? 'Start discovering talent across Africa' : 'Create your football profile in minutes'}
+          {copy.subtitle}
         </Text>
       </LinearGradient>
 
@@ -114,7 +148,7 @@ export default function Signup() {
       >
         <View style={styles.fields}>
           <AppTextField label="Full Name" icon="user" placeholder="Enter full name" value={fullName} onChangeText={setFullName} />
-          {isScout && (
+          {needsOrg && (
             <AppTextField
               label="Organization / Club"
               icon="briefcase"
@@ -196,7 +230,7 @@ export default function Signup() {
         </View>
 
         <PrimaryButton
-          label={submitting ? 'Creating account…' : `Create ${isScout ? 'Scout' : 'Player'} Account`}
+          label={submitting ? 'Creating account…' : `Create ${copy.noun} Account`}
           disabled={!canSubmit || submitting}
           loading={submitting}
           onPress={submit}

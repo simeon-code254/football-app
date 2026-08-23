@@ -228,6 +228,7 @@ export default function AiRatings() {
         rating={Math.round(data?.publicView.overall_rating ?? 0)}
         attributesAssessed={presentAttrCount}
         attributesTotal={totalAttrCount}
+        position={data?.publicView.primary_position}
         lowConfidence={(data?.attributes ?? []).some((a) => a.value != null && a.confidence === 'Low')}
         onClose={dismissReveal}
       />
