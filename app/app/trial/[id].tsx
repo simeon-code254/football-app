@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
+import { NoticeBox } from '../../src/components/NoticeBox';
 import { IconButton } from '../../src/components/IconButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { images } from '../../src/constants/images';
@@ -249,6 +250,17 @@ export default function TrialDetail() {
             </View>
             {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
           </View>
+
+          {/*
+            Canvas 57 puts this immediately above the apply button, not in a
+            help screen. It is the last thing a player reads before committing
+            to travel, which is exactly where trial fraud is intercepted --
+            the counterpart to the same warning on the trials list.
+          */}
+          <NoticeBox tone="danger" icon="alert-circle" style={styles.safety}>
+            <Text style={styles.safetyStrong}>Never pay to attend.</Text> Report anyone asking for
+            money.
+          </NoticeBox>
 
           <View style={{ paddingHorizontal: 20 }}>
             {loadingMyApplication ? (
@@ -513,7 +525,9 @@ function InfoCell({ label, value }: { label: string; value: string }) {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
+  safety: { marginHorizontal: 20, marginBottom: 12 },
+  safetyStrong: { fontFamily: fontFamily.bold },
   notFound: { textAlign: 'center', marginTop: 40, fontFamily: fontFamily.regular, color: colors.textMuted },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },

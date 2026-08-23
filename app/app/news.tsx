@@ -1,6 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+
+/** Same 200wpm estimate the article screen uses, so the two agree. */
+function readingMinutes(body: string | null | undefined): number {
+  if (!body) return 1;
+  return Math.max(1, Math.round(body.trim().split(/\s+/).length / 200));
+}
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -26,7 +32,6 @@ function formatDate(iso: string) {
 export default function News() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const PAGE_SIZE = 20;
   const {
@@ -48,35 +53,37 @@ export default function News() {
 
   const renderItem = useCallback(
     ({ item }: { item: NewsPostRow }) => {
-      const expanded = expandedId === item.id;
       const coverUrl = getPublicStorageUrl('post-images', item.cover_image_path);
       const isTrial = !!item.trial_id;
       // Trial-originated posts (see 20260815020000_trials_as_news.sql's
       // sync trigger) go straight to the real trial detail page -- there's
       // a whole apply/manage-applicants screen behind it, unlike a plain
       // announcement which only ever had inline expand/collapse text.
+      // Canvas 59 opens the article rather than expanding it in place -- screen
+      // 60 exists precisely so a long post gets a readable page instead of a
+      // three-line clamp that grows the row.
       const onPress = () =>
-        isTrial ? router.push({ pathname: '/trial/[id]', params: { id: item.trial_id! } }) : setExpandedId(expanded ? null : item.id);
+        isTrial
+          ? router.push({ pathname: '/trial/[id]', params: { id: item.trial_id! } })
+          : router.push({ pathname: '/news/[id]', params: { id: item.id } });
       return (
         <Pressable style={styles.card} onPress={onPress}>
           {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardCover} contentFit="contain" />}
           <View style={styles.cardTop}>
             <Text style={styles.cardTitle}>{item.title}</Text>
-            {isTrial ? (
-              <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
-            ) : (
-              <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textPlaceholder} />
-            )}
+            <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
           </View>
-          <Text style={styles.cardDate}>{formatDate(item.published_at)}</Text>
-          <Text style={styles.cardBody} numberOfLines={isTrial ? 3 : expanded ? undefined : 3}>
+          <Text style={styles.cardDate}>
+            {formatDate(item.published_at)} · {readingMinutes(item.body)} min read
+          </Text>
+          <Text style={styles.cardBody} numberOfLines={3}>
             {item.body}
           </Text>
           {isTrial && <Text style={styles.viewTrialLink}>View trial details →</Text>}
         </Pressable>
       );
     },
-    [expandedId, styles, colors]
+    [styles, colors]
   );
 
   return (
@@ -112,7 +119,7 @@ export default function News() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   list: { padding: 20, paddingTop: 8 },
