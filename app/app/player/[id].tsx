@@ -354,7 +354,7 @@ export default function PlayerDetail() {
               <View style={styles.disclaimer}>
                 <Feather name="info" size={14} color={colors.primary} />
                 <Text style={styles.disclaimerText}>
-                  AI performance data is decision support, not a final verdict — always confirm with match footage.
+                  Decision support only. Ratings guide watching, not signing.
                 </Text>
               </View>
 
