@@ -12,7 +12,7 @@ Three states, and the distinction matters:
 
 Everything below is verified against the working tree, not assumed.
 
-## Built (73)
+## Built (78)
 
 | # | Screen | Where |
 |---|---|---|
@@ -36,7 +36,11 @@ Everything below is verified against the working tree, not assumed.
 | 12 | AI ratings · FIFA attrs | `app/ai-ratings.tsx` |
 | 14 | Upload | `app/(player-tabs)/upload.tsx` |
 | 23 | Player detail | `app/player/[id].tsx` (disclaimer only) |
+| 07 | Profile completion | `app/profile-complete.tsx` |
+| 13 | Reels | `app/(player-tabs)/reels.tsx` (overlay chrome) |
+| 22 | Scout search | `app/(scout-tabs)/players.tsx` |
 | 24 | Compare | `app/compare.tsx` |
+| 25 | Scout verification | `app/scout-verification.tsx` |
 | 32 | Notification settings | `app/notification-settings.tsx` |
 | 33 | Settings | `app/settings.tsx` |
 | 47 | Scout path · organisation | `app/scout-onboarding.tsx` |
@@ -93,18 +97,22 @@ Plus a login screen the canvas never drew (it offers "Sign in" on 02 and a
 forgotten-password flow on 68, but no sign-in form), designed from the canvas's
 own vocabulary.
 
-## Routed, not rebuilt (10)
+## Covered by another surface (5)
 
-These work and are on the paper ground, but their internals still follow the
-older design: 07, 13, 22, 25, 26, 28, 29, 34, 35, 69.
+Not separate screens here, and deliberately so:
 
-- `13 Reels` deliberately keeps its black ground -- it is a full-bleed video
-  surface and paper behind a player would be wrong. Only its overlay chrome is
-  unported.
-- `26`, `28`, `29` are covered in substance by `premium.tsx`, `checkout.tsx`
-  and `verification-badge.tsx`; the canvas draws them as separate screens.
-- `34 Log out` and `35 Session expired` are the shared alert and StatusScreen.
-- `69 Chat conversation` is the thread inside `messages.tsx`, not its own route.
+- `26 Scout premium`, `28 Club verification fee`, `29 Verification badge detail`
+  — covered in substance by `premium.tsx`, `checkout.tsx` and
+  `verification-badge.tsx`. The canvas draws them as three screens; the same
+  content lives on one screen each in the app because the tier lists and the
+  checkout are shared between scout and club.
+- `34 Log out` — the shared confirm alert (`GlobalAlert`).
+- `35 Session expired` — `StatusScreen`, fired by the root layout when an
+  unflagged SIGNED_OUT arrives.
+- `69 Chat conversation` — the thread inside `messages.tsx`, not its own route.
+
+`13 Reels` keeps its black ground on purpose: it is a full-bleed video surface
+and paper behind a player would be wrong. Its overlay chrome is ported.
 
 ## Absent (2)
 
