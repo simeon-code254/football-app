@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
+import { Logo } from '../../src/components/Logo';
 
 // Scout gets a different tab set from Player — Players/Trials/Messages
 // instead of Reels/Upload/Discover — per the Scout Dashboard spec's bottom
@@ -33,7 +34,14 @@ export default function ScoutTabsLayout() {
     >
       <Tabs.Screen
         name="home"
-        options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Feather name="home" color={color} size={size} /> }}
+        options={{
+          title: 'Home',
+          // Canvas 21/50 put the Matobev mark here rather than a house, and the
+          // brand deck's usage map says the same: navy mark at 16px in the tab
+          // bar. The player tab bar (canvas 10) genuinely does draw a house --
+          // the two navs differ on purpose.
+          tabBarIcon: ({ size }) => <Logo variant="navy" size={size - 2} />,
+        }}
       />
       <Tabs.Screen
         name="players"

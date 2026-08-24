@@ -22,6 +22,8 @@ import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
 import { Kicker } from '../../src/components/Kicker';
 import { RatingChip } from '../../src/components/RatingChip';
+import Animated from 'react-native-reanimated';
+import { usePulse } from '../../src/lib/motion';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
@@ -127,6 +129,8 @@ const ReelItem = memo(function ReelItem({
     p.loop = true;
   });
   const [paused, setPaused] = useState(false);
+  // Canvas 13 pulses the live dot at 1.2s.
+  const livePulse = usePulse(1200);
 
   useEffect(() => {
     // Reset any manual pause once this item becomes active again (e.g. it
@@ -135,12 +139,40 @@ const ReelItem = memo(function ReelItem({
   }, [isActive]);
 
   useEffect(() => {
-    if (isActive && !paused) player.play();
-    else player.pause();
-  }, [isActive, paused, player]);
+    // play() returns a promise on web, and pause() while it is still pending
+    // rejects it with AbortError. Scrolling the feed flips isActive faster
+    // than a source loads, so the two collide constantly -- which is why the
+    // console filled with "The play() request was interrupted by a call to
+    // pause()" and clips sat there not playing.
+    //
+    // Guarded two ways: nothing is asked to play without a source, and the
+    // pause is deferred until the play promise settles.
+    if (!item.videoUrl) return;
+
+    let cancelled = false;
+    if (isActive && !paused) {
+      const maybePromise = player.play() as unknown as Promise<void> | undefined;
+      // expo-video returns void on native and a promise on web.
+      if (maybePromise?.catch) maybePromise.catch(() => {});
+    } else {
+      // Settle first so we never pause a play that has not started.
+      Promise.resolve().then(() => {
+        if (!cancelled) player.pause();
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, paused, player, item.videoUrl]);
 
   return (
     <View style={{ height, width: '100%' }}>
+      {!item.videoUrl && (
+        <View style={[StyleSheet.absoluteFill, styles.pauseOverlay]} pointerEvents="none">
+          <Feather name="alert-circle" size={28} color="rgba(255,255,255,0.7)" />
+          <Text style={styles.unavailable}>This clip could not be loaded.</Text>
+        </View>
+      )}
       <Pressable style={StyleSheet.absoluteFill} onPress={() => setPaused((p) => !p)}>
         {/* "cover" cropped any clip that wasn't exactly screen-aspect-ratio
             (the common case for real match footage filmed landscape or on a
@@ -161,18 +193,12 @@ const ReelItem = memo(function ReelItem({
         pointerEvents="none"
       />
 
-      <View style={styles.topMeta}>
+      <View style={styles.livePill}>
+        <Animated.View style={[styles.liveDot, livePulse]} />
         <Kicker size={fontSize.caption} tone="inherit" style={styles.liveKicker}>
           Live highlight
         </Kicker>
-        {item.rating != null && <RatingChip value={item.rating} variant="gold" size="sm" />}
       </View>
-
-      {!!item.badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{item.badge}</Text>
-        </View>
-      )}
 
       <View style={styles.actionRail}>
         <Pressable
@@ -227,7 +253,9 @@ const ReelItem = memo(function ReelItem({
           transition={200}
         />
           <Text style={styles.creatorName}>{item.creatorName}</Text>
+          {item.rating != null && <RatingChip value={item.rating} size="sm" />}
         </View>
+        {!!item.badge && <Text style={styles.reelMeta}>{item.badge}</Text>}
         {!!item.caption && <Text style={styles.caption}>{item.caption}</Text>}
         {!!item.hashtags && <Text style={styles.hashtags}>{item.hashtags}</Text>}
       </View>
@@ -526,16 +554,30 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     borderRadius: 8,
   },
   badgeText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.white },
-  topMeta: {
+  // Canvas: black .5 fill, 1px gold border, radius 20, pulsing gold dot.
+  livePill: {
     position: 'absolute',
     top: 52,
-    left: 12,
-    right: 12,
+    left: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.gold },
   liveKicker: { color: colors.gold },
+  reelMeta: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.bodySm,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 4,
+  },
+  unavailable: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
   actionRail: { position: 'absolute', right: 12, bottom: 120, alignItems: 'center', gap: 20 },
   actionItem: { alignItems: 'center', gap: 4 },
   actionCount: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.white },

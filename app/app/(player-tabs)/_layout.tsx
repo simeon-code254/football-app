@@ -18,6 +18,8 @@ export default function TabsLayout() {
       height: 64,
       paddingBottom: 8,
       paddingTop: 6,
+      // The raised tile is lifted out of the bar and must not be clipped by it.
+      overflow: 'visible',
     },
     tabLabel: {
       fontFamily: fontFamily.medium,
@@ -47,6 +49,10 @@ export default function TabsLayout() {
         name="upload"
         options={{
           title: 'Upload',
+          // Canvas 10 draws no label under the raised tile -- the other four
+          // are labelled, this one is not. With a label the 44px tile and the
+          // caption fought for the same 64px of bar and both were clipped.
+          tabBarLabel: () => null,
           tabBarIcon: () => <UploadTabButton />,
         }}
       />

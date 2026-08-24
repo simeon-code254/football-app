@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, Share } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -10,6 +10,7 @@ import { cx, fontFamily, fontFamilyDisplay, fontSize, kicker, radii, spacing, us
 import Svg, { Defs, Pattern, Path, Rect, RadialGradient, Stop } from 'react-native-svg';
 import { Kicker } from '../../src/components/Kicker';
 import { RatingChip } from '../../src/components/RatingChip';
+import { StatTile } from '../../src/components/StatTile';
 import { VerificationBadge } from '../../src/components/VerificationBadge';
 import * as guardianRepository from '../../src/repositories/guardianRepository';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -90,9 +91,9 @@ export default function Profile() {
     // OVR is deliberately not a tile: the identity card above already shows
     // it in the gold chip, and printing the same number twice six lines apart
     // read as two different figures.
-    { label: 'Reels', value: data ? String(data.videoCount) : '—' },
-    { label: 'Views', value: data ? formatCompact(data.videoViews30d) : '—' },
-    { label: 'Invites', value: data ? String(data.trialInvitations) : '—' },
+    { label: 'Clips', value: data ? data.videoCount : null },
+    { label: 'Views', value: data ? formatCompact(data.videoViews30d) : null },
+    { label: 'Invites', value: data ? data.trialInvitations : null },
   ];
 
   const { data: thumbUrls } = useQuery({
@@ -182,15 +183,56 @@ export default function Profile() {
             </View>
             <RatingChip value={data?.publicView.overall_rating ?? null} size="lg" />
           </View>
+
+          {/* Canvas 17: Edit | Messages | Share, inside the card. Share is the
+              filled one because it is the action that gets a player seen. */}
+          <View style={styles.actionRow}>
+            <Pressable
+              style={styles.actionBtn}
+              onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })}
+              accessibilityRole="button"
+            >
+              <Feather name="edit-2" size={12} color={colors.primaryDark} />
+              <Text style={styles.actionText}>Edit</Text>
+            </Pressable>
+            <Pressable
+              style={styles.actionBtn}
+              onPress={() => router.push('/messages')}
+              accessibilityRole="button"
+            >
+              <Feather name="message-square" size={12} color={colors.primaryDark} />
+              <Text style={styles.actionText}>Messages</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.actionBtn, styles.actionBtnFilled]}
+              onPress={() =>
+                userId &&
+                Share.share({
+                  message: `${data?.profile.full_name ?? 'This player'} on Matobev — matobev://p/${userId}`,
+                }).catch(() => {})
+              }
+              accessibilityRole="button"
+            >
+              <Feather name="share" size={12} color={colors.gold} />
+              <Text style={[styles.actionText, styles.actionTextFilled]}>Share</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
-      <View style={[styles.statCard, elevation('raised', isDark)]}>
-        {statTiles.map((t, i) => (
-          <View key={t.label} style={[styles.statTile, i < statTiles.length - 1 && styles.statTileDivider]}>
-            <Text style={styles.statTileValue}>{t.value}</Text>
-            <Text style={styles.statTileLabel}>{t.label}</Text>
+      {!!data?.player.bio && (
+        <View style={styles.aboutBlock}>
+          <Kicker>About</Kicker>
+          <View style={styles.aboutCard}>
+            <Text style={styles.aboutText}>{data.player.bio}</Text>
           </View>
+        </View>
+      )}
+
+      {/* Canvas 17: three separate bordered tiles, not one divided card. */}
+      <View style={styles.statTileRow}>
+        {statTiles.map((t) => (
+          <StatTile key={t.label} value={t.value} label={t.label} />
         ))}
       </View>
       {(isProvisionalRating || anyLowConfidence) && (
@@ -397,24 +439,44 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   idTileText: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.heading, color: colors.primaryDark },
   idNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { flexShrink: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.title, color: colors.textPrimary },
-  statCard: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 20,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    paddingVertical: spacing.lg,
-  },
   statTile: { flex: 1, alignItems: 'center' },
-  statTileDivider: { borderRightWidth: 1, borderRightColor: colors.divider },
-  statTileValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: -0.5 },
-  statTileLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 3, letterSpacing: 0.3 },
   tabRow: { flexDirection: 'row', marginTop: 24, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingHorizontal: 20 },
   tabItem: { marginRight: 20, paddingBottom: 10 },
   tabLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   tabLabelActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
   tabIndicator: { height: 2, backgroundColor: colors.primary, borderRadius: 1, marginTop: 8 },
   panel: { padding: 20 },
+  actionRow: { flexDirection: 'row', gap: 6, marginTop: spacing.md },
+  actionBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  actionBtnFilled: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+  actionText: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.sm, color: colors.primaryDark },
+  actionTextFilled: { color: colors.gold },
+  aboutBlock: { paddingHorizontal: 20, marginTop: spacing.xl },
+  aboutCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  aboutText: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.bodySm,
+    lineHeight: fontSize.bodySm * 1.45,
+    color: colors.textPrimary,
+  },
+  statTileRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginTop: spacing.md },
   gridLabel: { paddingHorizontal: 20, marginTop: spacing.xl },
   attrGrid: {
     flexDirection: 'row',

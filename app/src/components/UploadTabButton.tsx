@@ -44,7 +44,15 @@ export function UploadTabButton() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', width: 48, height: 48 },
+  wrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    // Canvas 10 lifts the tile out of the bar (margin-top:-20). Without this
+    // it sat flush and read as a fifth equal icon.
+    marginTop: -18,
+  },
   halo: {
     position: 'absolute',
     width: 44,
@@ -57,5 +65,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    // A ring of the bar's own ground, so the lifted tile reads as sitting on
+    // top of the bar rather than punched through it.
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
 });
