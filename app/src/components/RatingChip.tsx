@@ -17,6 +17,14 @@ import { fontFamilyDisplay, fontSize, radii, spacing, useThemeColors } from '../
 // Gold on navy is 10.93:1 and navy on gold is the same pairing inverted, so
 // either direction is safe. What the chip must never do is put gold digits on
 // paper, which is why there is no "plain" variant.
+//
+// -- ROUNDING HAPPENS HERE, NOT AT THE CALL SITE --
+//
+// players.overall_rating is numeric(5,2), so the database hands back 18.62.
+// A rating is a whole number in this product's language -- the canvas draws
+// 78 and 83, never 78.40 -- and leaving each of ~20 call sites to remember
+// Math.round is how "18.62" reached a profile screen. Rounding at the display
+// boundary means no caller can leak a decimal.
 export function RatingChip({
   value,
   variant = 'navy',
@@ -47,7 +55,7 @@ export function RatingChip({
         style,
       ]}
       accessible
-      accessibilityLabel={value == null ? 'Not yet rated' : `Overall rating ${value}`}
+      accessibilityLabel={value == null ? 'Not yet rated' : `Overall rating ${Math.round(value)}`}
     >
       <Text
         style={{
@@ -57,7 +65,7 @@ export function RatingChip({
         }}
         maxFontSizeMultiplier={1.3}
       >
-        {value == null ? '—' : value}
+        {value == null ? '—' : Math.round(value)}
       </Text>
     </View>
   );

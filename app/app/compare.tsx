@@ -116,7 +116,7 @@ export default function ComparePlayers() {
                   style={styles.overallValue}
                   accessibilityLabel={`${p.full_name ?? 'Player'} overall ${p.overall_rating ?? 'not rated'}${anyLowFor(p) ? ', based partly on low-confidence analysis' : ''}`}
                 >
-                  {p.overall_rating ?? '—'}
+                  {p.overall_rating != null ? Math.round(p.overall_rating) : '—'}
                   {anyLowFor(p) ? '·' : ''}
                 </Text>
               </View>

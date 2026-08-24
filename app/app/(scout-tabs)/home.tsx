@@ -402,7 +402,7 @@ export default function ScoutDashboard() {
                   </View>
                   <Text style={styles.uploadName}>{v.players?.profiles?.full_name || 'Player'}</Text>
                   <Text style={styles.uploadMeta}>{v.players?.primary_position ?? '—'}</Text>
-                  <Text style={styles.uploadOvr}>{v.players?.overall_rating ?? '—'} OVR</Text>
+                  <Text style={styles.uploadOvr}>{v.players?.overall_rating != null ? Math.round(v.players.overall_rating) : '—'} OVR</Text>
                   <Text style={styles.uploadType}>{v.title || 'Highlight'}</Text>
                   <Text style={styles.uploadTime}>{new Date(v.created_at).toLocaleDateString()}</Text>
                 </Pressable>
@@ -443,7 +443,7 @@ export default function ScoutDashboard() {
                     <Text style={styles.leaderName}>{p.full_name || 'Unnamed player'}</Text>
                     <Text style={styles.leaderMeta}>{p.primary_position ?? '—'} · {p.nationality_name ?? '—'}</Text>
                   </View>
-                  <Text style={styles.leaderOvr}>{p.overall_rating ?? '—'} OVR</Text>
+                  <Text style={styles.leaderOvr}>{p.overall_rating != null ? Math.round(p.overall_rating) : '—'} OVR</Text>
                 </Pressable>
               ))
             )}

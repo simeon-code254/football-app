@@ -87,16 +87,9 @@ export default function Profile() {
   const anyLowConfidence = data?.attributes.some((a) => a.value != null && a.confidence === 'Low') ?? false;
 
   const statTiles = [
-    {
-      label: 'OVR',
-      // The marker rides along in the string because these tiles are rendered
-      // generically; keeping OVR in the same list avoids special-casing one
-      // tile's markup just to append a dot.
-      value:
-        data?.publicView.overall_rating != null
-          ? `${data.publicView.overall_rating}${anyLowConfidence ? '·' : ''}`
-          : '—',
-    },
+    // OVR is deliberately not a tile: the identity card above already shows
+    // it in the gold chip, and printing the same number twice six lines apart
+    // read as two different figures.
     { label: 'Reels', value: data ? String(data.videoCount) : '—' },
     { label: 'Views', value: data ? formatCompact(data.videoViews30d) : '—' },
     { label: 'Invites', value: data ? String(data.trialInvitations) : '—' },
@@ -200,17 +193,15 @@ export default function Profile() {
           </View>
         ))}
       </View>
-      {isProvisionalRating && (
+      {(isProvisionalRating || anyLowConfidence) && (
         <Text style={styles.provisionalNote}>
-          Provisional — {presentAttrCount}/{totalAttrCount} attributes assessed
-        </Text>
-      )}
-      {anyLowConfidence && (
-        // Worded as a fact about the footage, not a judgement of the player.
-        // This is their own profile -- the one place the difference between
-        // "we could not measure you" and "you scored badly" matters most.
-        <Text style={styles.provisionalNote}>
-          · Some values were hard to measure — clearer footage improves them
+          {isProvisionalRating
+            ? `Provisional — ${presentAttrCount} of ${totalAttrCount} attributes assessed.`
+            : ''}
+          {isProvisionalRating && anyLowConfidence ? ' ' : ''}
+          {anyLowConfidence
+            ? 'Some values were hard to measure — clearer footage improves them.'
+            : ''}
         </Text>
       )}
 
@@ -434,8 +425,12 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   attrTile: {
     // Three per row with two 5px gaps, expressed as a percentage so it holds
-    // at any width rather than assuming the canvas's 266px frame.
-    width: '32%',
+    // at any width rather than assuming the canvas's 266px frame. flexGrow
+    // lets a short final row spread rather than stranding one tile at a third
+    // width -- the attribute count is 10 for outfield and 8 for a keeper, so
+    // neither divides by three.
+    flexBasis: '32%',
+    flexGrow: 1,
     backgroundColor: colors.primaryDark,
     borderRadius: radii.sm,
     paddingVertical: 7,

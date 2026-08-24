@@ -326,7 +326,7 @@ export default function Messages() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.threadName}>{activeConversation?.players?.profiles?.full_name || 'Player'}</Text>
                 <Text style={styles.threadMeta}>
-                  {activePlayerInfo ? `${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating ?? '—'} OVR` : ''}
+                  {activePlayerInfo ? `${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating != null ? Math.round(activePlayerInfo.overall_rating) : '—'} OVR` : ''}
                 </Text>
               </View>
               <Pressable onPress={() => setReportOpen(true)} hitSlop={8} accessibilityLabel="Report this player">
@@ -355,7 +355,7 @@ export default function Messages() {
                 <View style={styles.contextBubble}>
                   <Text style={styles.contextText}>
                     You are contacting {activeConversation?.players?.profiles?.full_name || 'this player'}
-                    {activePlayerInfo ? ` — ${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating ?? '—'} OVR` : ''}
+                    {activePlayerInfo ? ` — ${activePlayerInfo.primary_position ?? '—'} · ${activePlayerInfo.nationality_name ?? '—'} · ${activePlayerInfo.overall_rating != null ? Math.round(activePlayerInfo.overall_rating) : '—'} OVR` : ''}
                   </Text>
                 </View>
               }

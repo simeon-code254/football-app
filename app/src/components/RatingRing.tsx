@@ -43,6 +43,9 @@ export function RatingRing({
   const colors = useThemeColors();
   const isDark = useIsDark();
 
+  // Rounded for display for the same reason RatingChip rounds: the column is
+  // numeric(5,2) and a rating reads as a whole number.
+  //
   // A null rating draws an empty track and an em dash rather than a zero arc.
   // Zero is a verdict; "not measured" is not, and the two must not look alike.
   const fraction = value == null ? 0 : Math.max(0, Math.min(1, value / 99));
@@ -109,7 +112,7 @@ export function RatingRing({
           // it overflows its own ring.
           maxFontSizeMultiplier={1.3}
         >
-          {value == null ? '—' : value}
+          {value == null ? '—' : Math.round(value)}
         </Animated.Text>
       </View>
     </View>

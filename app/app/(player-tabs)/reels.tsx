@@ -33,7 +33,8 @@ import { tapFeedback } from '../../src/lib/haptics';
 
 type ReelState = {
   id: string;
-  videoUrl: string;
+  /** Null when the signed URL could not be resolved -- never an empty string. */
+  videoUrl: string | null;
   storagePath: string;
   creatorId: string;
   creatorName: string;
@@ -65,7 +66,7 @@ async function fetchReelsPage(userId: string, cursor?: string): Promise<ReelsPag
   const engagement = await videosRepository.getMyEngagement(userId, videos.map((v) => v.id));
   const items = videos.map((v) => ({
     id: v.id,
-    videoUrl: urlByPath[v.storage_path] ?? '',
+    videoUrl: urlByPath[v.storage_path] || null,
     storagePath: v.storage_path,
     creatorId: v.player_id,
     creatorName: v.players?.profiles?.full_name || 'Player',

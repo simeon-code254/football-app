@@ -147,7 +147,11 @@ export default function AiRatings() {
             <View style={styles.heroRow}>
               <View>
                 <Kicker size={fontSize.caption} tone="onNavy">Overall</Kicker>
-                <Text style={styles.heroValue}>{data?.publicView.overall_rating ?? '—'}</Text>
+                <Text style={styles.heroValue}>
+                  {data?.publicView.overall_rating != null
+                    ? Math.round(data.publicView.overall_rating)
+                    : '—'}
+                </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Kicker size={fontSize.caption} style={{ color: 'rgba(255,255,255,0.5)' }}>Position</Kicker>
