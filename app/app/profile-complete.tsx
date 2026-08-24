@@ -12,6 +12,7 @@ import { IconButton } from '../src/components/IconButton';
 import { AppTextField } from '../src/components/AppTextField';
 import { SelectField } from '../src/components/SelectField';
 import { PositionPicker } from '../src/components/PositionPicker';
+import { NoticeBox } from '../src/components/NoticeBox';
 import { TypeaheadField } from '../src/components/TypeaheadField';
 import { POSITIONS, GENDERS } from '../src/constants/football';
 import { AFRICAN_COUNTRIES } from '../src/constants/africanCountries';
@@ -305,10 +306,8 @@ export default function ProfileComplete() {
           )}
         </View>
         <Text style={styles.stepTitle}>{STEP_TITLES[step - 1]}</Text>
-        <View style={styles.progressRow}>
-          {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={[styles.progressSeg, { backgroundColor: i <= step ? colors.primary : colors.border }]} />
-          ))}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${(step / 4) * 100}%` }]} />
         </View>
       </View>
 
@@ -348,9 +347,10 @@ export default function ProfileComplete() {
               // allowed, but they and their guardian should know the app
               // analyses video of them -- which the amended COPPA rules
               // treat as biometric processing requiring separate consent.
-              <Text style={styles.minorNote}>
-                Because you're under 18, ask a parent or guardian before uploading videos or talking to scouts.
-              </Text>
+              <NoticeBox style={styles.minorNote}>
+                <Text style={styles.minorNoteStrong}>Under 18.</Text> A parent must approve AI
+                analysis before your videos can be scored. You can still post highlights without it.
+              </NoticeBox>
             )}
             <SelectField label="Gender" value={form.gender} options={[...GENDERS]} onChange={(v) => set('gender', v)} />
             <TypeaheadField
@@ -477,6 +477,9 @@ export default function ProfileComplete() {
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
+  progressTrack: { height: 4, backgroundColor: colors.track, borderRadius: 2, overflow: 'hidden', marginTop: 10 },
+  progressFill: { height: '100%', backgroundColor: colors.gold },
+  minorNoteStrong: { fontFamily: fontFamily.bold },
   minorNote: {
     fontFamily: fontFamily.regular,
     fontSize: fontSize.xs,
@@ -492,8 +495,6 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stepLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted, marginBottom: 2 },
   stepTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.heading, color: colors.textPrimary },
-  progressRow: { flexDirection: 'row', gap: 4, marginTop: 10 },
-  progressSeg: { flex: 1, height: 3, borderRadius: 2 },
   content: { paddingHorizontal: 28, paddingBottom: 32, flexGrow: 1 },
   stepBody: { gap: 14, paddingTop: 8 },
   row: { flexDirection: 'row', gap: 10 },

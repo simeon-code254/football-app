@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import { Kicker } from '../../src/components/Kicker';
 import { PlayerCard } from '../../src/components/PlayerCard';
 import { POSITIONS } from '../../src/constants/football';
 import { images } from '../../src/constants/images';
@@ -266,7 +267,18 @@ export default function DiscoverPlayers() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
         onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
         onEndReachedThreshold={0.4}
-        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} />
+          ) : results.length ? (
+            // Canvas 22's footer. `hasNextPage` matters: without it this would
+            // read "24 players match" when 24 is merely the current page.
+            <Kicker style={styles.matchCount}>
+              {results.length}
+              {hasNextPage ? '+' : ''} player{results.length === 1 ? '' : 's'} match
+            </Kicker>
+          ) : null
+        }
         ListEmptyComponent={
           <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonCards />}>
             <View style={styles.empty}>
@@ -484,10 +496,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   emptySub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: radii.xxl, borderTopRightRadius: radii.xxl, padding: 20, maxHeight: '80%' },
-  sheetTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginBottom: 16 },
+  sheetTitle: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.display, color: colors.textPrimary, marginBottom: 16 },
+  matchCount: { textAlign: 'center', paddingVertical: 20 },
   filterLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textLabel, marginTop: 16, marginBottom: 8 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted },
+  optionPill: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radii.lg, backgroundColor: colors.surfaceMuted },
   optionPillActive: { backgroundColor: colors.primary },
   optionPillText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textBody },
   optionPillTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },

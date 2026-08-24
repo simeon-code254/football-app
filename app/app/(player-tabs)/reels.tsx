@@ -20,6 +20,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import { Kicker } from '../../src/components/Kicker';
+import { RatingChip } from '../../src/components/RatingChip';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
@@ -37,6 +39,8 @@ type ReelState = {
   creatorName: string;
   creatorAvatar: string;
   badge: string;
+  /** Overall rating, or null when the player has not been rated yet. */
+  rating: number | null;
   caption: string;
   hashtags: string;
   likeCount: number;
@@ -66,7 +70,8 @@ async function fetchReelsPage(userId: string, cursor?: string): Promise<ReelsPag
     creatorId: v.player_id,
     creatorName: v.players?.profiles?.full_name || 'Player',
     creatorAvatar: v.players?.profiles?.avatar_url || images.avatarMale,
-    badge: [v.players?.primary_position, v.players?.overall_rating != null ? `${v.players.overall_rating} OVR` : null]
+    rating: v.players?.overall_rating ?? null,
+    badge: [v.players?.primary_position, v.players?.is_goalkeeper ? 'GK' : null]
       .filter(Boolean)
       .join(' · '),
     caption: v.title || v.description || '',
@@ -154,6 +159,13 @@ const ReelItem = memo(function ReelItem({
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
+
+      <View style={styles.topMeta}>
+        <Kicker size={fontSize.caption} tone="inherit" style={styles.liveKicker}>
+          Live highlight
+        </Kicker>
+        {item.rating != null && <RatingChip value={item.rating} variant="gold" size="sm" />}
+      </View>
 
       {!!item.badge && (
         <View style={styles.badge}>
@@ -513,6 +525,16 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     borderRadius: 8,
   },
   badgeText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.white },
+  topMeta: {
+    position: 'absolute',
+    top: 52,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  liveKicker: { color: colors.gold },
   actionRail: { position: 'absolute', right: 12, bottom: 120, alignItems: 'center', gap: 20 },
   actionItem: { alignItems: 'center', gap: 4 },
   actionCount: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.white },
