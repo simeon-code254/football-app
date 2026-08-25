@@ -15,6 +15,17 @@ function assertUuid(value: string): string {
   return value;
 }
 
+// -- WHERE THIS GUARD IS AND IS NOT REQUIRED --
+//
+// It is REQUIRED wherever an id is interpolated into a PostgREST filter
+// *string* -- the `.or()` calls below build `scout_id.eq.${id},...` by hand,
+// and a malformed value there changes the filter rather than failing it.
+//
+// It is NOT required for `.eq()`, which PostgREST parameterises; a bad value
+// simply returns nothing. It is still called at those sites for consistency,
+// so nobody reading this file concludes the guard is optional near `.or()` --
+// and so nobody cargo-cults it as though `.eq()` were unsafe without it.
+
 export type ConversationRow = Database['public']['Tables']['conversations']['Row'];
 export type MessageRow = Database['public']['Tables']['messages']['Row'];
 export type ConversationWithParties = ConversationRow & {

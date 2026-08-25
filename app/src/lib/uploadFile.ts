@@ -65,7 +65,7 @@ async function uploadNativeWithProgress(
     xhr.onload = () =>
       xhr.status >= 200 && xhr.status < 300
         ? resolve()
-        : reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText?.slice(0, 200)}`));
+        : reject(new UploadRejectedError(xhr.status, xhr.responseText?.slice(0, 200)));
     xhr.onerror = () => reject(new Error('Network error during upload'));
     xhr.onabort = () => reject(new DOMException('Upload cancelled', 'AbortError'));
 
@@ -84,6 +84,26 @@ async function uploadNativeBase64(bucket: string, path: string, fileUri: string,
     .from(bucket)
     .upload(path, decode(base64), { contentType, upsert: true });
   if (error) throw error;
+}
+
+/**
+ * The server answered and refused. Distinct from a transport failure, because
+ * only the latter is worth retrying on the base64 path.
+ */
+export class UploadRejectedError extends Error {
+  constructor(
+    readonly status: number,
+    body?: string
+  ) {
+    super(
+      status === 413
+        ? 'That file is too large for this upload.'
+        : status === 401 || status === 403
+          ? 'You are not signed in to upload this.'
+          : `Upload failed (${status})${body ? `: ${body}` : ''}`
+    );
+    this.name = 'UploadRejectedError';
+  }
 }
 
 export async function uploadFileToStorage(
@@ -109,6 +129,14 @@ export async function uploadFileToStorage(
     // A deliberate cancellation must NOT silently fall back and upload
     // anyway -- that would ignore the user.
     if (err instanceof Error && err.name === 'AbortError') throw err;
+
+    // Nor should a server refusal. The fallback exists for "streaming does not
+    // work on this device", not for "the server said no" -- a 413 over the
+    // bucket's size limit, or a 401 on an expired token, fails identically on
+    // the base64 path and only makes the user wait through a second full
+    // upload before seeing the same error. Those surface immediately.
+    if (err instanceof UploadRejectedError && err.status >= 400) throw err;
+
     console.warn('Streaming upload failed, falling back to base64 path:', err);
     await uploadNativeBase64(bucket, path, fileUri, contentType);
   }

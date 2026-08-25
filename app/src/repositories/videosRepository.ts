@@ -232,10 +232,35 @@ export async function incrementShare(videoId: string) {
 // labelled video/mp4 and stored as `source.mp4` regardless of what was
 // actually picked, so a QuickTime .mov -- the default for iOS-recorded
 // footage -- was stored under a mismatched extension and content type.
-function videoMimeFor(fileUri: string, fileName?: string | null): { mime: string; ext: string } {
-  const source = (fileName || fileUri).toLowerCase();
+/**
+ * The `videos` bucket allows video/mp4 and video/quicktime only.
+ *
+ * Anything else used to be labelled video/mp4 and sent anyway, so an .avi or
+ * .webm from an OEM camera app was rejected by the bucket and the user saw
+ * "upload failed" -- true, but not the reason. Returning null lets the caller
+ * say "unsupported format" before spending the upload.
+ */
+function videoMimeFor(
+  fileUri: string,
+  fileName?: string | null
+): { mime: string; ext: string } | null {
+  const source = (fileName || fileUri).toLowerCase().split('?')[0];
   if (source.endsWith('.mov')) return { mime: 'video/quicktime', ext: 'mov' };
-  return { mime: 'video/mp4', ext: 'mp4' };
+  if (source.endsWith('.mp4') || source.endsWith('.m4v')) return { mime: 'video/mp4', ext: 'mp4' };
+  // No recognisable extension at all: the picker sometimes hands back an
+  // opaque content:// URI. Assume mp4, which is what it almost always is, and
+  // let the bucket be the authority -- refusing here would block a legitimate
+  // upload over a missing filename.
+  if (!/\.[a-z0-9]{2,4}$/.test(source)) return { mime: 'video/mp4', ext: 'mp4' };
+  return null;
+}
+
+/** Thrown before an upload starts when the file is a format the bucket refuses. */
+export class UnsupportedVideoFormatError extends Error {
+  constructor() {
+    super('That video format is not supported. Upload an MP4 or MOV.');
+    this.name = 'UnsupportedVideoFormatError';
+  }
 }
 
 export async function uploadVideoSource(
@@ -245,7 +270,9 @@ export async function uploadVideoSource(
   fileName?: string | null,
   opts?: UploadOptions
 ) {
-  const { mime, ext } = videoMimeFor(fileUri, fileName);
+  const format = videoMimeFor(fileUri, fileName);
+  if (!format) throw new UnsupportedVideoFormatError();
+  const { mime, ext } = format;
   const path = `${playerId}/${videoId}/source.${ext}`;
   await uploadFileToStorage('videos', path, fileUri, mime, opts);
   return path;

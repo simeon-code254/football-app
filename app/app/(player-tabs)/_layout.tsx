@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamilyDisplay, fontSize, useThemeColors } from '../../src/theme';
 import { UploadTabButton } from '../../src/components/UploadTabButton';
+import { Logo } from '../../src/components/Logo';
 
 // The tab bar from the design canvas: Home | Reels | Upload | Discover |
 // Profile, with Upload raised into a navy tile rather than sitting flat as
@@ -46,7 +47,15 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="home"
-        options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Feather name="home" color={color} size={size} /> }}
+        options={{
+          title: 'Home',
+          // The Matobev mark, per the brand deck's usage map: "Tab bar (Home
+          // icon) - logo-mask.png - Navy #0A1B33 - 16x16px". Canvas 10 draws a
+          // house glyph, but the deck is explicit and it is the same mark the
+          // scout and club bars already carry -- one Home icon across all three
+          // roles rather than a house for one and the mark for the others.
+          tabBarIcon: ({ size }) => <Logo variant="navy" size={size - 2} />,
+        }}
       />
       <Tabs.Screen
         name="reels"

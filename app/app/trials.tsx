@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -15,7 +14,6 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import * as trialsRepository from '../src/repositories/trialsRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonCards } from '../src/components/Skeleton';
-import { getPublicStorageUrl } from '../src/lib/publicUrl';
 
 const SEGMENTS = ['Open Trials', 'My Applications'] as const;
 
@@ -130,11 +128,9 @@ export default function PlayerTrials() {
             ListFooterComponent={isFetchingOpenTrials ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
             renderItem={({ item: trial }) => {
               const mine = applicationByTrialId.get(trial.id);
-              const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
               return (
                 <Pressable style={[styles.card, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                   <View style={styles.cardRow}>
-                    {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardThumb} contentFit="cover" />}
                     <View style={{ flex: 1 }}>
                       <View style={styles.cardTop}>
                         <View style={{ flex: 1 }}>
@@ -213,11 +209,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
-  segmentRow: { flexDirection: 'row', backgroundColor: colors.surface, borderRadius: radii.pill, padding: 4, marginHorizontal: 20, marginBottom: 16 },
-  segment: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
-  segmentActive: { backgroundColor: colors.primary },
-  segmentText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted },
-  segmentTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
+  segmentRow: { flexDirection: 'row', gap: 5, marginHorizontal: 20, marginBottom: 16 },
+  segment: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  segmentActive: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+  segmentText: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.caption, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textMuted },
+  segmentTextActive: { color: colors.gold },
   list: { paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
   card: {
     backgroundColor: colors.surface,
@@ -237,7 +233,6 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   posChipText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.caption, color: colors.primaryDark },
   cardRow: { flexDirection: 'row', gap: 12 },
-  cardThumb: { width: 56, height: 56, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
   cardTitle: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   statusBadge: { borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 3 },

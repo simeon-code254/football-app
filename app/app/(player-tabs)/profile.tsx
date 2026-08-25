@@ -247,36 +247,6 @@ export default function Profile() {
         </Text>
       )}
 
-      {/*
-        Canvas 17's ATTRIBUTES grid: navy tiles, the code in accent blue above
-        the value, and the value in gold only where it is strong. The canvas
-        golds 81 and 74 and leaves 58/65/68/72 white -- the same break at 70
-        that AttributeBar uses for its fill.
-      */}
-      {!!data?.attributes.length && (
-        <>
-          <Kicker style={styles.gridLabel}>Attributes</Kicker>
-          <View style={styles.attrGrid}>
-            {data.attributes.map((a) => (
-              <View key={a.key} style={styles.attrTile}>
-                <Kicker size={fontSize.caption} tone="onNavy">
-                  {a.displayName.slice(0, 3)}
-                </Kicker>
-                <Text
-                  style={[
-                    styles.attrValue,
-                    a.value != null && a.value >= 70 && { color: colors.gold },
-                    a.value == null && { color: colors.accentOnNavy },
-                  ]}
-                >
-                  {a.value ?? '—'}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </>
-      )}
-
       {/* Sits directly under the stats so it's the first thing a player
           sees about their OWN profile. Only shown while there's something
           left to do -- a permanent 100% bar is just clutter. */}
@@ -477,28 +447,6 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     color: colors.textPrimary,
   },
   statTileRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginTop: spacing.md },
-  gridLabel: { paddingHorizontal: 20, marginTop: spacing.xl },
-  attrGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 5,
-    paddingHorizontal: 20,
-    marginTop: spacing.sm,
-  },
-  attrTile: {
-    // Three per row with two 5px gaps, expressed as a percentage so it holds
-    // at any width rather than assuming the canvas's 266px frame. flexGrow
-    // lets a short final row spread rather than stranding one tile at a third
-    // width -- the attribute count is 10 for outfield and 8 for a keeper, so
-    // neither divides by three.
-    flexBasis: '32%',
-    flexGrow: 1,
-    backgroundColor: colors.primaryDark,
-    borderRadius: radii.sm,
-    paddingVertical: 7,
-    alignItems: 'center',
-  },
-  attrValue: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.body, color: colors.white },
   sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 1, marginBottom: 12 },
   bioCard: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: spacing.lg, borderLeftWidth: 3, borderLeftColor: colors.primary },
   bio: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody, lineHeight: 21 },

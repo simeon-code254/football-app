@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import { checkUpload, UPLOAD_LIMITS } from '../src/lib/uploadLimits';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
@@ -51,10 +52,26 @@ export default function Messages() {
     const result = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
+
+    // Checked here, before the upload starts. The bucket enforces the same
+    // limits server-side, so nothing unsafe gets through either way -- but
+    // without this the user picks a 40MB PDF, waits out a slow mobile upload,
+    // and gets a generic failure having spent the data. These users are on
+    // metered connections.
+    const problem = checkUpload(UPLOAD_LIMITS.messageAttachments, asset);
+    if (problem) {
+      showAlert('Cannot attach that file', problem);
+      return;
+    }
+
     setPickedAttachment({ uri: asset.uri, name: asset.name, mimeType: asset.mimeType });
   };
 
-  const CONVO_PAGE_SIZE = 20;
+  // Mirrors the messages_body_length check constraint. Kept as a named constant
+// so the input cap and the counter cannot drift apart.
+const MESSAGE_MAX_LENGTH = 4000;
+
+const CONVO_PAGE_SIZE = 20;
   const {
     data: conversationPages,
     isLoading,
@@ -407,14 +424,25 @@ export default function Messages() {
               <Pressable style={styles.attachBtn} onPress={pickAttachment} accessibilityRole="button" accessibilityLabel="Attach a file">
                 <Feather name="paperclip" size={18} color={colors.textMuted} />
               </Pressable>
-              <TextInput
-                placeholder="Write message..."
-                placeholderTextColor={colors.textPlaceholder}
-                style={styles.composeInput}
-                value={draft}
-                onChangeText={setDraft}
-                multiline
-              />
+              <View style={{ flex: 1 }}>
+                <TextInput
+                  placeholder="Message…"
+                  placeholderTextColor={colors.textPlaceholder}
+                  style={styles.composeInput}
+                  value={draft}
+                  onChangeText={setDraft}
+                  multiline
+                  // Matches the messages_body_length check constraint
+                  // (20260825120000). The database is the authority; this stops
+                  // the paste before it becomes a failed round trip.
+                  maxLength={MESSAGE_MAX_LENGTH}
+                />
+                {draft.length > MESSAGE_MAX_LENGTH - 200 && (
+                  <Text style={styles.charCount}>
+                    {MESSAGE_MAX_LENGTH - draft.length} characters left
+                  </Text>
+                )}
+              </View>
               <Pressable style={[styles.sendBtn, sending && { opacity: 0.5 }]} onPress={send} disabled={sending} accessibilityRole="button" accessibilityLabel="Send message">
                 <Feather name="send" size={16} color={colors.white} />
               </Pressable>
@@ -487,7 +515,14 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   bubbleTextMine: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.white },
   composeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: colors.divider },
   attachBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  composeInput: { flex: 1, maxHeight: 100, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  charCount: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.caption,
+    color: colors.textMuted,
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  composeInput: { maxHeight: 100, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
   sendBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   pendingAttachmentRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 10, backgroundColor: colors.infoTint },
   pendingAttachmentText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.primary },

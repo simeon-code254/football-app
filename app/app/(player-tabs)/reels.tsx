@@ -186,9 +186,15 @@ const ReelItem = memo(function ReelItem({
           <Feather name="play" size={40} color="rgba(255,255,255,0.9)" />
         </View>
       )}
+      {/*
+        Canvas 13's wash keeps a genuinely clear band across the middle of the
+        frame (transparent from 35% to 55%) and only darkens where chrome sits.
+        The previous ramp went transparent at 40% then straight back to 0.65,
+        which tinted the whole lower two thirds of the video.
+      */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.65)']}
-        locations={[0, 0.4, 1]}
+        colors={['rgba(10,27,51,0.35)', 'transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+        locations={[0, 0.35, 0.55, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
@@ -316,6 +322,10 @@ export default function Reels() {
   const [draft, setDraft] = useState('');
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   const viewedRef = useRef<Set<string>>(new Set());
+  // onViewableItemsChanged is captured in a ref (see below) so it cannot close
+  // over userId; the id is mirrored here instead.
+  const viewerIdRef = useRef<string | undefined>(userId);
+  viewerIdRef.current = userId;
 
   const COMMENTS_PAGE_SIZE = 30;
   const {
@@ -339,11 +349,17 @@ export default function Reels() {
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const top = viewableItems.find((v) => v.isViewable);
     if (top?.item) {
-      const id = (top.item as ReelState).id;
-      setActiveId(id);
-      if (!viewedRef.current.has(id)) {
-        viewedRef.current.add(id);
-        videosRepository.incrementView(id).catch(() => {});
+      const reel = top.item as ReelState;
+      setActiveId(reel.id);
+      // A player scrolling past their own clip was incrementing their own view
+      // count, so the number on their profile counted themselves. Profile views
+      // already exclude self (profileRepository.logProfileView); video views
+      // did not, and a player checking their own upload a few times could move
+      // the figure they are being judged on.
+      const isOwnClip = !!viewerIdRef.current && reel.creatorId === viewerIdRef.current;
+      if (!isOwnClip && !viewedRef.current.has(reel.id)) {
+        viewedRef.current.add(reel.id);
+        videosRepository.incrementView(reel.id).catch(() => {});
       }
     }
   }).current;
