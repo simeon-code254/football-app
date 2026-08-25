@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
+import { fontFamilyDisplay, fontSize, useThemeColors } from '../../src/theme';
 import { Logo } from '../../src/components/Logo';
 
 // Scout gets a different tab set from Player — Players/Trials/Messages
@@ -11,14 +11,21 @@ export default function ScoutTabsLayout() {
   const styles = {
     tabBar: {
       backgroundColor: colors.surface,
-      borderTopColor: colors.border,
+      borderTopColor: colors.track,
       height: 60,
       paddingBottom: 8,
       paddingTop: 6,
     },
     tabLabel: {
-      fontFamily: fontFamily.medium,
-      fontSize: fontSize.xs,
+      // Canvas 10's nav labels are the .mono kicker: Barlow Condensed,
+      // uppercase, letterspaced, 7px in a 266px frame. Sentence-case medium
+      // was the one thing making the bar read as a stock tab bar rather than
+      // this design's.
+      fontFamily: fontFamilyDisplay.semiBold,
+      fontSize: fontSize.caption,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginTop: 2,
     },
   } as const;
 
@@ -26,8 +33,8 @@ export default function ScoutTabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textDisabled,
+        tabBarActiveTintColor: colors.primaryDark,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
       }}

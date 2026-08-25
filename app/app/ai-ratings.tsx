@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -8,8 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { cx, fontFamily, fontFamilyDisplay, fontSize, radii, spacing, useThemeColors } from '../src/theme';
 import { Kicker } from '../src/components/Kicker';
+import { Logo } from '../src/components/Logo';
 import { AttributeBar } from '../src/components/AttributeBar';
-import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
 import * as videosRepository from '../src/repositories/videosRepository';
@@ -121,9 +121,11 @@ export default function AiRatings() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>AI Ratings</Text>
-        <View style={{ width: 36 }} />
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityLabel="Go back">
+          <Feather name="chevron-left" size={20} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>AI ratings</Text>
+        <Logo variant="navy" size={16} />
       </View>
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
@@ -251,16 +253,32 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
-  headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
+  headerTitle: { flex: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.title, color: colors.textPrimary },
   content: { padding: 20, paddingTop: 8, gap: 20, paddingBottom: 40 },
 
   heroSheen: { position: 'absolute', top: 0, left: '-40%', width: '50%', height: '100%' },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   heroPosition: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.bodyLg, color: colors.white, marginTop: 2 },
   sectionKicker: { marginBottom: spacing.md },
-  hero: { borderRadius: radii.lg, paddingVertical: 18, paddingHorizontal: 20 },
-  heroValue: { fontFamily: fontFamily.extraBold, fontSize: 42, color: colors.white, lineHeight: 48, marginTop: 2 },
-  heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: 'rgba(255,255,255,0.78)', marginTop: 4 },
+  hero: {
+    backgroundColor: colors.primaryDark,
+    borderRadius: radii.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    // The sheen sweeps inside the card and must not bleed past its corners.
+    overflow: 'hidden',
+  },
+  // Gold, not white. The overall IS the gold moment on this screen -- the
+  // canvas reserves gold for the rating and the mark, and a white numeral here
+  // made the card read as a generic dark panel.
+  heroValue: {
+    fontFamily: fontFamilyDisplay.extraBold,
+    fontSize: fontSize.splash,
+    lineHeight: fontSize.splash * 1.05,
+    color: colors.gold,
+    marginTop: 2,
+  },
+  heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.6)', marginTop: 8 },
 
   statusBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.warningTint, borderRadius: radii.md, padding: 12, alignItems: 'center' },
   statusBannerText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.goldDark },

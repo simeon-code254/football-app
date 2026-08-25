@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, useThemeColors } from '../../src/theme';
+import { fontFamilyDisplay, fontSize, useThemeColors } from '../../src/theme';
 import { UploadTabButton } from '../../src/components/UploadTabButton';
 
 // The tab bar from the design canvas: Home | Reels | Upload | Discover |
@@ -14,7 +14,7 @@ export default function TabsLayout() {
   const styles = {
     tabBar: {
       backgroundColor: colors.surface,
-      borderTopColor: colors.border,
+      borderTopColor: colors.track,
       height: 64,
       paddingBottom: 8,
       paddingTop: 6,
@@ -22,8 +22,15 @@ export default function TabsLayout() {
       overflow: 'visible',
     },
     tabLabel: {
-      fontFamily: fontFamily.medium,
-      fontSize: fontSize.xs,
+      // Canvas 10's nav labels are the .mono kicker: Barlow Condensed,
+      // uppercase, letterspaced, 7px in a 266px frame. Sentence-case medium
+      // was the one thing making the bar read as a stock tab bar rather than
+      // this design's.
+      fontFamily: fontFamilyDisplay.semiBold,
+      fontSize: fontSize.caption,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+      marginTop: 2,
     },
   } as const;
 
@@ -31,8 +38,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textDisabled,
+        tabBarActiveTintColor: colors.primaryDark,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
       }}
@@ -58,7 +65,7 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="discover"
-        options={{ title: 'Discover', tabBarIcon: ({ color, size }) => <Feather name="search" color={color} size={size} /> }}
+        options={{ title: 'Search', tabBarIcon: ({ color, size }) => <Feather name="search" color={color} size={size} /> }}
       />
       <Tabs.Screen
         name="profile"

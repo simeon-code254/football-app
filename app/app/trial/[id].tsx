@@ -9,6 +9,42 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../../src/theme';
 import { NoticeBox } from '../../src/components/NoticeBox';
+import { ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Kicker } from '../../src/components/Kicker';
+import { Chip } from '../../src/components/Chip';
+import { Button } from '../../src/components/Button';
+import { cx, fontFamilyDisplay, spacing } from '../../src/theme';
+
+/** First and last initial of a club name, for the crest tile. */
+function clubInitials(name: string | null | undefined): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return ((parts[0][0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] ?? '' : '')).toUpperCase();
+}
+
+/** One cell of canvas 57's 2x2 fact grid. */
+function Fact({
+  styles,
+  label,
+  value,
+  tone,
+}: {
+  styles: Record<string, object>;
+  label: string;
+  value: string | null;
+  tone?: 'success';
+}) {
+  return (
+    <View style={styles.factCell as object}>
+      <Kicker size={10}>{label}</Kicker>
+      <Text style={[styles.factValue as object, tone === 'success' ? (styles.factSuccess as object) : null]}>
+        {value || '—'}
+      </Text>
+    </View>
+  );
+}
 import { IconButton } from '../../src/components/IconButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { images } from '../../src/constants/images';
@@ -231,40 +267,91 @@ export default function TrialDetail() {
   if (role === 'player') {
     const status = myApplication?.status;
     return (
-      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <View style={styles.header}>
-          <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-          <Text style={styles.headerTitle}>Trial Details</Text>
-          <View style={{ width: 36 }} />
-        </View>
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-          {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.trialCover} contentFit="contain" />}
-          <View style={styles.infoCard}>
-            <Text style={styles.trialTitle}>{trial.title}</Text>
-            <Text style={styles.trialClub}>{trial.club}</Text>
-            <View style={styles.infoGrid}>
-              <InfoCell label="Location" value={trial.location} />
-              <InfoCell label="Age" value={`${trial.age_min ?? '—'}-${trial.age_max ?? '—'}`} />
-              <InfoCell label="Position" value={trial.positions.join(', ') || 'Any'} />
-              <InfoCell label="Deadline" value={trial.application_deadline} />
-            </View>
-            {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
+      <View style={styles.root}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+          {/*
+            Canvas 57: a 172px photo hero under a navy-to-paper wash, with the
+            back control and a TRIAL kicker over it. The wash ends at the paper
+            colour so the card below rides up into it seamlessly.
+          */}
+          <View style={styles.hero}>
+            {!!coverUrl && (
+              <ImageBackground source={{ uri: coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            )}
+            <LinearGradient
+              colors={['rgba(10,27,51,0.6)', 'rgba(10,27,51,0.2)', colors.background]}
+              locations={[0, 0.5, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+            <SafeAreaView edges={['top']}>
+              <View style={styles.heroBar}>
+                <Pressable onPress={() => router.back()} hitSlop={10} accessibilityLabel="Go back">
+                  <Feather name="chevron-left" size={16} color={colors.white} />
+                </Pressable>
+                <Kicker size={fontSize.caption} tone="inherit" style={{ color: colors.white }}>
+                  Trial
+                </Kicker>
+              </View>
+            </SafeAreaView>
           </View>
 
-          {/*
+          <View style={styles.body}>
+            {/* Crest + title, riding up over the hero's lower edge. */}
+            <View style={styles.titleRow}>
+              <View style={styles.crest}>
+                <Text style={styles.crestText}>{clubInitials(trial.club)}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.trialTitle} numberOfLines={2}>
+                  {trial.title}
+                </Text>
+                <Kicker size={fontSize.caption}>{trial.club}</Kicker>
+              </View>
+            </View>
+
+            {/* Canvas 57's 2x2 fact grid. */}
+            <View style={styles.factGrid}>
+              <Fact styles={styles} label="Date" value={trial.trial_date} />
+              <Fact
+                styles={styles}
+                label="Ages"
+                value={
+                  trial.age_min != null || trial.age_max != null
+                    ? `${trial.age_min ?? '—'} – ${trial.age_max ?? '—'}`
+                    : 'Any'
+                }
+              />
+              <Fact styles={styles} label="Venue" value={trial.location} />
+              {/*
+                Entry is always Free and always green. Not a field: the trials
+                table has no fee column, because Matobev does not allow clubs to
+                charge players -- the same rule locked on canvas 30.
+              */}
+              <Fact styles={styles} label="Entry" value="Free" tone="success" />
+            </View>
+
+            <Kicker style={styles.sectionKicker}>Positions wanted</Kicker>
+            <View style={styles.chipRow}>
+              {(trial.positions.length ? trial.positions : ['Any']).map((pos) => (
+                <Chip key={pos} label={pos} variant="filled" />
+              ))}
+            </View>
+
+            {!!trial.description && <Text style={styles.trialDesc}>{trial.description}</Text>}
+
+            {/*
             Canvas 57 puts this immediately above the apply button, not in a
             help screen. It is the last thing a player reads before committing
             to travel, which is exactly where trial fraud is intercepted --
             the counterpart to the same warning on the trials list.
           */}
-          <NoticeBox tone="danger" icon="alert-circle" style={styles.safety}>
-            <Text style={styles.safetyStrong}>Never pay to attend.</Text> Report anyone asking for
-            money.
-          </NoticeBox>
+            <NoticeBox tone="danger" icon="alert-circle" style={styles.safety}>
+              <Text style={styles.safetyStrong}>Never pay to attend.</Text> Report anyone asking
+              for money.
+            </NoticeBox>
 
-          <View style={{ paddingHorizontal: 20 }}>
             {loadingMyApplication ? (
-              // Don't flash "Apply for Trial" while we still don't know
+              // Don't flash "Apply to this trial" while we still don't know
               // whether an application already exists -- that gap is what
               // let a real double-tap or a fast reopen insert a duplicate
               // row and hit the trial_applications unique-constraint 409.
@@ -277,11 +364,18 @@ export default function TrialDetail() {
                 </Text>
               </View>
             ) : (
-              <PrimaryButton label={applying ? 'Applying…' : 'Apply for Trial'} onPress={apply} disabled={applying} loading={applying} />
+              <Button
+                label="Apply to this trial"
+                variant="navy"
+                onPress={apply}
+                disabled={applying}
+                loading={applying}
+                style={{ marginTop: 10 }}
+              />
             )}
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -526,7 +620,37 @@ function InfoCell({ label, value }: { label: string; value: string }) {
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  safety: { marginHorizontal: 20, marginBottom: 12 },
+  hero: { height: cx(172), backgroundColor: colors.primaryDark },
+  heroBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: cx(14), paddingTop: 10 },
+  // Rides up over the hero's lower edge, as the canvas does at -40.
+  body: { paddingHorizontal: cx(18), marginTop: -cx(40) },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  crest: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.gold,
+    borderWidth: 3,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  crestText: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodySm, color: colors.primaryDark },
+  factGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  factCell: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: 10,
+  },
+  factValue: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 2 },
+  factSuccess: { color: colors.success },
+  sectionKicker: { marginTop: 12 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 5 },
+  safety: { marginTop: 12 },
   safetyStrong: { fontFamily: fontFamily.bold },
   notFound: { textAlign: 'center', marginTop: 40, fontFamily: fontFamily.regular, color: colors.textMuted },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
