@@ -1,13 +1,18 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, Share } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
-import { images } from '../../src/constants/images';
+import { cx, fontFamily, fontFamilyDisplay, fontSize, kicker, radii, spacing, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import Svg, { Defs, Pattern, Path, Rect, RadialGradient, Stop } from 'react-native-svg';
+import { Kicker } from '../../src/components/Kicker';
+import { RatingChip } from '../../src/components/RatingChip';
+import { StatTile } from '../../src/components/StatTile';
+import { VerificationBadge } from '../../src/components/VerificationBadge';
+import * as guardianRepository from '../../src/repositories/guardianRepository';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { IconButton } from '../../src/components/IconButton';
 import * as profileRepository from '../../src/repositories/profileRepository';
@@ -23,8 +28,14 @@ function VideoPreview({ url }: { url: string }) {
   return <VideoView player={player} style={{ flex: 1 }} contentFit="contain" nativeControls />;
 }
 
-const COVER = images.onboardSlide1;
-const AVATAR = images.avatarMale;
+/** First and last initial, matching InitialsAvatar's rule. */
+function initialsOf(name: string | null | undefined): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return ((parts[0][0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] ?? '' : '')).toUpperCase();
+}
+
 
 const TABS = ['About', 'Videos', 'AI Ratings', 'Stats'] as const;
 
@@ -77,19 +88,12 @@ export default function Profile() {
   const anyLowConfidence = data?.attributes.some((a) => a.value != null && a.confidence === 'Low') ?? false;
 
   const statTiles = [
-    {
-      label: 'OVR',
-      // The marker rides along in the string because these tiles are rendered
-      // generically; keeping OVR in the same list avoids special-casing one
-      // tile's markup just to append a dot.
-      value:
-        data?.publicView.overall_rating != null
-          ? `${data.publicView.overall_rating}${anyLowConfidence ? '·' : ''}`
-          : '—',
-    },
-    { label: 'Reels', value: data ? String(data.videoCount) : '—' },
-    { label: 'Views', value: data ? formatCompact(data.videoViews30d) : '—' },
-    { label: 'Invites', value: data ? String(data.trialInvitations) : '—' },
+    // OVR is deliberately not a tile: the identity card above already shows
+    // it in the gold chip, and printing the same number twice six lines apart
+    // read as two different figures.
+    { label: 'Clips', value: data ? data.videoCount : null },
+    { label: 'Views', value: data ? formatCompact(data.videoViews30d) : null },
+    { label: 'Invites', value: data ? data.trialInvitations : null },
   ];
 
   const { data: thumbUrls } = useQuery({
@@ -106,6 +110,14 @@ export default function Profile() {
     },
   });
 
+  // The player hexagon means "guardian consent on file", which is the only
+  // thing this app verifies about a player account. Nothing else earns it.
+  const { data: hasGuardianConsent } = useQuery({
+    queryKey: ['guardianConsentFlag', userId],
+    enabled: !!userId,
+    queryFn: () => guardianRepository.hasAiConsent(userId!),
+  });
+
   const [playingVideoUrl, setPlayingVideoUrl] = useState<string | null>(null);
   const openVideo = async (storagePath: string) => {
     const url = await videosRepository.getVideoUrl(storagePath);
@@ -115,45 +127,123 @@ export default function Profile() {
   return (
     <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
       <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
+      {/*
+        Canvas screen 17: a navy cover with a faint blueprint grid and the gold
+        glow, NOT a photograph. The photo cover this replaced was a stock image
+        that had nothing to do with the player -- the canvas gives the space to
+        the identity card that overlaps it instead.
+      */}
       <View style={styles.coverWrap}>
-        <Image source={{ uri: COVER }} style={styles.cover} />
-        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.35)']} style={StyleSheet.absoluteFill} />
-        <View style={styles.coverMask} />
-        <View style={styles.editBtnWrap}>
+        <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Defs>
+            <Pattern id="ppg" width="16" height="16" patternUnits="userSpaceOnUse">
+              <Path d="M0 8h16M8 0v16" stroke={colors.accentOnNavy} strokeWidth={0.4} />
+            </Pattern>
+            <RadialGradient id="profileGlow" cx="85%" cy="0%" r="58%">
+              <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.22} />
+              <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#ppg)" opacity={0.08} />
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#profileGlow)" />
+        </Svg>
+        <View style={styles.coverActions}>
           <IconButton icon="settings" light accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
           <IconButton icon="edit-2" light accessibilityLabel="Edit profile" onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })} />
         </View>
       </View>
 
-      <View style={styles.headerBlock}>
-        <Image source={{ uri: data?.profile.avatar_url ?? AVATAR }} style={styles.avatar} />
-        <Text style={styles.name}>{data?.profile.full_name || 'Complete your profile'}</Text>
-        <Text style={styles.meta}>
-          {[data?.publicView.primary_position, data?.publicView.age, data?.publicView.nationality_name]
-            .filter(Boolean)
-            .join(' · ') || (isLoading ? 'Loading…' : '')}
-        </Text>
+      {/* The identity card rides up over the cover's lower edge. */}
+      <View style={styles.idCardWrap}>
+        <View style={[styles.idCard, elevation('raised', isDark)]}>
+          <View style={styles.idRow}>
+            <View style={styles.idTile}>
+              <Text style={styles.idTileText}>{initialsOf(data?.profile.full_name)}</Text>
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={styles.idNameRow}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {data?.profile.full_name || 'Complete your profile'}
+                </Text>
+                {/* The player hexagon appears only once guardian consent is on
+                    file, which is the only thing this app actually verifies
+                    about a player. */}
+                {hasGuardianConsent && <VerificationBadge role="player" size={12} glyph="mark" />}
+              </View>
+              <Kicker size={fontSize.caption} style={{ marginTop: 3 }}>
+                {[
+                  data?.publicView.primary_position,
+                  data?.publicView.nationality_name,
+                  data?.publicView.age,
+                  data?.publicView.club,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || (isLoading ? 'Loading…' : '')}
+              </Kicker>
+            </View>
+            <RatingChip value={data?.publicView.overall_rating ?? null} size="lg" />
+          </View>
+
+          {/* Canvas 17: Edit | Messages | Share, inside the card. Share is the
+              filled one because it is the action that gets a player seen. */}
+          <View style={styles.actionRow}>
+            <Pressable
+              style={styles.actionBtn}
+              onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })}
+              accessibilityRole="button"
+            >
+              <Feather name="edit-2" size={12} color={colors.primaryDark} />
+              <Text style={styles.actionText}>Edit</Text>
+            </Pressable>
+            <Pressable
+              style={styles.actionBtn}
+              onPress={() => router.push('/messages')}
+              accessibilityRole="button"
+            >
+              <Feather name="message-square" size={12} color={colors.primaryDark} />
+              <Text style={styles.actionText}>Messages</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.actionBtn, styles.actionBtnFilled]}
+              onPress={() =>
+                userId &&
+                Share.share({
+                  message: `${data?.profile.full_name ?? 'This player'} on Matobev — matobev://p/${userId}`,
+                }).catch(() => {})
+              }
+              accessibilityRole="button"
+            >
+              <Feather name="share" size={12} color={colors.gold} />
+              <Text style={[styles.actionText, styles.actionTextFilled]}>Share</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
 
-      <View style={[styles.statCard, elevation('raised', isDark)]}>
-        {statTiles.map((t, i) => (
-          <View key={t.label} style={[styles.statTile, i < statTiles.length - 1 && styles.statTileDivider]}>
-            <Text style={styles.statTileValue}>{t.value}</Text>
-            <Text style={styles.statTileLabel}>{t.label}</Text>
+      {!!data?.player.bio && (
+        <View style={styles.aboutBlock}>
+          <Kicker>About</Kicker>
+          <View style={styles.aboutCard}>
+            <Text style={styles.aboutText}>{data.player.bio}</Text>
           </View>
+        </View>
+      )}
+
+      {/* Canvas 17: three separate bordered tiles, not one divided card. */}
+      <View style={styles.statTileRow}>
+        {statTiles.map((t) => (
+          <StatTile key={t.label} value={t.value} label={t.label} />
         ))}
       </View>
-      {isProvisionalRating && (
+      {(isProvisionalRating || anyLowConfidence) && (
         <Text style={styles.provisionalNote}>
-          Provisional — {presentAttrCount}/{totalAttrCount} attributes assessed
-        </Text>
-      )}
-      {anyLowConfidence && (
-        // Worded as a fact about the footage, not a judgement of the player.
-        // This is their own profile -- the one place the difference between
-        // "we could not measure you" and "you scored badly" matters most.
-        <Text style={styles.provisionalNote}>
-          · Some values were hard to measure — clearer footage improves them
+          {isProvisionalRating
+            ? `Provisional — ${presentAttrCount} of ${totalAttrCount} attributes assessed.`
+            : ''}
+          {isProvisionalRating && anyLowConfidence ? ' ' : ''}
+          {anyLowConfidence
+            ? 'Some values were hard to measure — clearer footage improves them.'
+            : ''}
         </Text>
       )}
 
@@ -302,41 +392,61 @@ export default function Profile() {
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  coverWrap: { height: 140 },
-  cover: { width: '100%', height: '100%' },
-  editBtnWrap: { position: 'absolute', top: 44, right: 16, flexDirection: 'row', gap: 8 },
-  coverMask: {
-    position: 'absolute',
-    bottom: -1,
-    left: 0,
-    right: 0,
-    height: 24,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+  coverWrap: { height: cx(104), backgroundColor: colors.primaryDark, overflow: 'hidden' },
+  coverActions: { position: 'absolute', top: cx(32), right: 16, flexDirection: 'row', gap: 8 },
+  // The card overlaps the cover's lower edge, as the canvas does at -38px.
+  idCardWrap: { paddingHorizontal: cx(15), marginTop: -cx(38) },
+  idCard: { backgroundColor: colors.surface, borderRadius: radii.xl, padding: 14 },
+  idRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  idTile: {
+    width: 58,
+    height: 58,
+    borderRadius: radii.xl,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  headerBlock: { alignItems: 'center', marginTop: -44 },
-  avatar: { width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
-  name: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 10 },
-  meta: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginTop: 2 },
-  statCard: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 20,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-    paddingVertical: spacing.lg,
-  },
+  idTileText: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.heading, color: colors.primaryDark },
+  idNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  name: { flexShrink: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.title, color: colors.textPrimary },
   statTile: { flex: 1, alignItems: 'center' },
-  statTileDivider: { borderRightWidth: 1, borderRightColor: colors.divider },
-  statTileValue: { fontFamily: fontFamily.extraBold, fontSize: fontSize.display, color: colors.textPrimary, letterSpacing: -0.5 },
-  statTileLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 3, letterSpacing: 0.3 },
   tabRow: { flexDirection: 'row', marginTop: 24, borderBottomWidth: 1, borderBottomColor: colors.divider, paddingHorizontal: 20 },
   tabItem: { marginRight: 20, paddingBottom: 10 },
   tabLabel: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   tabLabelActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
   tabIndicator: { height: 2, backgroundColor: colors.primary, borderRadius: 1, marginTop: 8 },
   panel: { padding: 20 },
+  actionRow: { flexDirection: 'row', gap: 6, marginTop: spacing.md },
+  actionBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  actionBtnFilled: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+  actionText: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.sm, color: colors.primaryDark },
+  actionTextFilled: { color: colors.gold },
+  aboutBlock: { paddingHorizontal: 20, marginTop: spacing.xl },
+  aboutCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+  },
+  aboutText: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.bodySm,
+    lineHeight: fontSize.bodySm * 1.45,
+    color: colors.textPrimary,
+  },
+  statTileRow: { flexDirection: 'row', gap: 6, paddingHorizontal: 20, marginTop: spacing.md },
   sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textMuted, letterSpacing: 1, marginBottom: 12 },
   bioCard: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: spacing.lg, borderLeftWidth: 3, borderLeftColor: colors.primary },
   bio: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody, lineHeight: 21 },

@@ -11,7 +11,20 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      retry: 1,
+      // Retry transport failures, never authorisation ones.
+      //
+      // PostgREST answers an expired or missing token with 401 and a
+      // `.single()` against a row the caller cannot see with 406. Neither
+      // improves on a second attempt: the 401 needs a new session (the root
+      // layout routes to /session-expired when Supabase fires SIGNED_OUT) and
+      // the 406 means the row genuinely is not there for this account -- a
+      // scout has no `players` row and never will. Retrying both was doubling
+      // the console noise and delaying the real handling by a round trip.
+      retry: (failureCount, error) => {
+        const status = (error as { status?: number; code?: string } | null)?.status;
+        if (status === 401 || status === 403 || status === 406) return false;
+        return failureCount < 1;
+      },
       // Cached data has to outlive the session for offline reads to be
       // possible at all -- the default 5 minutes would evict everything
       // long before the user reopens the app on a train with no signal.

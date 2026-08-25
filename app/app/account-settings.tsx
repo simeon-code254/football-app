@@ -1,88 +1,138 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
-import { IconButton } from '../src/components/IconButton';
+import { useQuery } from '@tanstack/react-query';
+import { cx, fontFamilyDisplay, fontSize, spacing, useThemeColors } from '../src/theme';
+import { SettingsRow, SettingsGroup } from '../src/components/SettingsRow';
 import { useSessionStore } from '../src/store/useSessionStore';
+import * as authRepository from '../src/repositories/authRepository';
+import { showAlert } from '../src/lib/alert';
 
+// Canvas screen 63 SETTINGS · ACCOUNT.
+//
+//   Email    simeon@matobev.co   [VERIFIED]
+//   Phone    Not added                    ›
+//   Role     Player                       ›
+//   Download my data · "Ratings, clips, messages"   ›
+//   DANGER ZONE
+//   Delete account · "Immediate and permanent"      ›
+//
+// -- ROLE IS SHOWN, NOT EDITABLE --
+//
+// The canvas draws a chevron beside it, but `prevent_role_change` is a database
+// trigger: a role cannot be changed after signup, by anyone, including an
+// admin through this app. Tapping it explains that rather than opening a picker
+// that would fail on save.
 export default function AccountSettings() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const email = useSessionStore((s) => s.session?.user.email);
+  const profile = useSessionStore((s) => s.profile);
+  const session = useSessionStore((s) => s.session);
+  const clearSession = useSessionStore((s) => s.clear);
   const role = useSessionStore((s) => s.role);
+  const [deleting, setDeleting] = useState(false);
 
-  const rows = [
-    {
-      icon: 'edit-2' as const,
-      title: 'Edit Profile',
-      sub: 'Name, photo, bio, and other details',
-      onPress: () => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } }),
-    },
-    {
-      icon: 'lock' as const,
-      title: 'Change Password',
-      sub: 'Update your password or sign out of all devices',
-      onPress: () => router.push('/security-settings'),
-    },
-  ];
+  const { data: emailConfirmed } = useQuery({
+    queryKey: ['emailConfirmedSettings', session?.user.id],
+    enabled: !!session,
+    queryFn: () => authRepository.isEmailConfirmed(),
+  });
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await authRepository.deleteAccount();
+      clearSession();
+      router.replace('/welcome');
+    } catch (err) {
+      setDeleting(false);
+      showAlert('Could not delete account', err instanceof Error ? err.message : 'Please try again.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>Account</Text>
-        <View style={{ width: 36 }} />
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityLabel="Go back">
+          <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.title}>Account</Text>
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.sectionLabel}>Signed in as</Text>
-        <View style={styles.emailCard}>
-          <Feather name="mail" size={16} color={colors.textMuted} />
-          <Text style={styles.emailText}>{email ?? '—'}</Text>
-        </View>
-        {role && (
-          <Text style={styles.roleNote}>
-            Account type: <Text style={styles.roleValue}>{role === 'scout' ? 'Scout' : 'Player'}</Text>
-          </Text>
-        )}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <SettingsGroup>
+          <SettingsRow
+            title="Email"
+            subtitle={session?.user.email ?? undefined}
+            badge={
+              emailConfirmed
+                ? { label: 'Verified', tone: 'success' }
+                : { label: 'Unverified', tone: 'warning' }
+            }
+          />
+          <SettingsRow
+            title="Phone"
+            value={profile?.phone ?? 'Not added'}
+            onPress={() => router.push({ pathname: '/profile-complete', params: { mode: 'edit' } })}
+          />
+          <SettingsRow
+            title="Role"
+            value={role ?? '—'}
+            last
+            onPress={() =>
+              showAlert(
+                'Your role cannot be changed',
+                'Roles are fixed at signup and enforced by the database, so a player account cannot become a scout account. Create a separate account if you need the other role.'
+              )
+            }
+          />
+        </SettingsGroup>
 
-        <Text style={[styles.sectionLabel, { marginTop: 24 }]}>Manage</Text>
-        <View style={styles.list}>
-          {rows.map((r, i) => (
-            <Pressable key={r.title} style={[styles.row, i < rows.length - 1 && styles.rowBorder]} onPress={r.onPress}>
-              <View style={styles.rowIcon}>
-                <Feather name={r.icon} size={17} color={colors.textBody} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{r.title}</Text>
-                <Text style={styles.rowSub}>{r.sub}</Text>
-              </View>
-              <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
-            </Pressable>
-          ))}
-        </View>
-      </View>
+        <SettingsGroup style={styles.group}>
+          <SettingsRow
+            title="Download my data"
+            subtitle="Ratings, clips, messages"
+            last
+            onPress={() =>
+              showAlert(
+                'Data export is not automated yet',
+                'Contact support and we will send everything held on this account. Under Kenyan data protection law you are entitled to it, and the request is honoured manually until the export is built.'
+              )
+            }
+          />
+        </SettingsGroup>
+
+        <SettingsGroup label="Danger zone" style={styles.group}>
+          <SettingsRow
+            title={deleting ? 'Deleting…' : 'Delete account'}
+            subtitle="Immediate and permanent"
+            tone="danger"
+            last
+            onPress={() =>
+              showAlert(
+                'Delete account',
+                'This permanently deletes your account and everything on it — profile, videos, messages, applications. It cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete account', style: 'destructive', onPress: deleteAccount },
+                ]
+              )
+            }
+          />
+        </SettingsGroup>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.surface },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
-    headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
-    content: { padding: 20 },
-    sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textMuted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
-    emailCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 14 },
-    emailText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textPrimary },
-    roleNote: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 10 },
-    roleValue: { fontFamily: fontFamily.semiBold, color: colors.textBody },
-    list: { backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, overflow: 'hidden' },
-    row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14 },
-    rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.divider },
-    rowIcon: { width: 28, alignItems: 'center' },
-    rowTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
-    rowSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
+    root: { flex: 1, backgroundColor: colors.background },
+    header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: cx(18) },
+    title: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.display, color: colors.textPrimary },
+    scroll: { paddingHorizontal: cx(18), paddingTop: spacing.lg, paddingBottom: spacing.xl },
+    group: { marginTop: spacing.xl },
   });
 }

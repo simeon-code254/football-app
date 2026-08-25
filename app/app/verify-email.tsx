@@ -1,179 +1,185 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, useThemeColors } from '../src/theme';
-import { PrimaryButton } from '../src/components/PrimaryButton';
-import { AppTextField } from '../src/components/AppTextField';
-import { IconButton } from '../src/components/IconButton';
+import {
+  cx,
+  fontFamily,
+  fontFamilyDisplay,
+  fontSize,
+  radii,
+  spacing,
+  useThemeColors,
+} from '../src/theme';
+import { Button, LinkButton } from '../src/components/Button';
 import * as authRepository from '../src/repositories/authRepository';
-import * as profileRepository from '../src/repositories/profileRepository';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { showAlert } from '../src/lib/alert';
 
-const RESEND_COOLDOWN_S = 30;
+// Canvas screen 06 VERIFY EMAIL.
+//
+//   60x60 rounded envelope tile on #EEF2F6
+//   "Check your email"                    .h 20px w800
+//   "We sent a 6-digit code to <email>"
+//   six 46px boxes, filled ones outlined gold, the active one underlined navy
+//   "Resend in 00:42"
+//   [Verify]
+//
+// -- TWO PATHS, ONE SCREEN --
+//
+// The canvas draws a code. The Supabase project currently emails a link (see
+// authRepository.verifyEmailOtp for the template change that switches it). So
+// this screen does both: the user can type the code, and if their email only
+// contained a link, tapping it still confirms the account and the poll below
+// notices and moves them on. Neither path dead-ends while the template is
+// whatever it currently is.
+const CODE_LENGTH = 6;
+const RESEND_SECONDS = 60;
+const POLL_MS = 3000;
 
-// Matches Matobev v4.dc.html's EMAIL VERIFICATION block. Scouts skip the
-// player-specific profile wizard (position/foot/jersey make no sense for a
-// scout) and land straight on their dashboard, starting unverified — real
-// scout verification is an admin review step, not a self-serve form.
 export default function VerifyEmail() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const { email } = useLocalSearchParams<{ email?: string; role?: 'player' | 'scout' }>();
+  const { email = '', role } = useLocalSearchParams<{ email?: string; role?: string }>();
+
+  const [code, setCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
+  const inputRef = useRef<TextInput>(null);
   const hydrate = useSessionStore((s) => s.hydrate);
-  const [cooldown, setCooldown] = useState(0);
-  const [justSent, setJustSent] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [needsPassword, setNeedsPassword] = useState(false);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [secondsLeft]);
 
-  const resend = async () => {
-    if (cooldown > 0 || !email) return;
-    try {
-      await authRepository.resendVerificationEmail(email);
-      setJustSent(true);
-      setCooldown(RESEND_COOLDOWN_S);
-      timerRef.current = setInterval(() => {
-        setCooldown((c) => {
-          if (c <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            return 0;
-          }
-          return c - 1;
-        });
-      }, 1000);
-    } catch (err) {
-      showAlert('Could not resend', err instanceof Error ? err.message : 'Please try again.');
-    }
-  };
-
-  const proceedAfterAuth = async (session: NonNullable<Awaited<ReturnType<typeof authRepository.getSession>>>) => {
-    // Reads the role fresh off the real profile row rather than trusting
-    // the signup flow's route param -- also the only way to catch a
-    // non-player/non-scout account here, since getMyPlayer() 406s for one
-    // otherwise (a genuinely rare path for verify-email specifically, but
-    // the same fix as login.tsx/useSessionStore for consistency).
-    const profile = await profileRepository.getMyProfile(session.user.id);
-    if (profile.role !== 'player' && profile.role !== 'scout') {
-      await authRepository.signOut();
-      showAlert('This account isn\'t supported here', 'Admin accounts use the Matobev web dashboard, not this app.');
-      return;
-    }
-    await hydrate(session);
-    if (profile.role === 'scout') {
-      router.replace('/(scout-tabs)/home');
-      return;
-    }
-    // A signed-in player may already have completed their profile in a
-    // previous session (e.g. retrying this screen after already finishing
-    // onboarding) — don't force them back through the wizard.
-    try {
-      const player = await profileRepository.getMyPlayer(session.user.id);
-      router.push(player.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
-    } catch {
-      router.push('/profile-complete');
-    }
-  };
-
-  const checkVerified = async () => {
-    setChecking(true);
-    setError('');
-    try {
-      // Confirming the email happens wherever the link is tapped — a
-      // separate process from this app — so there's usually no local
-      // session yet even once the email is genuinely confirmed. Try the
-      // fast path (a session already exists, e.g. from a deep link) first;
-      // if that fails, fall back to asking for the password so we can
-      // actually establish a session. signIn() itself is the real "is this
-      // email confirmed?" check — Supabase rejects it with "Email not
-      // confirmed" until the link has actually been tapped.
-      const session = await authRepository.getSession();
-      if (session?.user.email_confirmed_at) {
-        await proceedAfterAuth(session);
-        return;
+  // The link path: if the user confirms in their mail client instead of typing
+  // the code, nothing here would otherwise ever fire. Polling is the only
+  // signal available -- Supabase does not push a confirmation to this device.
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        if (await authRepository.isEmailConfirmed()) {
+          clearInterval(id);
+          const session = await authRepository.getSession();
+          await hydrate(session);
+          router.replace('/profile-complete');
+        }
+      } catch {
+        // Offline, or no session yet. Keep polling rather than surfacing an
+        // error for something the user did not do.
       }
-      setNeedsPassword(true);
-    } finally {
-      setChecking(false);
-    }
-  };
+    }, POLL_MS);
+    return () => clearInterval(id);
+  }, [hydrate]);
 
-  const signInAndProceed = async () => {
-    if (!email || !password) return;
-    setChecking(true);
-    setError('');
+  const submit = async (value: string) => {
+    if (value.length !== CODE_LENGTH || submitting) return;
+    setSubmitting(true);
+    Keyboard.dismiss();
     try {
-      const session = await authRepository.signIn(email, password);
-      await proceedAfterAuth(session);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Please try again.';
-      setError(
-        message.toLowerCase().includes('email not confirmed')
-          ? "Your email isn't confirmed yet — check your inbox and tap the link, then try again."
-          : message.toLowerCase().includes('invalid login credentials')
-          ? 'Incorrect password.'
-          : message
+      await authRepository.verifyEmailOtp(String(email), value);
+      const session = await authRepository.getSession();
+      await hydrate(session);
+      router.replace(!role || role === 'player' ? '/profile-complete' : '/(scout-tabs)/home');
+    } catch (e) {
+      setCode('');
+      showAlert(
+        'That code did not work',
+        e instanceof Error && /expired|invalid/i.test(e.message)
+          ? 'Check the code and try again, or use the link in the email instead.'
+          : 'Something went wrong. Try again in a moment.'
       );
     } finally {
-      setChecking(false);
+      setSubmitting(false);
     }
   };
 
+  const resend = async () => {
+    try {
+      await authRepository.resendVerificationEmail(String(email));
+      setSecondsLeft(RESEND_SECONDS);
+    } catch {
+      showAlert('Could not resend', 'Check your connection and try again.');
+    }
+  };
+
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+  const ss = String(secondsLeft % 60).padStart(2, '0');
+
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-      </View>
-      <View style={styles.content}>
-        <View style={styles.iconBadge}>
-          <Feather name="mail" size={36} color={colors.primary} />
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <View style={styles.body}>
+        <View style={styles.envelope}>
+          <Feather name="mail" size={26} color={colors.primary} />
         </View>
-        <Text style={styles.title}>Verify Your Email</Text>
-        <Text style={styles.sub}>
-          We've sent a verification link to{'\n'}
-          <Text style={styles.email}>{email ?? 'your email'}</Text>
+
+        <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+          Check your email
+        </Text>
+        <Text style={styles.subtitle}>
+          We sent a {CODE_LENGTH}-digit code to{'\n'}
+          <Text style={styles.email}>{email}</Text>
         </Text>
 
-        {needsPassword && (
-          <AppTextField
-            label="Password"
-            icon="lock"
-            placeholder="Enter your password to continue"
-            isPassword
-            value={password}
-            onChangeText={setPassword}
-            style={{ width: '100%', marginBottom: 12 }}
-          />
-        )}
-        {!!error && <Text style={styles.errorText}>{error}</Text>}
+        {/*
+          One real input behind six drawn boxes. Six separate inputs is the
+          usual approach and it fights the platform: SMS/email autofill delivers
+          the whole code to a single field, and backspacing between six fields
+          is fiddly. The boxes are presentational; the input is one field.
+        */}
+        <Pressable style={styles.boxRow} onPress={() => inputRef.current?.focus()}>
+          {Array.from({ length: CODE_LENGTH }).map((_, i) => {
+            const char = code[i];
+            const active = i === code.length;
+            return (
+              <View
+                key={i}
+                style={[styles.box, char ? styles.boxFilled : null, active ? styles.boxActive : null]}
+              >
+                <Text style={styles.boxText}>{char ?? ''}</Text>
+              </View>
+            );
+          })}
+        </Pressable>
 
-        <PrimaryButton
-          label={checking ? 'Checking…' : needsPassword ? 'Continue' : "I've Verified My Email"}
-          onPress={needsPassword ? signInAndProceed : checkVerified}
-          disabled={needsPassword && !password}
-          loading={checking}
+        <TextInput
+          ref={inputRef}
+          value={code}
+          onChangeText={(t) => {
+            const digits = t.replace(/\D/g, '').slice(0, CODE_LENGTH);
+            setCode(digits);
+            if (digits.length === CODE_LENGTH) submit(digits);
+          }}
+          keyboardType="number-pad"
+          textContentType="oneTimeCode"
+          autoComplete="one-time-code"
+          maxLength={CODE_LENGTH}
+          autoFocus
+          style={styles.hiddenInput}
+          accessibilityLabel={'Verification code, ' + CODE_LENGTH + ' digits'}
+        />
+
+        {secondsLeft > 0 ? (
+          <Text style={styles.resend}>
+            Resend in <Text style={styles.resendClock}>{mm}:{ss}</Text>
+          </Text>
+        ) : (
+          <LinkButton label="Resend the code" tone="onPaper" onPress={resend} />
+        )}
+
+        <View style={{ flex: 1 }} />
+
+        <Button
+          label="Verify"
+          variant="navy"
+          loading={submitting}
+          disabled={code.length !== CODE_LENGTH}
+          onPress={() => submit(code)}
           style={styles.cta}
         />
-        {needsPassword && (
-          <Text style={styles.hintText}>
-            We need your password once to confirm the verification — this only happens the first time.
-          </Text>
-        )}
-        {justSent && <Text style={styles.sentText}>Verification email sent.</Text>}
-        <Pressable onPress={resend} disabled={cooldown > 0} hitSlop={8}>
-          <Text style={styles.resendText}>
-            Didn't receive it?{' '}
-            <Text style={[styles.resendLink, cooldown > 0 && styles.resendLinkDisabled]}>
-              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend'}
-            </Text>
-          </Text>
-        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -181,35 +187,62 @@ export default function VerifyEmail() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  header: { paddingHorizontal: 20, paddingTop: 4 },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  iconBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.infoTint,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  title: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginBottom: 6 },
-  sub: {
-    fontFamily: fontFamily.regular,
-    fontSize: fontSize.bodySm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 280,
-    marginBottom: 32,
-  },
-  email: { color: colors.textPrimary, fontFamily: fontFamily.semiBold },
-  cta: { width: '100%', marginBottom: 12 },
-  sentText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.success, marginBottom: 8 },
-  errorText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.error, marginBottom: 12, textAlign: 'center' },
-  hintText: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginBottom: 8 },
-  resendText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
-  resendLink: { color: colors.primary, fontFamily: fontFamily.semiBold },
-  resendLinkDisabled: { color: colors.textPlaceholder },
+    root: { flex: 1, backgroundColor: colors.background },
+    body: { flex: 1, alignItems: 'center', paddingHorizontal: cx(24), paddingBottom: cx(24) },
+    envelope: {
+      width: cx(60),
+      height: cx(60),
+      borderRadius: radii.xl,
+      backgroundColor: colors.infoTint,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.lg,
+      marginBottom: spacing.xl,
+    },
+    title: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.headingLg,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.body,
+      lineHeight: fontSize.body * 1.4,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: 6,
+    },
+    email: { fontFamily: fontFamily.bold, color: colors.textPrimary },
+    boxRow: { flexDirection: 'row', gap: spacing.sm, marginTop: cx(22), width: '100%' },
+    box: {
+      flex: 1,
+      minWidth: 0,
+      height: 52,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // The canvas outlines entered digits in gold and underlines the caret box.
+    boxFilled: { borderColor: colors.gold },
+    boxActive: { borderBottomWidth: 2, borderBottomColor: colors.primaryDark },
+    boxText: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.heading,
+      color: colors.textPrimary,
+    },
+    // Off-screen rather than opacity 0 -- a zero-opacity input still takes
+    // taps on some Android builds and would swallow presses on the boxes.
+    hiddenInput: { position: 'absolute', top: -1000, left: -1000, height: 1, width: 1 },
+    resend: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.bodySm,
+      color: colors.textMuted,
+      marginTop: spacing.lg,
+    },
+    resendClock: { fontFamily: fontFamily.bold, color: colors.primary },
+    cta: { width: '100%' },
   });
 }

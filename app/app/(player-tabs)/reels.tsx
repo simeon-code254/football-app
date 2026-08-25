@@ -20,6 +20,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../../src/theme';
+import { Kicker } from '../../src/components/Kicker';
+import { RatingChip } from '../../src/components/RatingChip';
+import Animated from 'react-native-reanimated';
+import { usePulse } from '../../src/lib/motion';
 import { images } from '../../src/constants/images';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import * as videosRepository from '../../src/repositories/videosRepository';
@@ -31,12 +35,15 @@ import { tapFeedback } from '../../src/lib/haptics';
 
 type ReelState = {
   id: string;
-  videoUrl: string;
+  /** Null when the signed URL could not be resolved -- never an empty string. */
+  videoUrl: string | null;
   storagePath: string;
   creatorId: string;
   creatorName: string;
   creatorAvatar: string;
   badge: string;
+  /** Overall rating, or null when the player has not been rated yet. */
+  rating: number | null;
   caption: string;
   hashtags: string;
   likeCount: number;
@@ -61,12 +68,13 @@ async function fetchReelsPage(userId: string, cursor?: string): Promise<ReelsPag
   const engagement = await videosRepository.getMyEngagement(userId, videos.map((v) => v.id));
   const items = videos.map((v) => ({
     id: v.id,
-    videoUrl: urlByPath[v.storage_path] ?? '',
+    videoUrl: urlByPath[v.storage_path] || null,
     storagePath: v.storage_path,
     creatorId: v.player_id,
     creatorName: v.players?.profiles?.full_name || 'Player',
     creatorAvatar: v.players?.profiles?.avatar_url || images.avatarMale,
-    badge: [v.players?.primary_position, v.players?.overall_rating != null ? `${v.players.overall_rating} OVR` : null]
+    rating: v.players?.overall_rating ?? null,
+    badge: [v.players?.primary_position, v.players?.is_goalkeeper ? 'GK' : null]
       .filter(Boolean)
       .join(' · '),
     caption: v.title || v.description || '',
@@ -121,6 +129,8 @@ const ReelItem = memo(function ReelItem({
     p.loop = true;
   });
   const [paused, setPaused] = useState(false);
+  // Canvas 13 pulses the live dot at 1.2s.
+  const livePulse = usePulse(1200);
 
   useEffect(() => {
     // Reset any manual pause once this item becomes active again (e.g. it
@@ -129,12 +139,40 @@ const ReelItem = memo(function ReelItem({
   }, [isActive]);
 
   useEffect(() => {
-    if (isActive && !paused) player.play();
-    else player.pause();
-  }, [isActive, paused, player]);
+    // play() returns a promise on web, and pause() while it is still pending
+    // rejects it with AbortError. Scrolling the feed flips isActive faster
+    // than a source loads, so the two collide constantly -- which is why the
+    // console filled with "The play() request was interrupted by a call to
+    // pause()" and clips sat there not playing.
+    //
+    // Guarded two ways: nothing is asked to play without a source, and the
+    // pause is deferred until the play promise settles.
+    if (!item.videoUrl) return;
+
+    let cancelled = false;
+    if (isActive && !paused) {
+      const maybePromise = player.play() as unknown as Promise<void> | undefined;
+      // expo-video returns void on native and a promise on web.
+      if (maybePromise?.catch) maybePromise.catch(() => {});
+    } else {
+      // Settle first so we never pause a play that has not started.
+      Promise.resolve().then(() => {
+        if (!cancelled) player.pause();
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, paused, player, item.videoUrl]);
 
   return (
     <View style={{ height, width: '100%' }}>
+      {!item.videoUrl && (
+        <View style={[StyleSheet.absoluteFill, styles.pauseOverlay]} pointerEvents="none">
+          <Feather name="alert-circle" size={28} color="rgba(255,255,255,0.7)" />
+          <Text style={styles.unavailable}>This clip could not be loaded.</Text>
+        </View>
+      )}
       <Pressable style={StyleSheet.absoluteFill} onPress={() => setPaused((p) => !p)}>
         {/* "cover" cropped any clip that wasn't exactly screen-aspect-ratio
             (the common case for real match footage filmed landscape or on a
@@ -148,18 +186,25 @@ const ReelItem = memo(function ReelItem({
           <Feather name="play" size={40} color="rgba(255,255,255,0.9)" />
         </View>
       )}
+      {/*
+        Canvas 13's wash keeps a genuinely clear band across the middle of the
+        frame (transparent from 35% to 55%) and only darkens where chrome sits.
+        The previous ramp went transparent at 40% then straight back to 0.65,
+        which tinted the whole lower two thirds of the video.
+      */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.15)', 'transparent', 'rgba(0,0,0,0.65)']}
-        locations={[0, 0.4, 1]}
+        colors={['rgba(10,27,51,0.35)', 'transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+        locations={[0, 0.35, 0.55, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
 
-      {!!item.badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{item.badge}</Text>
-        </View>
-      )}
+      <View style={styles.livePill}>
+        <Animated.View style={[styles.liveDot, livePulse]} />
+        <Kicker size={fontSize.caption} tone="inherit" style={styles.liveKicker}>
+          Live highlight
+        </Kicker>
+      </View>
 
       <View style={styles.actionRail}>
         <Pressable
@@ -214,7 +259,9 @@ const ReelItem = memo(function ReelItem({
           transition={200}
         />
           <Text style={styles.creatorName}>{item.creatorName}</Text>
+          {item.rating != null && <RatingChip value={item.rating} size="sm" />}
         </View>
+        {!!item.badge && <Text style={styles.reelMeta}>{item.badge}</Text>}
         {!!item.caption && <Text style={styles.caption}>{item.caption}</Text>}
         {!!item.hashtags && <Text style={styles.hashtags}>{item.hashtags}</Text>}
       </View>
@@ -275,6 +322,10 @@ export default function Reels() {
   const [draft, setDraft] = useState('');
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   const viewedRef = useRef<Set<string>>(new Set());
+  // onViewableItemsChanged is captured in a ref (see below) so it cannot close
+  // over userId; the id is mirrored here instead.
+  const viewerIdRef = useRef<string | undefined>(userId);
+  viewerIdRef.current = userId;
 
   const COMMENTS_PAGE_SIZE = 30;
   const {
@@ -298,11 +349,17 @@ export default function Reels() {
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const top = viewableItems.find((v) => v.isViewable);
     if (top?.item) {
-      const id = (top.item as ReelState).id;
-      setActiveId(id);
-      if (!viewedRef.current.has(id)) {
-        viewedRef.current.add(id);
-        videosRepository.incrementView(id).catch(() => {});
+      const reel = top.item as ReelState;
+      setActiveId(reel.id);
+      // A player scrolling past their own clip was incrementing their own view
+      // count, so the number on their profile counted themselves. Profile views
+      // already exclude self (profileRepository.logProfileView); video views
+      // did not, and a player checking their own upload a few times could move
+      // the figure they are being judged on.
+      const isOwnClip = !!viewerIdRef.current && reel.creatorId === viewerIdRef.current;
+      if (!isOwnClip && !viewedRef.current.has(reel.id)) {
+        viewedRef.current.add(reel.id);
+        videosRepository.incrementView(reel.id).catch(() => {});
       }
     }
   }).current;
@@ -513,6 +570,30 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     borderRadius: 8,
   },
   badgeText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.white },
+  // Canvas: black .5 fill, 1px gold border, radius 20, pulsing gold dot.
+  livePill: {
+    position: 'absolute',
+    top: 52,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.gold },
+  liveKicker: { color: colors.gold },
+  reelMeta: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.bodySm,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 4,
+  },
+  unavailable: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
   actionRail: { position: 'absolute', right: 12, bottom: 120, alignItems: 'center', gap: 20 },
   actionItem: { alignItems: 'center', gap: 4 },
   actionCount: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.white },

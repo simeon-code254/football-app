@@ -315,7 +315,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   createBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, borderRadius: radii.pill, paddingHorizontal: 14, paddingVertical: 9 },
   createBtnText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.white },
   verifyNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.warningTint, marginHorizontal: 20, borderRadius: radii.md, padding: 10, marginBottom: 8 },
-  verifyNoticeText: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: '#7A5C00', flex: 1 },
+  verifyNoticeText: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.goldDark, flex: 1 },
   list: { padding: 20, gap: 12 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 6 },
   emptyTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8, textAlign: 'center' },

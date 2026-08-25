@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../theme';
 import { useTranslation } from '../i18n';
+import Animated from 'react-native-reanimated';
+import { useBarGrow } from '../lib/motion';
 
 type StrengthInput = {
   avatarUrl?: string | null;
@@ -47,6 +49,9 @@ export function ProfileStrength(props: StrengthInput) {
   const items = buildStrengthItems(props, t);
   const done = items.filter((i) => i.done).length;
   const pct = Math.round((done / items.length) * 100);
+  // Canvas barGrow (screen 07). Fed the unrounded fraction so the bar matches
+  // the real completion rather than the rounded label beside it.
+  const grow = useBarGrow(done / items.length);
   // Only ever show the next single missing thing. A checklist of seven
   // outstanding tasks reads as a chore; one clear next step reads as
   // progress.
@@ -65,7 +70,7 @@ export function ProfileStrength(props: StrengthInput) {
         accessibilityLabel={`Profile strength ${pct} percent`}
         accessibilityValue={{ min: 0, max: 100, now: pct }}
       >
-        <View style={[styles.fill, { width: `${pct}%` }]} />
+        <Animated.View style={[styles.fill, grow]} />
       </View>
 
       {next ? (

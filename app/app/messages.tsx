@@ -5,10 +5,15 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import { checkUpload, UPLOAD_LIMITS } from '../src/lib/uploadLimits';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
+import { VerificationBadge } from '../src/components/VerificationBadge';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
+import { AvatarWithBadge } from '../src/components/AvatarWithBadge';
+import { Kicker } from '../src/components/Kicker';
+import { NoticeBox } from '../src/components/NoticeBox';
 import { IconButton } from '../src/components/IconButton';
 import { images } from '../src/constants/images';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -19,18 +24,10 @@ import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
 import { ReportModal } from '../src/components/ReportModal';
 import { ScoutSafetyNotice } from '../src/components/ScoutSafetyNotice';
+import { timeAgo } from '../src/lib/time';
 
 function isImagePath(path: string) {
   return /\.(jpe?g|png|webp)$/i.test(path);
-}
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
 }
 
 // The player-side counterpart to (scout-tabs)/messages.tsx — previously
@@ -55,10 +52,26 @@ export default function Messages() {
     const result = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
+
+    // Checked here, before the upload starts. The bucket enforces the same
+    // limits server-side, so nothing unsafe gets through either way -- but
+    // without this the user picks a 40MB PDF, waits out a slow mobile upload,
+    // and gets a generic failure having spent the data. These users are on
+    // metered connections.
+    const problem = checkUpload(UPLOAD_LIMITS.messageAttachments, asset);
+    if (problem) {
+      showAlert('Cannot attach that file', problem);
+      return;
+    }
+
     setPickedAttachment({ uri: asset.uri, name: asset.name, mimeType: asset.mimeType });
   };
 
-  const CONVO_PAGE_SIZE = 20;
+  // Mirrors the messages_body_length check constraint. Kept as a named constant
+// so the input cap and the counter cannot drift apart.
+const MESSAGE_MAX_LENGTH = 4000;
+
+const CONVO_PAGE_SIZE = 20;
   const {
     data: conversationPages,
     isLoading,
@@ -189,30 +202,50 @@ export default function Messages() {
     ({ item }: { item: (typeof conversations)[number] }) => {
       const scout = item.scouts;
       const preview = previews?.[item.id];
+      const unread = !!preview?.unreadCount;
       return (
-        <Pressable style={[styles.convoRow, elevation('raised', isDark)]} onPress={() => setActiveConversationId(item.id)}>
-          <Image source={{ uri: scout?.profiles?.avatar_url || images.avatarMale }} style={styles.convoAvatar}
-          cachePolicy="memory-disk"
-          transition={200}
-        />
-          <View style={{ flex: 1 }}>
+        <Pressable
+          style={[styles.convoRow, unread ? styles.convoRowUnread : null]}
+          onPress={() => setActiveConversationId(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            (unread ? 'Unread. ' : '') +
+            (scout?.profiles?.full_name || 'Scout') +
+            '. ' + (preview?.lastMessage || 'New conversation')
+          }
+        >
+          {/* Canvas 19 clips the verification hexagon to the avatar's corner,
+              so who is verified is legible without reading a second line. */}
+          <AvatarWithBadge
+            name={scout?.profiles?.full_name}
+            uri={scout?.profiles?.avatar_url}
+            size={38}
+            role={scout?.verification_status === 'verified' ? 'scout' : null}
+          />
+          <View style={{ flex: 1, overflow: 'hidden' }}>
             <View style={styles.convoNameRow}>
-              <Text style={styles.convoName}>{scout?.profiles?.full_name || 'Scout'}</Text>
-              {scout?.verification_status === 'verified' && (
-                <Feather name="check-circle" size={13} color={colors.success} />
+              <Text style={styles.convoName} numberOfLines={1}>
+                {scout?.profiles?.full_name || 'Scout'}
+              </Text>
+              {!!preview?.lastMessageAt && (
+                <Kicker size={fontSize.caption} tone={unread ? 'inherit' : 'muted'}
+                  style={unread ? { color: colors.goldDark } : undefined}>
+                  {timeAgo(preview.lastMessageAt, 'compact')}
+                </Kicker>
               )}
             </View>
-            {!!scout?.organization && <Text style={styles.convoOrg}>{scout.organization}</Text>}
-            <Text style={styles.convoLast} numberOfLines={1}>{preview?.lastMessage || 'New conversation'}</Text>
+            <Text
+              style={[styles.convoLast, unread && styles.convoLastUnread]}
+              numberOfLines={1}
+            >
+              {preview?.lastMessage || 'New conversation'}
+            </Text>
           </View>
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            {!!preview?.lastMessageAt && <Text style={styles.convoTime}>{timeAgo(preview.lastMessageAt)}</Text>}
-            {!!preview?.unreadCount && (
-              <View style={styles.unreadDot}>
-                <Text style={styles.unreadText}>{preview.unreadCount}</Text>
-              </View>
-            )}
-          </View>
+          {!!preview?.unreadCount && (
+            <View style={styles.unreadDot}>
+              <Text style={styles.unreadText}>{preview.unreadCount}</Text>
+            </View>
+          )}
         </Pressable>
       );
     },
@@ -267,7 +300,7 @@ export default function Messages() {
             {!!item.body && <Text style={mine ? styles.bubbleTextMine : styles.bubbleText}>{item.body}</Text>}
           </View>
           <Text style={styles.bubbleMeta}>
-            {timeAgo(item.created_at)}
+            {timeAgo(item.created_at, 'compact')}
             {mine ? (item.read_at ? ' · Read' : ' · Sent') : ''}
           </Text>
         </View>
@@ -284,12 +317,25 @@ export default function Messages() {
         <View style={{ width: 36 }} />
       </View>
 
+      {/*
+        Canvas 19 puts this above the thread list, in navy with the mark. It is
+        the counterpart to the trial screen's "never pay to attend": the two
+        places money fraud reaches a player are a fake trial and a fake scout.
+        Shown on the list rather than inside a thread, so it is read before the
+        first message rather than after.
+      */}
+      <NoticeBox tone="info" style={styles.safety}>
+        <Text style={styles.safetyStrong}>Scouts never ask for money.</Text> Report anyone who does.
+      </NoticeBox>
+
       <QueryState isLoading={isLoading} error={error} onRetry={refetchConversations} skeleton={<SkeletonRow />}>
       {!conversations.length ? (
         <View style={styles.empty}>
           <Feather name="message-circle" size={28} color={colors.textPlaceholder} />
-          <Text style={styles.emptyTitle}>No conversations yet.</Text>
-          <Text style={styles.emptySub}>Scouts who message you will show up here.</Text>
+          <Text style={styles.emptyTitle}>Nothing yet</Text>
+          <Text style={styles.emptySub}>
+            Upload a highlight — scouts message players they&apos;ve seen, not the other way around.
+          </Text>
         </View>
       ) : (
         <FlashList
@@ -320,7 +366,7 @@ export default function Messages() {
                 <View style={styles.convoNameRow}>
                   <Text style={styles.threadName}>{activeConversation?.scouts?.profiles?.full_name || 'Scout'}</Text>
                   {activeConversation?.scouts?.verification_status === 'verified' && (
-                    <Feather name="check-circle" size={13} color={colors.success} />
+                    <VerificationBadge role="scout" size={15} />
                   )}
                 </View>
                 <Text style={styles.threadMeta}>{activeConversation?.scouts?.organization || ''}</Text>
@@ -378,14 +424,25 @@ export default function Messages() {
               <Pressable style={styles.attachBtn} onPress={pickAttachment} accessibilityRole="button" accessibilityLabel="Attach a file">
                 <Feather name="paperclip" size={18} color={colors.textMuted} />
               </Pressable>
-              <TextInput
-                placeholder="Write message..."
-                placeholderTextColor={colors.textPlaceholder}
-                style={styles.composeInput}
-                value={draft}
-                onChangeText={setDraft}
-                multiline
-              />
+              <View style={{ flex: 1 }}>
+                <TextInput
+                  placeholder="Message…"
+                  placeholderTextColor={colors.textPlaceholder}
+                  style={styles.composeInput}
+                  value={draft}
+                  onChangeText={setDraft}
+                  multiline
+                  // Matches the messages_body_length check constraint
+                  // (20260825120000). The database is the authority; this stops
+                  // the paste before it becomes a failed round trip.
+                  maxLength={MESSAGE_MAX_LENGTH}
+                />
+                {draft.length > MESSAGE_MAX_LENGTH - 200 && (
+                  <Text style={styles.charCount}>
+                    {MESSAGE_MAX_LENGTH - draft.length} characters left
+                  </Text>
+                )}
+              </View>
               <Pressable style={[styles.sendBtn, sending && { opacity: 0.5 }]} onPress={send} disabled={sending} accessibilityRole="button" accessibilityLabel="Send message">
                 <Feather name="send" size={16} color={colors.white} />
               </Pressable>
@@ -415,10 +472,25 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 40 },
   emptyTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodyLg, color: colors.textPrimary, marginTop: 8, textAlign: 'center' },
   emptySub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, textAlign: 'center' },
-  convoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.lg, padding: 12 },
+  convoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: 12,
+  },
+  // Canvas 19 outlines an unread thread in gold rather than tinting its fill,
+  // so the row still reads as the same object -- just flagged.
+  convoRowUnread: { borderColor: colors.gold },
+  safety: { marginHorizontal: 20, marginBottom: 12 },
+  safetyStrong: { fontFamily: fontFamily.bold },
+  convoLastUnread: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
   convoAvatar: { width: 46, height: 46, borderRadius: 23 },
-  convoNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  convoName: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  convoNameRow: { justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center', gap: 5 },
+  convoName: { flex: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   convoOrg: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
   convoLast: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
   convoTime: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder },
@@ -443,7 +515,14 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   bubbleTextMine: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.white },
   composeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: colors.divider },
   attachBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  composeInput: { flex: 1, maxHeight: 100, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  charCount: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.caption,
+    color: colors.textMuted,
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  composeInput: { maxHeight: 100, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, paddingHorizontal: 14, paddingVertical: 10, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary },
   sendBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   pendingAttachmentRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 10, backgroundColor: colors.infoTint },
   pendingAttachmentText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.primary },

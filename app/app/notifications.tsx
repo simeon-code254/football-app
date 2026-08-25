@@ -6,14 +6,19 @@ import { router } from 'expo-router';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, useThemeColors } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
-import { useSessionStore } from '../src/store/useSessionStore';
+import { useSessionStore, type Role } from '../src/store/useSessionStore';
 import * as notificationsRepository from '../src/repositories/notificationsRepository';
 import type { NotificationRow, NotificationPage } from '../src/repositories/notificationsRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
 import { showAlert } from '../src/lib/alert';
+import { timeAgo } from '../src/lib/time';
+import Animated from 'react-native-reanimated';
+import { usePulse } from '../src/lib/motion';
+import { Logo } from '../src/components/Logo';
+import { Kicker } from '../src/components/Kicker';
 
 const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
   trial_status_change: 'clipboard',
@@ -31,43 +36,46 @@ const TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = 
 // Every notification carries enough in `data` to know where it's actually
 // about — previously tapping one only marked it read and went nowhere,
 // even though the destination was always derivable.
-function routeForNotification(item: NotificationRow, role: 'player' | 'scout' | null): string | null {
+//
+// Typed against the store's Role rather than a local union, so that widening
+// the role set fails the type-check here instead of silently routing a new
+// role to a player screen -- which is exactly what adding 'club' would
+// otherwise have done to every branch below.
+function routeForNotification(item: NotificationRow, role: Role | null): string | null {
   const data = (item.data as Record<string, unknown> | null) ?? {};
   switch (item.type) {
     case 'trial_status_change':
     case 'trial_invitation':
       return data.trial_id ? `/trial/${data.trial_id}` : null;
     case 'new_message':
-      return role === 'scout' ? '/(scout-tabs)/messages' : '/messages';
+      return role === 'scout'
+        ? '/(scout-tabs)/messages'
+        : role === 'club'
+          ? '/(club-tabs)/messages'
+          : '/messages';
     case 'analysis_complete':
     case 'analysis_skipped':
     case 'analysis_failed':
     case 'rating_improved':
-      return '/ai-ratings';
+      // Ratings belong to a player. A scout or club receiving one of these
+      // would be a bug upstream, so send them nowhere rather than to a screen
+      // that would fail to load their own player row.
+      return role === 'player' ? '/ai-ratings' : null;
     case 'scout_verification':
-      return '/(scout-tabs)/home';
+      // Both ID-checked roles get this, and each has its own home.
+      return role === 'club' ? '/(club-tabs)/home' : '/(scout-tabs)/home';
     case 'weekly_digest':
       // The digest is about movement and attention, both of which live on the
       // player's own profile.
-      return '/(player-tabs)/profile';
+      return role === 'player' ? '/(player-tabs)/profile' : null;
     case 'profile_view':
       // Their own profile: the notification says to keep highlights current,
       // so it should land where they can see what the scout just saw and act
       // on it, rather than dead-ending on the notification list.
-      return '/(player-tabs)/profile';
+      return role === 'player' ? '/(player-tabs)/profile' : null;
     default:
       return null;
   }
-}
-
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 // Bell icons existed on both dashboards with a static badge and nowhere to
@@ -76,6 +84,10 @@ function timeAgo(iso: string) {
 export default function Notifications() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  // Canvas pulse. One shared driver for the whole list: separate hooks per
+  // row would need a hook inside renderItem, and synced unread dots read as
+  // one signal rather than as several competing ones.
+  const pulse = usePulse();
   const userId = useSessionStore((s) => s.session?.user.id);
   const role = useSessionStore((s) => s.role);
   const queryClient = useQueryClient();
@@ -185,9 +197,25 @@ export default function Notifications() {
     );
   };
 
+  // Canvas screen 20. Every row is a white card with a coloured stripe down its
+  // left edge, a navy chip carrying the gold Matobev mark, a condensed title
+  // and an uppercase meta line.
+  //
+  // The mark rather than a per-type glyph is the canvas's call, and the brand
+  // deck's usage map states the same thing outright: "Notification / alert
+  // chip -- 18x18px mark in 32x32px chip, gold on navy chip". It costs some
+  // at-a-glance type distinction, which the stripe colour carries instead.
   const renderItem = useCallback(
-    ({ item }: { item: NotificationRow }) => {
+    ({ item, index }: { item: NotificationRow; index: number }) => {
       const read = !!item.read_at;
+      // Gold marks "unread"; green marks a rating that moved, which is the one
+      // notification type that is good news on its own. Everything else has no
+      // stripe rather than a decorative one.
+      const stripe = !read
+        ? colors.gold
+        : item.type === 'rating_improved'
+          ? colors.success
+          : 'transparent';
       return (
         <Pressable
           style={styles.row}
@@ -196,16 +224,21 @@ export default function Notifications() {
             const dest = routeForNotification(item, role);
             if (dest) router.push(dest);
           }}
+          accessibilityRole="button"
+          accessibilityLabel={(read ? '' : 'Unread. ') + item.title}
         >
-          <View style={[styles.iconWrap, !read && styles.iconWrapUnread]}>
-            <Feather name={TYPE_ICON[item.type] ?? 'bell'} size={16} color={read ? colors.textMuted : colors.primary} />
+          <View style={[styles.stripe, { backgroundColor: stripe }]} />
+          <View style={styles.markChip}>
+            <Logo variant="gold" size={18} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.title, !read && styles.titleUnread]}>{item.title}</Text>
+            <Text style={styles.title}>{item.title}</Text>
             {!!item.body && <Text style={styles.body}>{item.body}</Text>}
-            <Text style={styles.time}>{timeAgo(item.created_at)}</Text>
+            <Kicker size={fontSize.caption} style={{ marginTop: 2 }}>
+              {timeAgo(item.created_at)}
+            </Kicker>
           </View>
-          {!read && <View style={styles.dot} />}
+          {!read && <Animated.View style={[styles.dot, pulse]} />}
           {read && (
             <Pressable
               onPress={() => clearOne(item.id)}
@@ -220,7 +253,7 @@ export default function Notifications() {
         </Pressable>
       );
     },
-    [role, styles, colors]
+    [role, styles, colors, pulse]
   );
 
   return (
@@ -264,7 +297,7 @@ export default function Notifications() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -275,10 +308,36 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   list: { padding: 20, paddingTop: 8 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyTitle: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 14 },
-  iconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  iconWrapUnread: { backgroundColor: colors.infoTint },
-  title: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textBody },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: 14,
+    overflow: 'hidden',
+  },
+  // The canvas insets the stripe 12px top and bottom and rounds its right edge.
+  stripe: {
+    position: 'absolute',
+    left: 0,
+    top: 12,
+    bottom: 12,
+    width: 3,
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
+  },
+  markChip: {
+    width: 32,
+    height: 32,
+    borderRadius: radii.sm,
+    backgroundColor: colors.primaryDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   titleUnread: { color: colors.textPrimary },
   body: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2, lineHeight: 18 },
   time: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, marginTop: 4 },

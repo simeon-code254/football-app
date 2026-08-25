@@ -9,6 +9,7 @@ import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../../src/theme';
+import { NoticeBox } from '../../src/components/NoticeBox';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { AppTextField } from '../../src/components/AppTextField';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -19,6 +20,8 @@ import { showAlert } from '../../src/lib/alert';
 import { successFeedback, errorFeedback } from '../../src/lib/haptics';
 import { PushPrimer } from '../../src/components/PushPrimer';
 import { getPushPermission } from '../../src/lib/push';
+import Animated from 'react-native-reanimated';
+import { useFloat } from '../../src/lib/motion';
 
 type UploadMode = 'reel' | 'ai';
 type PickedVideo = {
@@ -110,6 +113,7 @@ function VideoPreviewPlayer({ uri }: { uri: string }) {
 export default function Upload() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+  const float = useFloat();
   const userId = useSessionStore((s) => s.session?.user.id);
   const [mode, setMode] = useState<UploadMode>('reel');
   const [video, setVideo] = useState<PickedVideo | null>(null);
@@ -317,18 +321,14 @@ export default function Upload() {
         })
         .catch(() => {});
 
-      // Previously this always force-navigated to Profile on OK, regardless
-      // of mode -- for a highlight-only upload nothing new shows up there
-      // (it's on Reels), and even for AI mode the analysis hasn't finished
-      // yet, so jumping away felt arbitrary rather than useful. Just reset
-      // the form and let the user decide where to go next.
-      showAlert(
-        mode === 'ai' ? 'Uploaded — Queued for Analysis' : 'Uploaded',
-        mode === 'ai'
-          ? "Your video was submitted successfully and is queued for AI analysis. You'll see your ratings in AI Ratings once processing completes."
-          : 'Your video has been published to your highlights.',
-        [{ text: 'OK', onPress: resetForm }]
-      );
+      // Canvas screen 15 gives the upload its own success screen rather than
+      // an OS alert. The form is reset first so returning here via "Upload
+      // another" lands on a clean one.
+      resetForm();
+      router.push({
+        pathname: '/upload-success',
+        params: { videoId, title: title.trim() || 'Your highlight', mode },
+      });
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // The user asked to stop; anything already written is cleaned up
@@ -347,19 +347,45 @@ export default function Upload() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Upload</Text>
-        <Text style={styles.sub}>Share your highlights or get AI analysis</Text>
+        <Text style={styles.title}>New upload</Text>
 
+        {/*
+          Canvas screen 14 puts AI ANALYSIS first and HIGHLIGHT ONLY second,
+          which is the right default: analysis is the product, and a player who
+          picks highlight-only by accident gets no rating and no explanation.
+          The order was reversed here before.
+        */}
         <View style={styles.toggleRow}>
-          <Pressable style={[styles.toggleBtn, mode === 'reel' && styles.toggleBtnActive]} onPress={() => setMode('reel')}>
-            <Feather name="film" size={14} color={mode === 'reel' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.toggleText, mode === 'reel' && styles.toggleTextActive]}>Highlight Reel</Text>
+          <Pressable
+            style={[styles.toggleBtn, mode === 'ai' && styles.toggleBtnActive]}
+            onPress={() => setMode('ai')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: mode === 'ai' }}
+          >
+            <Text style={[styles.toggleText, mode === 'ai' && styles.toggleTextActive]}>
+              AI analysis
+            </Text>
           </Pressable>
-          <Pressable style={[styles.toggleBtn, mode === 'ai' && styles.toggleBtnActive]} onPress={() => setMode('ai')}>
-            <Feather name="cpu" size={14} color={mode === 'ai' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.toggleText, mode === 'ai' && styles.toggleTextActive]}>AI Analysis</Text>
+          <Pressable
+            style={[styles.toggleBtn, mode === 'reel' && styles.toggleBtnActive]}
+            onPress={() => setMode('reel')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: mode === 'reel' }}
+          >
+            <Text style={[styles.toggleText, mode === 'reel' && styles.toggleTextActive]}>
+              Highlight only
+            </Text>
           </Pressable>
         </View>
+
+        {/* Canvas 14's framing tip. It is not decoration: camera shake and the
+            player leaving frame are the two things that most often make the
+            pipeline fail calibration or lose the subject. */}
+        {mode === 'ai' && (
+          <NoticeBox style={styles.framingTip}>
+            Keep the camera still and stay in frame — it lifts every attribute score.
+          </NoticeBox>
+        )}
 
         {video ? (
           <>
@@ -390,9 +416,12 @@ export default function Upload() {
           </>
         ) : (
           <Pressable style={styles.dropZone} onPress={pickVideo}>
-            <View style={styles.dropIconWrap}>
+            {/* Canvas float (screen 14): the empty drop zone's icon drifts,
+                which is what marks it as the thing to act on rather than an
+                illustration. */}
+            <Animated.View style={[styles.dropIconWrap, float]}>
               <Feather name="upload-cloud" size={26} color={colors.primary} />
-            </View>
+            </Animated.View>
             <Text style={styles.dropTitle}>Upload Video</Text>
             <Text style={styles.dropSub}>MP4, MOV up to 100MB</Text>
           </Pressable>
@@ -561,12 +590,12 @@ export default function Upload() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
+  framingTip: { marginBottom: 20 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   title: { fontFamily: fontFamily.bold, fontSize: fontSize.display, color: colors.textPrimary },
-  sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 20 },
-  toggleRow: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, padding: 4, marginBottom: 20 },
-  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: radii.pill },
+  toggleRow: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.lg, padding: 4, marginBottom: 16 },
+  toggleBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 11, borderRadius: radii.md },
   toggleBtnActive: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
   toggleText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
   toggleTextActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
@@ -637,7 +666,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     marginTop: -14,
     borderWidth: 3,
     borderColor: colors.primary,
-    backgroundColor: 'rgba(26,109,255,0.25)',
+    backgroundColor: 'rgba(18,58,107,0.25)',
   },
   tagModalActions: { flexDirection: 'row', gap: 10, padding: 20, alignItems: 'center' },
   tagSkipBtn: { paddingVertical: 14, paddingHorizontal: 12 },

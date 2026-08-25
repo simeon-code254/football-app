@@ -72,7 +72,8 @@ export default function BlockedAccounts() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <Text style={styles.lede}>
-              Blocked people can't message you or see you in Discover. They're never told they've been blocked.
+              Blocked accounts can&apos;t see your profile, clips or ratings, and can&apos;t message
+              you. They are never told they have been blocked.
             </Text>
           }
           ListEmptyComponent={
@@ -138,7 +139,7 @@ function makeStyles(colors: ThemeColors) {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
     },
-    avatar: { width: 40, height: 40, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted },
+    avatar: { width: 40, height: 40, borderRadius: radii.pill, backgroundColor: colors.background },
     name: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.body, color: colors.textPrimary },
     unblockBtn: {
       paddingHorizontal: spacing.lg,

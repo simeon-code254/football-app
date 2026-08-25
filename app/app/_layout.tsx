@@ -4,17 +4,20 @@ import * as SplashScreen from 'expo-splash-screen';
 import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-// The package's own root barrel (`@expo-google-fonts/poppins`) requires
-// all 18 weight/style .ttf files unconditionally in one module -- importing
-// anything from it, even just `useFonts`, pulls every one of them into the
-// bundle regardless of which named exports are actually used. Per-weight
-// subpath imports avoid that the same way @expo/vector-icons/Feather does.
-import { useFonts } from '@expo-google-fonts/poppins/useFonts';
-import { Poppins_400Regular } from '@expo-google-fonts/poppins/400Regular';
-import { Poppins_500Medium } from '@expo-google-fonts/poppins/500Medium';
-import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
-import { Poppins_700Bold } from '@expo-google-fonts/poppins/700Bold';
-import { Poppins_800ExtraBold } from '@expo-google-fonts/poppins/800ExtraBold';
+// The packages' own root barrels (`@expo-google-fonts/barlow`,
+// `.../barlow-condensed`) require every weight/style .ttf unconditionally in
+// one module -- importing anything from them, even just `useFonts`, pulls all
+// of them into the bundle regardless of which named exports are actually used.
+// Per-weight subpath imports avoid that the same way @expo/vector-icons/Feather does.
+import { useFonts } from '@expo-google-fonts/barlow/useFonts';
+import { Barlow_400Regular } from '@expo-google-fonts/barlow/400Regular';
+import { Barlow_500Medium } from '@expo-google-fonts/barlow/500Medium';
+import { Barlow_600SemiBold } from '@expo-google-fonts/barlow/600SemiBold';
+import { Barlow_700Bold } from '@expo-google-fonts/barlow/700Bold';
+import { BarlowCondensed_500Medium } from '@expo-google-fonts/barlow-condensed/500Medium';
+import { BarlowCondensed_600SemiBold } from '@expo-google-fonts/barlow-condensed/600SemiBold';
+import { BarlowCondensed_700Bold } from '@expo-google-fonts/barlow-condensed/700Bold';
+import { BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed/800ExtraBold';
 import { useThemeColors, useIsDark } from '../src/theme';
 import { queryClient, persistOptions } from '../src/lib/queryClient';
 import { startNetworkWatcher } from '../src/lib/network';
@@ -60,11 +63,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
+    Barlow_400Regular,
+    Barlow_500Medium,
+    Barlow_600SemiBold,
+    Barlow_700Bold,
+    BarlowCondensed_500Medium,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+    BarlowCondensed_800ExtraBold,
   });
 
   const sessionStatus = useSessionStore((s) => s.status);
@@ -78,8 +84,16 @@ function RootLayout() {
 
   useEffect(() => {
     authRepository.getSession().then(hydrate);
-    const subscription = authRepository.onAuthStateChange((session) => {
+    const subscription = authRepository.onAuthStateChange((session, event) => {
       hydrate(session);
+      // An expired refresh token used to drop the user at the welcome screen
+      // with no explanation -- mid-upload, mid-message, no reason given.
+      // Supabase fires SIGNED_OUT for both a deliberate sign-out and a failed
+      // refresh, so authRepository flags the deliberate ones and an unflagged
+      // SIGNED_OUT is by elimination an expiry worth explaining.
+      if (event === 'SIGNED_OUT' && !authRepository.consumeDeliberateSignOut()) {
+        router.replace('/session-expired');
+      }
     });
     return () => subscription.unsubscribe();
   }, [hydrate]);
@@ -128,8 +142,26 @@ function RootLayout() {
   // folder name, not the screen inside it -- expo-router includes group
   // segments as-is, so a scout on /(player-tabs)/profile needs the group
   // check, not just the named-screen one).
-  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete']);
-  const SCOUT_ONLY_SCREENS = new Set(['scout-edit-profile', 'scout-verification']);
+  const PLAYER_ONLY_SCREENS = new Set(['ai-ratings', 'trials', 'messages', 'profile-complete', 'upload-success', 'player-verification', 'trial-applied', 'milestones', 'rating-history', 'analysis-progress']);
+  const SCOUT_ONLY_SCREENS = new Set(['scout-edit-profile', 'scout-verification', 'scout-onboarding', 'shortlist']);
+  // Billing and verification outcomes belong to the two paying roles, so they
+  // are not in either single-role set -- a player must never reach checkout.
+  const PAID_ROLE_SCREENS = new Set(['checkout', 'billing', 'premium', 'verification-pending', 'verification-rejected']);
+  const CLUB_ONLY_SCREENS = new Set(['club-edit-profile', 'club-verification', 'club-team', 'club-onboarding', 'trial-post']);
+  // Where each role belongs when it lands somewhere it should not be. Keyed by
+  // role so adding a fourth one fails loudly here rather than defaulting a
+  // stranger into the player tabs.
+  const HOME_FOR: Record<Exclude<typeof role, null>, string> = {
+    player: '/(player-tabs)/home',
+    scout: '/(scout-tabs)/home',
+    club: '/(club-tabs)/home',
+  };
+  // The tab group each role owns; every other group is off-limits to it.
+  const GROUP_FOR: Record<Exclude<typeof role, null>, string> = {
+    player: '(player-tabs)',
+    scout: '(scout-tabs)',
+    club: '(club-tabs)',
+  };
   useEffect(() => {
     if (!ready || sessionStatus !== 'signed-in') return;
     const top = segments[0] ?? '';
@@ -142,11 +174,21 @@ function RootLayout() {
       if (!AUTH_STACK_SCREENS.has(top)) router.replace('/profile-complete');
       return;
     }
-    if (role === 'scout' && (PLAYER_ONLY_SCREENS.has(top) || top === '(player-tabs)')) {
-      router.replace('/(scout-tabs)/home');
-    } else if (role === 'player' && (SCOUT_ONLY_SCREENS.has(top) || top === '(scout-tabs)')) {
-      router.replace('/(player-tabs)/home');
-    }
+    if (!role) return;
+
+    // A role may be in its own group, or on any screen that is not claimed by
+    // another role. Expressed as "is this somewhere else's" rather than a pair
+    // of hardcoded comparisons, so three roles do not need six branches.
+    const ownGroup = GROUP_FOR[role];
+    const inForeignGroup =
+      (top === '(player-tabs)' || top === '(scout-tabs)' || top === '(club-tabs)') && top !== ownGroup;
+    const onForeignScreen =
+      (role !== 'player' && PLAYER_ONLY_SCREENS.has(top)) ||
+      (role !== 'scout' && SCOUT_ONLY_SCREENS.has(top)) ||
+      (role !== 'club' && CLUB_ONLY_SCREENS.has(top)) ||
+      (role === 'player' && PAID_ROLE_SCREENS.has(top));
+
+    if (inForeignGroup || onForeignScreen) router.replace(HOME_FOR[role]);
   }, [ready, sessionStatus, role, player, profile, segments]);
 
   const onLayoutRootView = useCallback(async () => {

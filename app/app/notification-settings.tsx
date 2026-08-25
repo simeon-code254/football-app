@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation } from '../src/theme';
+import { fontFamily, fontSize, radii, spacing, useThemeColors, type ThemeColors, useIsDark, elevation, kicker } from '../src/theme';
 import { IconButton } from '../src/components/IconButton';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonRow } from '../src/components/Skeleton';
@@ -188,11 +188,9 @@ function makeStyles(colors: ThemeColors) {
     headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.title, color: colors.textPrimary },
     content: { padding: spacing.lg, paddingBottom: spacing.huge },
     sectionLabel: {
-      fontFamily: fontFamily.semiBold,
+      ...kicker,
       fontSize: fontSize.xs,
       color: colors.textMuted,
-      letterSpacing: 0.6,
-      textTransform: 'uppercase',
       marginBottom: spacing.sm,
       marginTop: spacing.md,
     },

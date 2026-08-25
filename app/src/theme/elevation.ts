@@ -21,19 +21,19 @@ export type ElevationLevel = 'raised' | 'floating' | 'overlay';
 
 const LIGHT: Record<ElevationLevel, ViewStyle> = {
   raised: Platform.select({
-    ios: { shadowColor: '#0B1220', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+    ios: { shadowColor: '#2A2418', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
     android: { elevation: 2 },
-    default: { boxShadow: '0 2px 8px rgba(11,18,32,0.06)' } as ViewStyle,
+    default: { boxShadow: '0 2px 8px rgba(42,36,24,0.06)' } as ViewStyle,
   })!,
   floating: Platform.select({
-    ios: { shadowColor: '#0B1220', shadowOpacity: 0.14, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
+    ios: { shadowColor: '#2A2418', shadowOpacity: 0.14, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
     android: { elevation: 8 },
-    default: { boxShadow: '0 8px 20px rgba(11,18,32,0.14)' } as ViewStyle,
+    default: { boxShadow: '0 8px 20px rgba(42,36,24,0.14)' } as ViewStyle,
   })!,
   overlay: Platform.select({
-    ios: { shadowColor: '#0B1220', shadowOpacity: 0.22, shadowRadius: 28, shadowOffset: { width: 0, height: 12 } },
+    ios: { shadowColor: '#2A2418', shadowOpacity: 0.22, shadowRadius: 28, shadowOffset: { width: 0, height: 12 } },
     android: { elevation: 16 },
-    default: { boxShadow: '0 12px 28px rgba(11,18,32,0.22)' } as ViewStyle,
+    default: { boxShadow: '0 12px 28px rgba(42,36,24,0.22)' } as ViewStyle,
   })!,
 };
 
@@ -41,9 +41,9 @@ const LIGHT: Record<ElevationLevel, ViewStyle> = {
 // nothing. Lifting the surface itself is what reads as elevation, so each
 // level steps the background lighter and adds a hairline to catch the edge.
 const DARK: Record<ElevationLevel, ViewStyle> = {
-  raised: { backgroundColor: '#161F30', borderWidth: 1, borderColor: '#22304A' },
-  floating: { backgroundColor: '#1B2537', borderWidth: 1, borderColor: '#2A3A57' },
-  overlay: { backgroundColor: '#1F2A3E', borderWidth: 1, borderColor: '#32456A' },
+  raised: { backgroundColor: '#1A2130', borderWidth: 1, borderColor: '#2A3340' },
+  floating: { backgroundColor: '#20293A', borderWidth: 1, borderColor: '#334052' },
+  overlay: { backgroundColor: '#283346', borderWidth: 1, borderColor: '#3D4B60' },
 };
 
 export function elevation(level: ElevationLevel, isDark: boolean): ViewStyle {

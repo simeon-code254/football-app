@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 import * as profileRepository from '../repositories/profileRepository';
 import type { ProfileRow, PlayerRow, ScoutRow } from '../repositories/profileRepository';
+import type { ClubRow } from '../repositories/clubsRepository';
+import * as clubsRepository from '../repositories/clubsRepository';
 
-export type Role = 'player' | 'scout';
+export type Role = 'player' | 'scout' | 'club';
 
 type SessionState = {
   status: 'loading' | 'signed-out' | 'signed-in';
@@ -11,7 +13,14 @@ type SessionState = {
   profile: ProfileRow | null;
   player: PlayerRow | null;
   scout: ScoutRow | null;
+  club: ClubRow | null;
   role: Role | null;
+  /**
+   * True when the signed-in account has cleared its ID check. Both scouts and
+   * clubs are ID-checked, and everything downstream (seeing minors, messaging,
+   * posting trials) gates on the same flag, so one name covers both rather
+   * than every consumer having to ask which role it is looking at.
+   */
   scoutVerified: boolean;
   hydrate: (session: Session | null) => Promise<void>;
   clear: () => void;
@@ -22,6 +31,7 @@ const CLEARED = {
   profile: null,
   player: null,
   scout: null,
+  club: null,
   role: null,
   scoutVerified: false,
 };
@@ -42,12 +52,11 @@ export const useSessionStore = create<SessionState>((set) => ({
     }
     try {
       const profile = await profileRepository.getMyProfile(session.user.id);
-      // Admin (and any other non-player/non-scout role) has no matching
-      // players/scouts row and no UI in this app -- previously this fell
-      // through to the player branch by default ("not scout = player") and
-      // 406'd fetching a players row that was never created for them. This
-      // app is player/scout only; admins use the separate web dashboard.
-      if (profile.role !== 'player' && profile.role !== 'scout') {
+      // Admin has no players/scouts/clubs row and no UI in this app -- it
+      // previously fell through to the player branch ("not scout = player")
+      // and 406'd fetching a players row that was never created for it.
+      // Admins use the separate web dashboard.
+      if (profile.role !== 'player' && profile.role !== 'scout' && profile.role !== 'club') {
         set(SIGNED_OUT);
         return;
       }
@@ -60,12 +69,34 @@ export const useSessionStore = create<SessionState>((set) => ({
           profile,
           player: null,
           scout,
+          club: null,
           role,
           scoutVerified: scout?.verification_status === 'verified',
         });
+      } else if (role === 'club') {
+        const club = await clubsRepository.getMyClub(session.user.id);
+        set({
+          status: 'signed-in',
+          session,
+          profile,
+          player: null,
+          scout: null,
+          club,
+          role,
+          scoutVerified: club?.verification_status === 'verified',
+        });
       } else {
         const player = await profileRepository.getMyPlayer(session.user.id);
-        set({ status: 'signed-in', session, profile, player, scout: null, role, scoutVerified: false });
+        set({
+          status: 'signed-in',
+          session,
+          profile,
+          player,
+          scout: null,
+          club: null,
+          role,
+          scoutVerified: false,
+        });
       }
     } catch {
       set(SIGNED_OUT);

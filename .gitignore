@@ -1,0 +1,9 @@
+# Design source binaries — large, and redundant with the canvas HTML
+# already committed under docs/design-handoff/.
+*.pptx
+Mobile app design scope.zip
+
+# Never commit real credentials. Only .env.example files belong in git.
+.env
+.env.local
+.env.*.local

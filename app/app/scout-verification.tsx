@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
 import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
+import { NoticeBox, ProgressSteps } from '../src/components/NoticeBox';
 import { PrimaryButton } from '../src/components/PrimaryButton';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -174,6 +175,20 @@ export default function ScoutVerification() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Canvas 48 SCOUT PATH · ID CHECK is step 3 of 4. */}
+        <ProgressSteps step={3} total={4} style={styles.steps} />
+
+        {/*
+          The canvas prints the reason under the upload slots, and it is the
+          reason: this check is what is_verified_scout() gates on, and that
+          function is what every RLS policy protecting a minor consults. An
+          unverified scout is not merely un-badged -- the database will not
+          return an under-18 player's row to them at all.
+        */}
+        <NoticeBox style={styles.why}>
+          Minors are invisible to unverified accounts. This check is why.
+        </NoticeBox>
+
         {rejected && (
           <View style={styles.rejectedBanner}>
             <Feather name="x-circle" size={16} color={colors.error} />
@@ -233,7 +248,9 @@ export default function ScoutVerification() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
+  root: { flex: 1, backgroundColor: colors.background },
+  steps: { marginBottom: 16 },
+  why: { marginBottom: 16 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
   content: { padding: 20, paddingTop: 8, gap: 18 },

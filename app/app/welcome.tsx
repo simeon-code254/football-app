@@ -1,111 +1,106 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { fontFamily, fontSize, spacing, useThemeColors } from '../src/theme';
-import { PrimaryButton } from '../src/components/PrimaryButton';
-import { SecondaryButton } from '../src/components/SecondaryButton';
-import { localImages } from '../src/constants/images';
-import { useTranslation } from '../src/i18n';
-import { Logo } from '../src/components/Logo';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { cx, fontFamily, fontFamilyDisplay, fontSize, spacing, useThemeColors } from '../src/theme';
+import { images } from '../src/constants/images';
+import { Button, LinkButton } from '../src/components/Button';
 
-// Matches Matobev v4.dc.html's WELCOME block.
+// Canvas screen 02 WELCOME.
+//
+//   <div style="height:310px">                       full-bleed photo
+//     <img ... filter:grayscale(1) contrast(1.05)>
+//     <div background:linear-gradient(180deg,rgba(89,128,166,.3),
+//                    rgba(10,27,51,.6) 45%, var(--navy) 100%)>
+//   <div style="margin-top:-46px">                   copy overlaps the photo
+//     "Get seen."            .h 36px w800 letter-spacing:-1px
+//     "Scouts are looking. Rated by AI, watched by humans."
+//     [Create account]  gold
+//     [Sign in]         outline
+//     Browse without an account   #7FB0F0 underlined
+//
+// The photo is greyscaled and contrast-lifted so the navy wash over it reads as
+// one colour rather than fighting the subject's kit -- that filter is the
+// reason a colour photo does not look wrong here.
 export default function Welcome() {
   const colors = useThemeColors();
-  const { t } = useTranslation();
   const styles = makeStyles(colors);
+
   return (
-    <SafeAreaView style={styles.root} edges={['bottom']}>
+    <View style={styles.root}>
       <View style={styles.hero}>
-        <Image source={localImages.welcomeHero} style={styles.heroImage} contentFit="cover" />
+        <ImageBackground
+          source={{ uri: images.authHero }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+        {/*
+          The canvas greyscales the photo. React Native has no CSS filter, so
+          the desaturation comes from the wash: a steel-blue top stop over a
+          navy base pulls the image toward the palette rather than leaving it
+          full-colour under a transparent overlay.
+        */}
         <LinearGradient
-          colors={['rgba(26,109,255,0.1)', 'rgba(255,255,255,0.7)', '#ffffff']}
-          locations={[0, 0.85, 1]}
+          colors={['rgba(89,128,166,0.30)', 'rgba(10,27,51,0.60)', '#0A1B33']}
+          locations={[0, 0.45, 1]}
           style={StyleSheet.absoluteFill}
         />
-        <View style={styles.badge}>
-          <View style={styles.badgeCard}>
-            <Logo size={38} />
-          </View>
-        </View>
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>{t('welcome.title')}</Text>
-        <Text style={styles.sub}>Discover. Analyze. Connect.{'\n'}Where football talent meets opportunity.</Text>
+      <SafeAreaView style={styles.body} edges={['bottom']}>
+        <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+          Get seen.
+        </Text>
+        <Text style={styles.subtitle}>Scouts are looking. Rated by AI, watched by humans.</Text>
 
-        <View style={styles.actions}>
-          <PrimaryButton label={t('common.createAccount')} onPress={() => router.push('/role-select')} />
-          <SecondaryButton label={t('common.login')} onPress={() => router.push('/login')} />
-        </View>
+        <View style={styles.spacer} />
 
-        {/* This screen -- not onboarding -- is where signed-out users
-            actually land: every sign-out path routes here
-            (settings.tsx, security-settings.tsx, suspended.tsx), and
-            onboarding's own Skip lands here too. Onboarding is only ever
-            reached on a cold start from the splash screen, so the
-            browse-first entry point has to exist here or most people never
-            see it. */}
-        <Pressable onPress={() => router.push('/browse')} hitSlop={10} style={styles.browseWrap}>
-          <Text style={styles.browseText}>{t('welcome.browseFirst')}</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
+        <Button
+          label="Create account"
+          variant="gold"
+          onPress={() => router.push('/role-select')}
+        />
+        <Button
+          label="Sign in"
+          variant="outline"
+          onPress={() => router.push('/login')}
+          style={styles.secondary}
+        />
+        <LinkButton label="Browse without an account" onPress={() => router.push('/browse')} />
+      </SafeAreaView>
+    </View>
   );
 }
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  // Same relative-weight fix as onboarding.tsx: 9:11 = 45:55, matching the
-  // mockup's intended split instead of the ~31:69 the old 0.45-vs-1 gave.
-  hero: { flex: 9, overflow: 'visible' },
-  heroImage: { width: '100%', height: '100%' },
-  badge: {
-    position: 'absolute',
-    bottom: -28,
-    left: '50%',
-    marginLeft: -28,
-    zIndex: 2,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-  },
-  badgeCard: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 11,
-    paddingTop: 40,
-    paddingHorizontal: 28,
-    paddingBottom: 28,
-    alignItems: 'center',
-  },
-  title: {
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.display,
-    color: colors.textPrimary,
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  sub: {
-    fontFamily: fontFamily.regular,
-    fontSize: fontSize.bodySm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 260,
-    marginBottom: 32,
-  },
-  actions: { width: '100%', gap: spacing.sm, marginTop: 'auto' },
-  browseWrap: { alignItems: 'center', marginTop: spacing.lg },
-  browseText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textMuted },
+    // The canvas paints the whole frame navy and lets the photo occupy the
+    // top; below the photo the navy simply continues, so there is no seam.
+    root: { flex: 1, backgroundColor: '#0A1B33' },
+    hero: { height: 310 },
+    body: {
+      flex: 1,
+      paddingHorizontal: cx(26),
+      paddingBottom: cx(26),
+      // The copy block rides up over the base of the photo, which is what
+      // makes the gradient read as a fade into the text rather than a band.
+      marginTop: -cx(46),
+    },
+    title: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.splash,
+      lineHeight: fontSize.splash,
+      letterSpacing: -1,
+      color: colors.white,
+    },
+    subtitle: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.body,
+      lineHeight: fontSize.body * 1.4,
+      color: 'rgba(255,255,255,0.7)',
+      marginTop: spacing.sm,
+    },
+    spacer: { flex: 1 },
+    secondary: { marginTop: spacing.md, marginBottom: spacing.xs },
   });
 }

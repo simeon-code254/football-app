@@ -1,20 +1,30 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
-import { IconButton } from '../src/components/IconButton';
+import { cx, fontFamily, fontFamilyDisplay, fontSize, radii, spacing, useThemeColors } from '../src/theme';
+import { Kicker } from '../src/components/Kicker';
+import { Logo } from '../src/components/Logo';
+import { AttributeBar } from '../src/components/AttributeBar';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as profileRepository from '../src/repositories/profileRepository';
 import * as videosRepository from '../src/repositories/videosRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonProfile } from '../src/components/Skeleton';
 import { RatingReveal } from '../src/components/RatingReveal';
+import { RatingHistory } from '../src/components/RatingHistory';
+import Animated from 'react-native-reanimated';
+import { useSpin, useSheen } from '../src/lib/motion';
+import * as communityRepository from '../src/repositories/communityRepository';
 
+// Canvas barGrow: each attribute bar fills from zero rather than appearing
+// already full. Split into its own component because useBarGrow is a hook and
+// these are rendered in a .map -- calling it inside the loop body would break
+// the rules of hooks the moment the attribute list changes length.
 // Key holds the last job id whose reveal was shown, so it fires once.
 const SEEN_REVEAL_KEY = 'matobev-last-rating-reveal-job';
 
@@ -37,12 +47,18 @@ const JOB_STATUS_COPY: Record<string, { icon: React.ComponentProps<typeof Feathe
 export default function AiRatings() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
-  const CONFIDENCE_COLOR: Record<string, string> = {
-    High: colors.success,
-    Medium: colors.goldDark,
-    Low: colors.error,
-  };
+  // 1.2s rather than the canvas's 4s: this one signals live work, and at 4s
+  // a loader reads as stalled rather than busy.
+  const spin = useSpin(1200);
+
   const userId = useSessionStore((s) => s.session?.user.id);
+
+  const { data: history } = useQuery({
+    queryKey: ['ratingHistory', userId],
+    enabled: !!userId,
+    queryFn: () => communityRepository.getRatingHistory(userId!),
+  });
+
   const role = useSessionStore((s) => s.role);
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -95,6 +111,8 @@ export default function AiRatings() {
     setRevealJobId(null);
   };
 
+  const heroSheen = useSheen(4000); // canvas 12: sheen 4s
+
   const presentAttrCount = data?.attributes.filter((a) => a.value != null).length ?? 0;
   const totalAttrCount = data?.attributes.length ?? 0;
   const isProvisionalRating = presentAttrCount > 0 && presentAttrCount < totalAttrCount;
@@ -103,26 +121,68 @@ export default function AiRatings() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevron-left" accessibilityLabel="Go back" onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>AI Ratings</Text>
-        <View style={{ width: 36 }} />
+        <Pressable onPress={() => router.back()} hitSlop={10} accessibilityLabel="Go back">
+          <Feather name="chevron-left" size={20} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>AI ratings</Text>
+        <Logo variant="navy" size={16} />
       </View>
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonProfile />}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <LinearGradient colors={[colors.primary, colors.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-            <Text style={styles.heroLabel}>OVERALL RATING</Text>
-            <Text style={styles.heroValue}>{data?.publicView.overall_rating ?? '—'}</Text>
-            {isProvisionalRating ? (
-              <Text style={styles.heroSub}>Provisional — {presentAttrCount} of {totalAttrCount} attributes assessed</Text>
-            ) : (
-              <Text style={styles.heroSub}>Updates automatically as new highlights are analyzed</Text>
+          {/*
+            Canvas screen 12: a navy card with the overall in gold at 40px on
+            the left and the position on the right, swept by the sheen. The
+            provisional line sits under it -- the canvas does not draw one, but
+            a rating computed from part of the attribute set is a different
+            claim from a complete one.
+          */}
+          <View style={styles.hero}>
+            <Animated.View style={[styles.heroSheen, heroSheen]} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(255,197,61,0)', 'rgba(255,197,61,0.16)', 'rgba(255,197,61,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ flex: 1 }}
+              />
+            </Animated.View>
+            <View style={styles.heroRow}>
+              <View>
+                <Kicker size={fontSize.caption} tone="onNavy">Overall</Kicker>
+                <Text style={styles.heroValue}>
+                  {data?.publicView.overall_rating != null
+                    ? Math.round(data.publicView.overall_rating)
+                    : '—'}
+                </Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Kicker size={fontSize.caption} style={{ color: 'rgba(255,255,255,0.5)' }}>Position</Kicker>
+                <Text style={styles.heroPosition}>
+                  {data?.publicView.primary_position ?? '—'}
+                </Text>
+              </View>
+            </View>
+            {isProvisionalRating && (
+              <Text style={styles.heroSub}>
+                Provisional — {presentAttrCount} of {totalAttrCount} attributes assessed
+              </Text>
             )}
-          </LinearGradient>
+          </View>
+
+          <RatingHistory snapshots={history ?? []} />
 
           {jobStatusInfo && (
             <View style={styles.statusBanner}>
-              <Feather name={jobStatusInfo.icon} size={14} color={colors.goldDark} />
+              {/* Canvas ringSpin. Only while genuinely processing -- a
+                  spinner on a queued job would claim work is happening that
+                  has not started. */}
+              {latestJob?.status === 'processing' ? (
+                <Animated.View style={spin}>
+                  <Feather name={jobStatusInfo.icon} size={14} color={colors.goldDark} />
+                </Animated.View>
+              ) : (
+                <Feather name={jobStatusInfo.icon} size={14} color={colors.goldDark} />
+              )}
               <Text style={styles.statusBannerText}>{jobStatusInfo.text}</Text>
             </View>
           )}
@@ -137,23 +197,17 @@ export default function AiRatings() {
 
           {hasAnyRatings && (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Performance Attributes</Text>
-              <View style={styles.attrGrid}>
-                {(data?.attributes ?? []).map((attr) => (
-                  <View key={attr.key} style={styles.attrCell}>
-                    <View style={styles.attrTopRow}>
-                      <Text style={styles.attrName} numberOfLines={1}>{attr.displayName}</Text>
-                      {attr.confidence && (
-                        <Text style={[styles.confText, { color: CONFIDENCE_COLOR[attr.confidence] }]}>{attr.confidence}</Text>
-                      )}
-                    </View>
-                    <Text style={styles.attrValue}>{attr.value ?? '—'}</Text>
-                    <View style={styles.attrTrack}>
-                      <View style={[styles.attrFill, { width: `${attr.value ?? 0}%` }]} />
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <Kicker style={styles.sectionKicker}>Fifa attributes</Kicker>
+              {(data?.attributes ?? []).map((attr, i) => (
+                <AttributeBar
+                  key={attr.key}
+                  code={attr.key.slice(0, 3).toUpperCase()}
+                  name={attr.displayName}
+                  value={attr.value}
+                  confidence={attr.confidence}
+                  index={i}
+                />
+              ))}
             </View>
           )}
 
@@ -187,6 +241,7 @@ export default function AiRatings() {
         rating={Math.round(data?.publicView.overall_rating ?? 0)}
         attributesAssessed={presentAttrCount}
         attributesTotal={totalAttrCount}
+        position={data?.publicView.primary_position}
         lowConfidence={(data?.attributes ?? []).some((a) => a.value != null && a.confidence === 'Low')}
         onClose={dismissReveal}
       />
@@ -198,30 +253,41 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
-  headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
+  headerTitle: { flex: 1, fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.title, color: colors.textPrimary },
   content: { padding: 20, paddingTop: 8, gap: 20, paddingBottom: 40 },
 
-  hero: { borderRadius: radii.lg, paddingVertical: 18, paddingHorizontal: 20 },
-  heroLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: 'rgba(255,255,255,0.72)', letterSpacing: 1.2 },
-  heroValue: { fontFamily: fontFamily.extraBold, fontSize: 42, color: colors.white, lineHeight: 48, marginTop: 2 },
-  heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: 'rgba(255,255,255,0.78)', marginTop: 4 },
+  heroSheen: { position: 'absolute', top: 0, left: '-40%', width: '50%', height: '100%' },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  heroPosition: { fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.bodyLg, color: colors.white, marginTop: 2 },
+  sectionKicker: { marginBottom: spacing.md },
+  hero: {
+    backgroundColor: colors.primaryDark,
+    borderRadius: radii.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    // The sheen sweeps inside the card and must not bleed past its corners.
+    overflow: 'hidden',
+  },
+  // Gold, not white. The overall IS the gold moment on this screen -- the
+  // canvas reserves gold for the rating and the mark, and a white numeral here
+  // made the card read as a generic dark panel.
+  heroValue: {
+    fontFamily: fontFamilyDisplay.extraBold,
+    fontSize: fontSize.splash,
+    lineHeight: fontSize.splash * 1.05,
+    color: colors.gold,
+    marginTop: 2,
+  },
+  heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.6)', marginTop: 8 },
 
   statusBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.warningTint, borderRadius: radii.md, padding: 12, alignItems: 'center' },
-  statusBannerText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: '#7A5C00' },
+  statusBannerText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.goldDark },
   errorBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.dangerTint, borderRadius: radii.md, padding: 12, alignItems: 'flex-start' },
   errorBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.error, lineHeight: 18 },
 
   section: { gap: 12 },
   sectionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.sm, color: colors.textPrimary },
 
-  attrGrid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20, rowGap: 16 },
-  attrCell: { width: '43%', flexGrow: 1 },
-  attrTopRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  attrName: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.textMuted },
-  confText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.caption },
-  attrValue: { fontFamily: fontFamily.bold, fontSize: fontSize.headingLg, color: colors.textPrimary, marginTop: 2 },
-  attrTrack: { height: 4, borderRadius: 2, backgroundColor: colors.divider, overflow: 'hidden', marginTop: 6 },
-  attrFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
 
   recoSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: -6 },
   recoList: { gap: 10 },

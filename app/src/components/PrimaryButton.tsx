@@ -12,7 +12,8 @@ type Props = {
   height?: number;
 };
 
-// Matches the mockup's repeated CTA pattern: linear-gradient(135deg,#1A6DFF,#0050D0),
+// Matches the canvas CTA pattern: a navy gradient built from the theme tokens
+// (gradients.primaryButton = primary -> primaryDark), so it follows the palette
 // 14px radius, box-shadow, scale(1.02) on hover -> we use Pressable's pressed state instead.
 export function PrimaryButton({ label, onPress, disabled, loading, style, height = 52 }: Props) {
   const colors = useThemeColors();

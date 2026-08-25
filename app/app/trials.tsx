@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, useThemeColors, useIsDark, elevation } from '../src/theme';
+import { NoticeBox } from '../src/components/NoticeBox';
+import { Kicker } from '../src/components/Kicker';
+import { DeadlinePill } from '../src/components/DeadlinePill';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as trialsRepository from '../src/repositories/trialsRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonCards } from '../src/components/Skeleton';
-import { getPublicStorageUrl } from '../src/lib/publicUrl';
 
 const SEGMENTS = ['Open Trials', 'My Applications'] as const;
 
@@ -87,6 +88,16 @@ export default function PlayerTrials() {
         <View style={{ width: 36 }} />
       </View>
 
+      {/*
+        Canvas screen 18 leads with this, above the list, in danger tint. It is
+        the single most important thing on the screen: trial fraud is the known
+        scam in this market, and a player who reads nothing else should read
+        this. Not dismissible, and not moved below the fold.
+      */}
+      <NoticeBox tone="danger" icon="alert-circle" style={styles.safety}>
+        <Text style={styles.safetyStrong}>Never pay to attend a trial.</Text> Report anyone who asks.
+      </NoticeBox>
+
       <View style={styles.segmentRow}>
         {SEGMENTS.map((s) => {
           const active = segment === s;
@@ -117,29 +128,35 @@ export default function PlayerTrials() {
             ListFooterComponent={isFetchingOpenTrials ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 20 }} /> : null}
             renderItem={({ item: trial }) => {
               const mine = applicationByTrialId.get(trial.id);
-              const coverUrl = getPublicStorageUrl('post-images', trial.cover_image_path);
               return (
                 <Pressable style={[styles.card, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
                   <View style={styles.cardRow}>
-                    {!!coverUrl && <Image source={{ uri: coverUrl }} style={styles.cardThumb} contentFit="contain" />}
                     <View style={{ flex: 1 }}>
                       <View style={styles.cardTop}>
-                        <Text style={styles.cardTitle}>{trial.title}</Text>
-                        {mine && (
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.cardTitle} numberOfLines={2}>{trial.title}</Text>
+                          <Kicker size={fontSize.caption} style={{ marginTop: 2 }}>
+                            {[trial.club, trial.location].filter(Boolean).join(' · ')}
+                          </Kicker>
+                        </View>
+                        {mine ? (
                           <View style={[styles.statusBadge, { backgroundColor: STATUS_STYLE[mine.status]?.bg }]}>
                             <Text style={[styles.statusBadgeText, { color: STATUS_STYLE[mine.status]?.text }]}>
                               {mine.source === 'invited' ? 'Invited' : STATUS_STYLE[mine.status]?.label}
                             </Text>
                           </View>
+                        ) : (
+                          <DeadlinePill deadline={trial.application_deadline} />
                         )}
                       </View>
-                      <Text style={styles.cardMeta}>{trial.club} · {trial.location}</Text>
-                      <Text style={styles.cardMeta}>Positions: {trial.positions.join(', ') || 'Any'} · Ages {trial.age_min ?? '—'}-{trial.age_max ?? '—'}</Text>
+                      <View style={styles.chipRow}>
+                        {(trial.positions.length ? trial.positions : ['Any']).map((pos) => (
+                          <View key={pos} style={styles.posChip}>
+                            <Text style={styles.posChipText}>{pos}</Text>
+                          </View>
+                        ))}
+                      </View>
                     </View>
-                  </View>
-                  <View style={styles.cardFooter}>
-                    <Text style={styles.cardDeadline}>Deadline: {trial.application_deadline}</Text>
-                    <Feather name="chevron-right" size={16} color={colors.textPlaceholder} />
                   </View>
                 </Pressable>
               );
@@ -189,20 +206,35 @@ export default function PlayerTrials() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surfaceMuted },
+  root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   headerTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
-  segmentRow: { flexDirection: 'row', backgroundColor: colors.surface, borderRadius: radii.pill, padding: 4, marginHorizontal: 20, marginBottom: 16 },
-  segment: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
-  segmentActive: { backgroundColor: colors.primary },
-  segmentText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted },
-  segmentTextActive: { color: colors.white, fontFamily: fontFamily.semiBold },
+  segmentRow: { flexDirection: 'row', gap: 5, marginHorizontal: 20, marginBottom: 16 },
+  segment: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  segmentActive: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+  segmentText: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.caption, letterSpacing: 1.2, textTransform: 'uppercase', color: colors.textMuted },
+  segmentTextActive: { color: colors.gold },
   list: { paddingHorizontal: 20, paddingBottom: 24, gap: 12 },
-  card: { backgroundColor: colors.surface, borderRadius: radii.lg, padding: 16 },
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    padding: 16,
+  },
+  safety: { marginHorizontal: 20, marginBottom: 12 },
+  safetyStrong: { fontFamily: fontFamily.bold },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 8 },
+  posChip: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: 12,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  posChipText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.caption, color: colors.primaryDark },
   cardRow: { flexDirection: 'row', gap: 12 },
-  cardThumb: { width: 56, height: 56, borderRadius: radii.md, backgroundColor: colors.surfaceMuted },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  cardTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary, flex: 1 },
+  cardTitle: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   statusBadge: { borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 3 },
   statusBadgeText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs },
   cardMeta: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4 },

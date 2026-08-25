@@ -43,7 +43,11 @@ export async function openLegal(doc: LegalDoc): Promise<void> {
       // product. Deliberately light: these pages follow the system theme and
       // a light chrome reads correctly against both.
       toolbarColor: '#FFFFFF',
-      controlsColor: '#00707F',
+      // Canvas navy2. This was still the old teal brand colour, which is
+      // the one place in the app it survived the re-skin -- it sets the
+      // Chrome Custom Tab chrome, so it never appears in a screenshot of
+      // the app itself.
+      controlsColor: '#123A6B',
       enableBarCollapsing: true,
     });
   } catch {

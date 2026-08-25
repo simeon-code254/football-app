@@ -1,53 +1,76 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import { fontFamily, fontSize, radii, useThemeColors } from '../src/theme';
-import { PrimaryButton } from '../src/components/PrimaryButton';
-import { IconButton } from '../src/components/IconButton';
-import { AppTextField } from '../src/components/AppTextField';
-import { images } from '../src/constants/images';
-import * as authRepository from '../src/repositories/authRepository';
-import { showAlert } from '../src/lib/alert';
-import * as profileRepository from '../src/repositories/profileRepository';
+import Feather from '@expo/vector-icons/Feather';
+import {
+  cx,
+  fontFamily,
+  fontFamilyDisplay,
+  fontSize,
+  spacing,
+  useThemeColors,
+} from '../src/theme';
+import { Field } from '../src/components/Field';
+import { Button, LinkButton } from '../src/components/Button';
+import { Logo } from '../src/components/Logo';
 import { useSessionStore } from '../src/store/useSessionStore';
+import * as authRepository from '../src/repositories/authRepository';
+import * as profileRepository from '../src/repositories/profileRepository';
+import { showAlert } from '../src/lib/alert';
 
-// Matches Matobev v4.dc.html's LOGIN block — given a hero photo (the mockup
-// had none on this screen, which read as bare) and a password visibility
-// toggle, which a static HTML mockup can't express.
+// -- DESIGNED FRESH, NOT PORTED --
+//
+// The canvas has no login screen. It draws 87 and this is not one of them:
+// screen 02 offers "Sign in" and screen 68 handles a forgotten password, but
+// the sign-in form itself was never mocked.
+//
+// So this is built from the canvas's own vocabulary rather than invented:
+// paper ground, a Barlow Condensed display heading, the kicker-labelled
+// `Field` from screens 05/07/08, and the navy-on-paper primary button. It
+// should look like it came from the same deck, because every part of it did.
 export default function Login() {
   const colors = useThemeColors();
   const styles = makeStyles(colors);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const hydrate = useSessionStore((s) => s.hydrate);
 
   const submit = async () => {
-    if (!email.trim() || !password) return;
+    if (!email.trim() || !password || submitting) return;
     setSubmitting(true);
     try {
       const session = await authRepository.signIn(email.trim(), password);
-      // Don't rely on the async auth-state listener's timing to know where
-      // to route — read the role (and, for players, completion status)
-      // directly. A player who abandoned the profile wizard must land back
-      // on it, not on the tabs with a blank profile.
+      // Route from the role read directly rather than waiting on the async
+      // auth-state listener, whose timing is not guaranteed here. A player who
+      // abandoned the profile wizard must land back on it, not on the tabs
+      // with a blank profile.
       const profile = await profileRepository.getMyProfile(session.user.id);
-      if (profile.role !== 'player' && profile.role !== 'scout') {
-        // Admin accounts (and any other non-player/non-scout role) have no
-        // matching players/scouts row and no UI in this app -- fetching
-        // either previously 406'd. This app is player/scout only; admins
-        // use the separate web dashboard.
+
+      // Admin accounts have no players/scouts/clubs row and no UI in this app;
+      // fetching either 406s. They use the separate web dashboard.
+      //
+      // Clubs are NOT in this bucket. This check previously read
+      // `!== 'player' && !== 'scout'`, which signed every club account out at
+      // the door and told them they were an admin.
+      if (profile.role !== 'player' && profile.role !== 'scout' && profile.role !== 'club') {
         await authRepository.signOut();
-        showAlert('This account isn\'t supported here', 'Admin accounts use the Matobev web dashboard, not this app.');
+        showAlert(
+          'This account is not supported here',
+          'Admin accounts use the Matobev web dashboard, not this app.'
+        );
         return;
       }
+
       await hydrate(session);
+
       if (profile.role === 'scout') {
         router.replace('/(scout-tabs)/home');
+      } else if (profile.role === 'club') {
+        router.replace('/(club-tabs)/home');
       } else {
         const player = await profileRepository.getMyPlayer(session.user.id);
         router.replace(player.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
@@ -60,77 +83,96 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={['bottom']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.hero}>
-        <Image source={{ uri: images.authHero }} style={styles.heroImage} contentFit="cover" />
-        <LinearGradient colors={['rgba(10,22,40,0.15)', 'rgba(10,22,40,0.75)']} style={StyleSheet.absoluteFill} />
-        <View style={styles.heroTop}>
-          <IconButton icon="chevron-left" light accessibilityLabel="Go back" onPress={() => router.back()} />
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.sub}>Sign in to continue</Text>
-
-        <View style={styles.fields}>
-          <AppTextField
-            label="Email"
-            icon="mail"
-            placeholder="you@email.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <AppTextField
-            label="Password"
-            icon="lock"
-            placeholder="Enter password"
-            isPassword
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-
-        <Pressable style={styles.forgotRow} onPress={() => router.push('/forgot-password')}>
-          <Text style={styles.forgotText}>Forgot Password?</Text>
-        </Pressable>
-
-        <View style={styles.dividerRow}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>or continue with</Text>
-          <View style={styles.divider} />
-        </View>
-
-        <View style={styles.socialRow}>
-          <Pressable style={styles.socialBtn}>
-            <AntDesign name="google" size={20} color="#EA4335" />
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={12}
+            style={styles.back}
+          >
+            <Feather name="chevron-left" size={22} color={colors.textPrimary} />
           </Pressable>
-          <Pressable style={styles.socialBtn}>
-            <AntDesign name="apple" size={20} color="#000" />
-          </Pressable>
-        </View>
 
-        <PrimaryButton
-          label={submitting ? 'Signing in…' : 'Sign In'}
-          onPress={submit}
-          disabled={!email.trim() || !password || submitting}
-          loading={submitting}
-          style={styles.submitBtn}
-        />
-        {(!email.trim() || !password) && !submitting && (
-          <Text style={styles.submitHint}>Enter your email and password to sign in.</Text>
-        )}
-
-        <View style={styles.signupRow}>
-          <Text style={styles.signupText}>Don't have an account? </Text>
-          <Text style={styles.signupLink} onPress={() => router.push('/welcome')}>
-            Sign Up
+          <Logo variant="navy" size={cx(24)} style={styles.mark} />
+          <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+            Welcome back.
           </Text>
+          <Text style={styles.subtitle}>Sign in to pick up where you left off.</Text>
+
+          <View style={styles.fields}>
+            <Field
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              placeholder="you@example.com"
+            />
+            <View>
+              <Field
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoComplete="current-password"
+                textContentType="password"
+                onSubmitEditing={submit}
+                returnKeyType="go"
+              />
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                hitSlop={10}
+                style={styles.reveal}
+              >
+                <Feather
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </Pressable>
+            </View>
+          </View>
+
+          <LinkButton
+            label="Forgot your password?"
+            tone="onPaper"
+            onPress={() => router.push('/forgot-password')}
+            style={styles.forgot}
+          />
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <Button
+            label="Sign in"
+            variant="navy"
+            loading={submitting}
+            disabled={!email.trim() || !password}
+            onPress={submit}
+          />
+          <View style={styles.signupRow}>
+            <Text style={styles.signupText}>New here? </Text>
+            <LinkButton
+              label="Create an account"
+              tone="onPaper"
+              onPress={() => router.replace('/role-select')}
+            />
+          </View>
         </View>
-      </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -138,38 +180,32 @@ export default function Login() {
 
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.surface },
-  hero: { height: 180 },
-  heroImage: { width: '100%', height: '100%' },
-  heroTop: { position: 'absolute', top: 8, left: 20 },
-  content: { paddingHorizontal: 28, paddingTop: 24, paddingBottom: 32, flexGrow: 1 },
-  title: { fontFamily: fontFamily.bold, fontSize: fontSize.displayLg, color: colors.textPrimary, marginBottom: 4 },
-  sub: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted, marginBottom: 28 },
-  roleToggle: { flexDirection: 'row', backgroundColor: colors.surfaceMuted, borderRadius: radii.pill, padding: 4, marginBottom: 20 },
-  roleOption: { flex: 1, paddingVertical: 10, borderRadius: radii.pill, alignItems: 'center' },
-  roleOptionActive: { backgroundColor: colors.surface, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  roleOptionText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textMuted },
-  roleOptionTextActive: { fontFamily: fontFamily.semiBold, color: colors.textPrimary },
-  fields: { gap: 14, marginBottom: 12 },
-  forgotRow: { alignItems: 'flex-end', marginBottom: 24 },
-  forgotText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.primary },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  divider: { flex: 1, height: 1, backgroundColor: colors.divider },
-  dividerText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.textDisabled },
-  socialRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  socialBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: radii.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitBtn: { marginTop: 'auto' },
-  submitHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: 8 },
-  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 12 },
-  signupText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
-  signupLink: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.primary },
+    root: { flex: 1, backgroundColor: colors.background },
+    scroll: { paddingHorizontal: cx(24), paddingBottom: spacing.xl },
+    back: { alignSelf: 'flex-start', marginBottom: spacing.lg },
+    mark: { marginBottom: spacing.md },
+    title: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.display,
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.body,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    fields: { gap: spacing.lg, marginTop: spacing.xxl },
+    // Sits over the password Field's input box, which is 48 tall under a
+    // ~16px label plus 4px gap.
+    reveal: { position: 'absolute', right: spacing.lg, top: 34 },
+    forgot: { alignSelf: 'flex-start', marginTop: spacing.sm },
+    footer: { paddingHorizontal: cx(24), paddingTop: spacing.md },
+    signupRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    signupText: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.bodySm,
+      color: colors.textMuted,
+    },
   });
 }

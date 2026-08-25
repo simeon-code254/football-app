@@ -1,74 +1,76 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import Feather from "@expo/vector-icons/Feather";
+import { useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import Animated, {
+  ReduceMotion,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import Feather from '@expo/vector-icons/Feather';
+import { useCountUp } from '../lib/motion';
 import {
   fontFamily,
+  fontFamilyDisplay,
   fontSize,
+  kicker,
   radii,
   spacing,
   elevation,
+  useThemeColors,
   useIsDark,
-} from "../theme";
+} from '../theme';
 
-// The player's rating, as a card in the visual language these users already
-// speak fluently.
+// The player's rating, drawn as the design canvas draws it: a white card
+// carrying a circular progress ring, the rating inside it, and the top
+// attributes as chips alongside.
 //
-// The previous version was a blue panel with the number in the corner --
-// competent, but it could have belonged to any app. This borrows the
-// grammar of a football card instead: rating top-left at display size,
-// position beneath it, country to the right, the name set in caps across a
-// rule, and the attribute pairs along the bottom.
+// This replaces a FIFA-style football card. That version borrowed a grammar
+// these users read fluently, but the canvas is right that a ring is the
+// better instrument here -- a football card states a settled verdict, and a
+// ring shows a position on a journey, which is what a rating out of 99 for a
+// 16-year-old actually is.
 //
-// It follows the theme. The first version was dark in BOTH themes, on the
-// reasoning that "a football card is a dark object with metallic edges".
-// That was wrong twice over. The iconic gold card is a *warm, light*
-// metallic, so darkness was never what made it a card -- the gold edge, the
-// display-size rating, the caps name across rules and the attribute pairs
-// carry that language on any ground. And a single dark object in a light
-// app reads as an ad or a rendering bug, not as a hero.
+// -- SIZES --
 //
-// The dark version was also actively broken against this app's own
-// elevation rule (see theme/elevation.ts: depth in the dark is a LIGHTER
-// surface). Its bottom gradient stop sat at luminance 0.0061 against an app
-// background of 0.0079 -- the hero element was sinking into the page
-// instead of lifting off it. The dark palette below is pinned to the
-// 'floating' level so it genuinely rises.
+// The canvas is drawn inside a 266px phone frame; a real device is ~390pt
+// across, so every canvas dimension is scaled by ~1.52 before use. That is
+// why the ring is 92 here and 64 there, and why the canvas's 7-8.5px labels
+// land on this app's 10-11pt caption sizes rather than being copied
+// literally. Copying them would have put text at 7pt on a real phone.
 //
-// Both palettes are contrast-checked against their own darkest/lightest
-// gradient stop, not against a convenient midpoint.
+// -- THE RING COLOUR IS NOT THE CANVAS'S --
 //
-// Deliberately NOT tiered gold/silver/bronze. That is the obvious next step
-// from FIFA, and it would be wrong here: the engine currently produces low
-// provisional numbers for everyone, so tiering would hand most young
-// players a "bronze" verdict on work the analysis cannot yet judge
-// properly. One treatment for everyone until the ratings are worth ranking.
-
-// Emoji flags were the first instinct here and were wrong: regional
-// indicator pairs do not render at all on Windows Chrome and are patchy on
-// older Android, so a Kenyan player saw the letters "KE" where a flag
-// should be. A typeset country code is legible on every platform and reads
-// as a deliberate card element rather than a failed glyph.
-
-// Confidence is marked, never hidden.
+// The canvas strokes the ring in gold #FFC53D on a #EDE8D9 track. Measured,
+// that is 1.29:1 -- the ring is very nearly invisible against its own track.
+// It reads in the mockup because the mockup is a small static image; on a
+// real screen at 92pt it disappears, and WCAG 1.4.11 asks 3:1 of a graphic
+// that carries meaning.
+//
+// So in the light theme the arc is goldDark #8A5A00, which is 4.93:1 on the
+// track and still unmistakably the gold family. In the dark theme the canvas
+// gold is kept exactly as drawn, because on the dark card surface it measures
+// 9.24:1 -- it was authored for a dark ground and works there.
+//
+// -- CONFIDENCE IS MARKED, NEVER HIDDEN --
 //
 // The engine earns a confidence per attribute (ai-service confidence.py) and
-// the database has always stored it -- player_attribute_scores.confidence is
-// `not null check (confidence in ('High','Medium','Low'))`. Until now every
-// layer above the database threw it away, so the card printed a bare number
-// on what is visually a trophy.
+// player_attribute_scores.confidence is `not null check (confidence in
+// ('High','Medium','Low'))`.
 //
-// That matters because these values are on the 0-99 scale (the DB CHECK says
-// so) -- the same scale a player already reads fluently from FIFA, where 99
-// is world class. A "1" for pace in that grammar says a teenager cannot run.
-// What it usually means is that the analysis could not see them move, which
-// is a statement about our footage and our detector, not about the player.
+// This matters because the values are on the 0-99 scale -- the same scale a
+// player reads fluently from FIFA, where 99 is world class. A "1" for pace in
+// that grammar says a teenager cannot run. What it usually means is that the
+// analysis could not see them move, which is a statement about our footage
+// and our detector, not about the player.
 //
 // So a low-confidence value is shown at full honesty but visibly qualified:
 // the number stays, rendered in the muted tone with a marker, and the card
 // says plainly what the marker means. Nothing is suppressed -- a scout still
 // sees every number the engine produced -- but nobody is told they are a 1
 // out of 99 as though we were sure.
-export type AttributeConfidence = "High" | "Medium" | "Low";
+export type AttributeConfidence = 'High' | 'Medium' | 'Low';
 
 export type RatingAttribute = {
   key: string;
@@ -76,6 +78,16 @@ export type RatingAttribute = {
   value: number | null;
   confidence?: AttributeConfidence | null;
 };
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// The scale's ceiling, matching the database CHECK on overall_rating. The
+// ring is a fraction of this, not of 100.
+const RATING_MAX = 99;
+
+const RING_SIZE = 92;
+const RING_RADIUS = 44; // in the 100x100 viewBox, matching the canvas
+const CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export function PlayerRatingCard({
   name,
@@ -96,310 +108,252 @@ export function PlayerRatingCard({
   totalCount: number;
   onPressReport: () => void;
 }) {
+  const colors = useThemeColors();
   const isDark = useIsDark();
-  const c = isDark ? PALETTE.dark : PALETTE.light;
-  const styles = isDark ? DARK_STYLES : LIGHT_STYLES;
-  const rated = attributes.filter((a) => a.value != null).slice(0, 4);
+  const styles = makeStyles(colors);
+
+  const rated = attributes.filter((a) => a.value != null).slice(0, 3);
   const provisional = assessedCount > 0 && assessedCount < totalCount;
 
-  // The overall is a flat average over whatever has been scored
-  // (recalc_player_overall), so a single Low-confidence attribute drags the
-  // headline number down just as hard as a confident one. If any contributing
-  // attribute is Low, the headline inherits the qualification -- otherwise
-  // the card would qualify "1 PAC" while presenting the 16 it produced as
-  // settled fact.
-  const anyLow = attributes.some(
-    (a) => a.value != null && a.confidence === "Low",
-  );
+  // The overall is a confidence- and position-weighted mean over whatever has
+  // been scored (recalc_player_overall), so a Low-confidence attribute still
+  // moves the headline. If any contributing attribute is Low, the headline
+  // inherits the qualification -- otherwise the card would carefully qualify
+  // "1 PAC" while presenting the overall it produced as settled fact.
+  const anyLow = attributes.some((a) => a.value != null && a.confidence === 'Low');
+
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.value = withTiming(
+      rating != null ? Math.min(rating, RATING_MAX) / RATING_MAX : 0,
+      { duration: 900, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }
+    );
+  }, [rating, progress]);
+
+  const arcProps = useAnimatedProps(() => ({
+    strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
+  }));
+
+  // Canvas countUp: the number arrives from 8px above as it fades in, keyed
+  // on the rating so a changed rating animates in again rather than sitting
+  // still. Despite the name it is not a numeric counter in the canvas either.
+  const numeralEntrance = useCountUp(rating);
+
+  const arcColor = isDark ? colors.gold : colors.goldDark;
 
   return (
-    <LinearGradient
-      colors={c.ground}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 0.9, y: 1 }}
-      style={[styles.card, elevation("floating", isDark)]}
-    >
-      {/* The metallic edge is what separates a card from a rectangle. */}
-      <LinearGradient
-        colors={c.edge}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.edge}
-      />
-
-      <View style={styles.topRow}>
-        <View>
-          <View style={styles.ratingRow}>
-            <Text style={styles.rating}>
-              {rating != null ? Math.round(rating) : "–"}
+    <View style={[styles.card, elevation('raised', isDark)]}>
+      <View style={styles.row}>
+        <View
+          style={styles.ringWrap}
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel={
+            rating == null
+              ? 'Not yet rated'
+              : `Overall rating ${Math.round(rating)} out of ${RATING_MAX}${
+                  anyLow ? ', based partly on low-confidence analysis' : ''
+                }`
+          }
+        >
+          <Svg width={RING_SIZE} height={RING_SIZE} viewBox="0 0 100 100">
+            <Circle
+              cx={50}
+              cy={50}
+              r={RING_RADIUS}
+              fill="none"
+              stroke={colors.surfaceMuted}
+              strokeWidth={7}
+            />
+            {/* -90deg so the arc starts at twelve o'clock, as the canvas does. */}
+            <AnimatedCircle
+              cx={50}
+              cy={50}
+              r={RING_RADIUS}
+              fill="none"
+              stroke={arcColor}
+              strokeWidth={7}
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              animatedProps={arcProps}
+              transform="rotate(-90 50 50)"
+            />
+          </Svg>
+          <Animated.View style={[styles.ringCentre, numeralEntrance]} pointerEvents="none">
+            <Text style={styles.rating} maxFontSizeMultiplier={1.3}>
+              {rating != null ? Math.round(rating) : '–'}
             </Text>
-            {anyLow && (
-              // Spoken as part of the rating rather than left as a bare
-              // glyph a screen reader would read as punctuation or skip.
-              <Text
-                style={styles.ratingMark}
-                accessibilityLabel="based partly on low-confidence analysis"
-              >
-                ·
-              </Text>
-            )}
-          </View>
-          {!!position && <Text style={styles.position}>{position}</Text>}
+            {anyLow && rating != null && <Text style={styles.ratingMark}>{'·'}</Text>}
+          </Animated.View>
         </View>
 
-        <View style={styles.topRight}>
-          {!!countryCode && (
-            <View style={styles.countryChip}>
-              <Text style={styles.countryText}>
-                {countryCode.toUpperCase()}
-              </Text>
+        <View style={styles.details}>
+          <Text style={styles.kicker} numberOfLines={1}>
+            {['Overall', position, countryCode?.toUpperCase()].filter(Boolean).join(' · ')}
+          </Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {name}
+          </Text>
+
+          {rated.length > 0 ? (
+            <View style={styles.chips}>
+              {rated.map((a) => {
+                const low = a.confidence === 'Low';
+                return (
+                  <View
+                    key={a.key}
+                    style={styles.chip}
+                    // One label for the pair, so a screen reader says
+                    // "Pace 1, low confidence" rather than reading a loose
+                    // number and an abbreviation it cannot expand.
+                    accessible
+                    accessibilityLabel={`${a.displayName} ${a.value}${low ? ', low confidence' : ''}`}
+                  >
+                    <Text style={styles.chipKey} numberOfLines={1}>
+                      {a.key.slice(0, 3)}
+                    </Text>
+                    <View style={styles.chipValueRow}>
+                      {/* The number is never removed, only de-emphasised to
+                          the muted tone -- which is contrast-checked to AA in
+                          both palettes, so "qualified" never means "hard to
+                          read". */}
+                      <Text style={[styles.chipValue, low && styles.chipValueLow]}>{a.value}</Text>
+                      {low && <Text style={styles.chipMark}>{'·'}</Text>}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
+          ) : (
+            <Text style={styles.pending}>
+              {assessedCount === 0 ? 'Upload a highlight to get rated' : 'Analysis in progress'}
+            </Text>
           )}
-          <Pressable
-            onPress={onPressReport}
-            style={styles.reportBtn}
-            accessibilityRole="button"
-            accessibilityLabel="View full rating report"
-          >
-            <Text style={styles.reportText}>Report</Text>
-            <Feather name="arrow-up-right" size={13} color={c.accent} />
-          </Pressable>
         </View>
       </View>
 
-      <View style={styles.rule} />
-      <Text style={styles.name} numberOfLines={1}>
-        {name.toUpperCase()}
-      </Text>
-      <View style={styles.rule} />
-
-      {rated.length > 0 ? (
-        <View style={styles.attrRow}>
-          {rated.map((a) => {
-            const low = a.confidence === "Low";
-            return (
-              <View
-                key={a.key}
-                style={styles.attr}
-                // One label for the pair, so a screen reader says
-                // "Pace 1, low confidence" instead of reading a loose
-                // number and an abbreviation it cannot expand.
-                accessible
-                accessibilityLabel={`${a.displayName} ${a.value}${low ? ", low confidence" : ""}`}
-              >
-                <View style={styles.attrValueRow}>
-                  <Text style={[styles.attrValue, low && styles.attrValueLow]}>
-                    {a.value}
-                  </Text>
-                  {low && <Text style={styles.attrMark}>·</Text>}
-                </View>
-                <Text style={styles.attrKey}>
-                  {a.displayName.slice(0, 3).toUpperCase()}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      ) : (
-        <Text style={styles.pending}>
-          Upload a highlight to get your first rating
+      {(anyLow || provisional) && (
+        <Text style={styles.footnote}>
+          {[
+            anyLow && 'A dot marks a number the analysis is not confident about.',
+            provisional && `Rated on ${assessedCount} of ${totalCount} attributes so far.`,
+          ]
+            .filter(Boolean)
+            .join(' ')}
         </Text>
       )}
 
-      {provisional && (
-        // Kept even in a card that is meant to feel aspirational. A number
-        // a scout later finds hollow costs more than the swagger gains.
-        <Text style={styles.provisional}>
-          Provisional · {assessedCount} of {totalCount} attributes rated
-        </Text>
-      )}
-
-      {anyLow && (
-        // The marker is meaningless without this, and the wording matters:
-        // it says the footage was hard to read, not that the player scored
-        // badly. Those are genuinely different claims and only one of them
-        // is something we actually know.
-        <Text style={styles.legend}>
-          · Marked values were hard to measure in your footage — clearer video
-          improves them
-        </Text>
-      )}
-    </LinearGradient>
+      <Pressable
+        onPress={onPressReport}
+        style={styles.reportBtn}
+        accessibilityRole="button"
+        accessibilityLabel="View full rating report"
+      >
+        <Text style={styles.reportText}>Full report</Text>
+        <Feather name="arrow-right" size={14} color={colors.primary} />
+      </Pressable>
+    </View>
   );
 }
 
-// Contrast measured against the worst-case gradient stop of each palette:
-// light gold 4.66:1, light ink 14.33:1, light muted 4.60:1; dark gold
-// 10.89:1, dark name 15.37:1, dark muted 6.75:1. All pass AA.
-const PALETTE = {
-  light: {
-    ground: ["#FFFBF0", "#EFE3CB"] as const, // warm card stock
-    edge: ["#B8860B", "rgba(184,134,11,0.15)"] as const,
-    accent: "#8A5A00", // deep gold -- #FFD54F is 1.23:1 on this ground
-    ink: "#1C1408",
-    muted: "rgba(0,0,0,0.62)",
-    hairline: "rgba(0,0,0,0.14)",
-    chipBorder: "rgba(138,90,0,0.45)",
-  },
-  dark: {
-    ground: ["#2A3A5C", "#1B2537"] as const, // pinned to elevation 'floating'
-    edge: ["#FFD54F", "rgba(255,213,79,0.15)"] as const,
-    accent: "#FFD54F",
-    ink: "#FFFFFF",
-    muted: "rgba(255,255,255,0.62)",
-    hairline: "rgba(255,255,255,0.12)",
-    chipBorder: "rgba(255,213,79,0.4)",
-  },
-} as const;
-
-type Palette = (typeof PALETTE)["light" | "dark"];
-
-function makeStyles(c: Palette) {
+function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
     card: {
-      marginHorizontal: spacing.xl,
-      marginTop: spacing.md,
-      borderRadius: radii.xl,
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.lg,
-      overflow: "hidden",
+      backgroundColor: colors.surface,
+      borderRadius: radii.xxl,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.xl,
+      marginHorizontal: spacing.lg,
     },
-    edge: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
-    topRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
+    row: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+    ringWrap: {
+      width: RING_SIZE,
+      height: RING_SIZE,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    ringCentre: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     rating: {
-      fontFamily: fontFamily.extraBold,
-      fontSize: 52,
-      lineHeight: 54,
-      color: c.accent,
-      letterSpacing: -2.5,
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: 38,
+      lineHeight: 42,
+      color: colors.textPrimary,
+      letterSpacing: -1,
     },
-    position: {
-      fontFamily: fontFamily.bold,
-      fontSize: fontSize.body,
-      color: c.ink,
-      letterSpacing: 2,
-      marginTop: 2,
-    },
-    topRight: { alignItems: "flex-end", gap: spacing.md },
-    countryChip: {
-      borderWidth: 1,
-      borderColor: c.chipBorder,
-      borderRadius: radii.sm,
-      paddingHorizontal: 7,
-      paddingVertical: 2,
-    },
-    countryText: {
-      fontFamily: fontFamily.bold,
-      fontSize: fontSize.xs,
-      color: c.accent,
-      letterSpacing: 1.5,
-    },
-    reportBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      borderWidth: 1,
-      borderColor: c.chipBorder,
-      borderRadius: radii.pill,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 6,
-    },
-    reportText: {
-      fontFamily: fontFamily.semiBold,
-      fontSize: fontSize.xs,
-      color: c.accent,
-    },
-    rule: {
-      height: 1,
-      backgroundColor: c.hairline,
-      marginVertical: spacing.sm,
-    },
-    name: {
-      fontFamily: fontFamily.bold,
-      fontSize: fontSize.bodyLg,
-      color: c.ink,
-      letterSpacing: 2.5,
-      textAlign: "center",
-    },
-    // Left-aligned with a fixed gap: space-between pushed two values to
-    // opposite edges of the card, which looked like a layout error rather
-    // than a design.
-    // A fixed four-column grid rather than a flow. space-between pushed two
-    // values to opposite edges of the card; a plain gap bunched them against
-    // the left with dead space beside them. Fixed 25% columns mean an
-    // attribute sits in the same place whether the engine has rated two of
-    // them or all four, which is what makes it read as a card face instead
-    // of a paragraph of numbers.
-    attrRow: {
-      flexDirection: "row",
-      marginTop: spacing.md,
-      paddingLeft: spacing.xs,
-    },
-    attr: { alignItems: "flex-start", width: "25%" },
-    ratingRow: { flexDirection: "row", alignItems: "flex-start" },
     ratingMark: {
-      fontFamily: fontFamily.extraBold,
-      fontSize: 30,
-      lineHeight: 34,
-      color: c.muted,
-      marginLeft: 3,
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: 22,
+      lineHeight: 26,
+      color: colors.textMuted,
+      marginLeft: 2,
     },
-    attrValueRow: { flexDirection: "row", alignItems: "flex-start" },
-    // The number is never removed, only de-emphasised to the muted tone --
-    // which is contrast-checked to AA in both palettes, so "qualified" never
-    // means "hard to read".
-    attrValueLow: { color: c.muted },
-    attrMark: {
-      fontFamily: fontFamily.extraBold,
-      fontSize: fontSize.bodySm,
-      color: c.muted,
-      marginLeft: 1,
-    },
-    legend: {
-      fontFamily: fontFamily.regular,
-      fontSize: fontSize.caption,
-      color: c.muted,
-      textAlign: "center",
-      marginTop: spacing.xs,
-      lineHeight: 14,
-      paddingHorizontal: spacing.sm,
-    },
-    attrValue: {
-      fontFamily: fontFamily.extraBold,
+    details: { flex: 1, gap: 2 },
+    kicker: { ...kicker, fontSize: fontSize.caption, color: colors.textMuted },
+    name: {
+      fontFamily: fontFamilyDisplay.bold,
       fontSize: fontSize.headingLg,
-      color: c.ink,
+      color: colors.textPrimary,
     },
-    attrKey: {
-      fontFamily: fontFamily.semiBold,
-      fontSize: fontSize.caption,
-      color: c.muted,
-      letterSpacing: 1.2,
-      marginTop: 2,
+    chips: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm },
+    chip: {
+      flex: 1,
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: radii.sm,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: 2,
+    },
+    chipKey: { ...kicker, fontSize: fontSize.caption, color: colors.textMuted },
+    chipValueRow: { flexDirection: 'row', alignItems: 'flex-start' },
+    chipValue: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.heading,
+      color: colors.textPrimary,
+    },
+    chipValueLow: { color: colors.textMuted },
+    chipMark: {
+      fontFamily: fontFamilyDisplay.extraBold,
+      fontSize: fontSize.sm,
+      color: colors.textMuted,
+      marginLeft: 1,
     },
     pending: {
       fontFamily: fontFamily.regular,
       fontSize: fontSize.bodySm,
-      color: c.muted,
-      textAlign: "center",
-      marginTop: spacing.lg,
+      color: colors.textMuted,
+      marginTop: spacing.sm,
     },
-    provisional: {
-      fontFamily: fontFamily.medium,
-      fontSize: fontSize.caption,
-      color: c.muted,
-      textAlign: "center",
+    footnote: {
+      fontFamily: fontFamily.regular,
+      fontSize: fontSize.xs,
+      lineHeight: 16,
+      color: colors.textMuted,
       marginTop: spacing.md,
-      letterSpacing: 0.4,
+    },
+    reportBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      marginTop: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.divider,
+    },
+    reportText: {
+      fontFamily: fontFamily.semiBold,
+      fontSize: fontSize.bodySm,
+      color: colors.primary,
     },
   });
 }
-
-// Both palettes are known at module load -- the card branches on a boolean,
-// not on runtime theme colours -- so the sheets are built once here rather
-// than re-running StyleSheet.create on every render.
-const LIGHT_STYLES = makeStyles(PALETTE.light);
-const DARK_STYLES = makeStyles(PALETTE.dark);
