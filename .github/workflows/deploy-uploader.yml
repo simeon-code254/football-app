@@ -30,10 +30,16 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Prepare site root
+        run: |
+          mkdir -p _site
+          cp uploader/index.html _site/index.html
+          touch _site/.nojekyll
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: uploader
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
