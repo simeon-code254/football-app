@@ -2,7 +2,7 @@ name: Deploy uploader
 
 on:
   push:
-    branches: [canvas-rebuild-87]
+    branches: [main]
     paths:
       - "uploader/**"
       - ".github/workflows/deploy-uploader.yml"
