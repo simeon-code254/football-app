@@ -1,38 +1,25 @@
 name: Update clip count
 
-# Counts what is actually in the container and publishes the number the
-# uploader page shows. Runs here rather than in the browser because counting
-# needs List permission, and a List-capable SAS in the page would let any
-# visitor enumerate every contributor's filenames.
-#
-# This job deploys Pages itself rather than committing and letting
-# deploy-uploader.yml pick the change up. That handoff cannot work: a push made
-# with the default GITHUB_TOKEN deliberately does not trigger other workflows,
-# so the commit landed on main and the site was never rebuilt -- main said 6,
-# Pages still served 0. Same reason there is no recursion risk here.
+# Counts what is actually in the container and records it in
+# uploader/count.json. Nothing renders this any more -- the page dropped its
+# counter -- so this is a reporting tool, not part of the site build.
 
 on:
-  schedule:
-    # every 20 minutes; GitHub delays cron under load, so treat it as "roughly"
-    - cron: "*/20 * * * *"
+  # Manual only. The page no longer displays a count, so there is nothing to
+  # keep fresh -- and the schedule was not reliably firing regardless. Run this
+  # from the Actions tab when you want to know how much footage has come in.
   workflow_dispatch:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
-  # shared with deploy-uploader.yml so the two can never publish at once
-  group: pages
+  group: clip-count
   cancel-in-progress: false
 
 jobs:
   count:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -56,31 +43,3 @@ jobs:
           git commit -m "Update clip count"
           git push
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Prepare site root
-        run: |
-          mkdir -p _site
-          cp uploader/index.html _site/index.html
-          touch _site/.nojekyll
-          # Stamp the deployed copy with when this job last ran. It is NOT
-          # committed -- otherwise every run would produce a commit saying
-          # nothing. Without it there is no way to tell a cron that is not
-          # firing from a cron that is firing and finding no new clips.
-          node -e "
-            const fs = require('fs');
-            const j = JSON.parse(fs.readFileSync('uploader/count.json', 'utf8'));
-            j.checked = new Date().toISOString();
-            fs.writeFileSync('_site/count.json', JSON.stringify(j, null, 2) + '
-');
-          "
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

@@ -37,9 +37,6 @@ jobs:
         run: |
           mkdir -p _site
           cp uploader/index.html _site/index.html
-          # the shared clip tally; the page fetches it at load and falls back
-          # to its built-in number if it is missing
-          cp uploader/count.json _site/count.json
           touch _site/.nojekyll
 
       - name: Upload Pages artifact
