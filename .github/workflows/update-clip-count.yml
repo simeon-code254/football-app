@@ -63,8 +63,18 @@ jobs:
         run: |
           mkdir -p _site
           cp uploader/index.html _site/index.html
-          cp uploader/count.json _site/count.json
           touch _site/.nojekyll
+          # Stamp the deployed copy with when this job last ran. It is NOT
+          # committed -- otherwise every run would produce a commit saying
+          # nothing. Without it there is no way to tell a cron that is not
+          # firing from a cron that is firing and finding no new clips.
+          node -e "
+            const fs = require('fs');
+            const j = JSON.parse(fs.readFileSync('uploader/count.json', 'utf8'));
+            j.checked = new Date().toISOString();
+            fs.writeFileSync('_site/count.json', JSON.stringify(j, null, 2) + '
+');
+          "
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

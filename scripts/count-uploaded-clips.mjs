@@ -69,8 +69,12 @@ do {
 } while (marker);
 
 const out = path.join('uploader', 'count.json');
-let previous = null;
-try { previous = JSON.parse(fs.readFileSync(out, 'utf8')).collected; } catch (e) {}
+let previous = null, previousUpdated = null;
+try {
+  const prev = JSON.parse(fs.readFileSync(out, 'utf8'));
+  previous = prev.collected;
+  previousUpdated = prev.updated;
+} catch (e) {}
 
 // Never publish a number that goes backwards on a partial or failed listing --
 // a counter that drops reads as data loss to whoever is watching it.
@@ -80,9 +84,13 @@ if (previous != null && clips < previous) {
   process.exit(1);
 }
 
+// Only stamp a new time when the number actually moved. Rewriting it every
+// run would make the file differ every run, producing a commit every 20
+// minutes that says nothing at all.
+const changed = previous !== clips;
 fs.writeFileSync(out, JSON.stringify({
   collected: clips,
-  updated: new Date().toISOString()
+  updated: (changed || !previousUpdated) ? new Date().toISOString() : previousUpdated
 }, null, 2) + '\n');
 
 const gb = (bytes / 1024 / 1024 / 1024).toFixed(1);
