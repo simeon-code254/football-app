@@ -14,8 +14,11 @@ permissions:
   id-token: write
 
 concurrency:
+  # shared with update-clip-count.yml. Not cancel-in-progress: killing a
+  # half-finished Pages deploy to start another leaves the site on the old
+  # build, which is the failure this whole change exists to stop.
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:

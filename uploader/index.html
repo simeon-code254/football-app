@@ -559,6 +559,13 @@ try {
   countFloor = parseInt(localStorage.getItem("matobev.floor") || "0", 10) || 0;
 } catch (e) { countFloor = 0; }
 
+// Seed the floor from what this device is already known to have sent. Without
+// this, anyone who uploaded before the floor existed carries a "sent" count but
+// no floor, so the total would still collapse to zero for exactly the people
+// who had contributed most recently. Their clips are in the container, so the
+// true total cannot be lower than their own contribution.
+if (lifetimeSent > countFloor) countFloor = lifetimeSent;
+
 // Pull the shared total. Failure is silent and harmless -- the fallback stands.
 async function loadCount() {
   if (!COLLECTION.countUrl) return;
@@ -919,10 +926,14 @@ function fmtPct(p) {
 function board() {
   var live = COLLECTION.alreadyCollected + sessionSent;
   var total = Math.max(live, countFloor);
-  if (total > countFloor) {
-    countFloor = total;
-    try { localStorage.setItem("matobev.floor", String(countFloor)); } catch (e) {}
-  }
+  if (total > countFloor) countFloor = total;
+  // Persist even when the floor only moved because it was seeded, otherwise a
+  // later load that cannot reach count.json falls back further than it needs to.
+  try {
+    if (localStorage.getItem("matobev.floor") !== String(countFloor)) {
+      localStorage.setItem("matobev.floor", String(countFloor));
+    }
+  } catch (e) {}
 
   var pct = COLLECTION.target ? Math.min(100, total / COLLECTION.target * 100) : 0;
 
