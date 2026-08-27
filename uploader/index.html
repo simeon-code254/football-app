@@ -381,7 +381,16 @@ const AZURE_CONFIG = {
    --------------------------------------------------------------------------- */
 const COLLECTION = {
   target: 10000,
-  alreadyCollected: 0
+
+  // Fallback total, used only if count.json can't be read.
+  alreadyCollected: 0,
+
+  // The real total lives in this file, served next to the page (same origin,
+  // so no CORS). Update it and every visitor sees the new number without the
+  // page being rebuilt. The page cannot count the container itself: that needs
+  // List permission on the SAS, which would let any visitor enumerate every
+  // contributor's filenames.
+  countUrl: "count.json"
 };
 
 /* --- tuning ------------------------------------------------------------- */
@@ -524,7 +533,33 @@ function friendly(e, item) {
 var items = [], seq = 0, running = false, everSucceeded = false;
 // Counted separately from the queue: finished rows get cleared when the
 // thank-you appears, and the tally must not go backwards when they do.
-var sessionSent = 0;
+var sessionSent = 0;    // this page-load only -- added on top of the stored total
+var lifetimeSent = 0;   // this device, across visits
+
+// A reload used to reset the contributor's own tally to zero, which read as
+// "none of that counted". localStorage keeps it; a browser that refuses
+// storage (private mode, blocked cookies) just falls back to 0.
+try {
+  lifetimeSent = parseInt(localStorage.getItem("matobev.sent") || "0", 10) || 0;
+} catch (e) { lifetimeSent = 0; }
+
+function rememberSent() {
+  try { localStorage.setItem("matobev.sent", String(lifetimeSent)); } catch (e) {}
+}
+
+// Pull the shared total. Failure is silent and harmless -- the fallback stands.
+async function loadCount() {
+  if (!COLLECTION.countUrl) return;
+  try {
+    var r = await fetch(COLLECTION.countUrl, { cache: "no-store" });
+    if (!r.ok) return;
+    var j = await r.json();
+    if (typeof j.collected === "number" && isFinite(j.collected)) {
+      COLLECTION.alreadyCollected = j.collected;
+      board();
+    }
+  } catch (e) { /* offline, missing, or not JSON -- keep the fallback */ }
+}
 var usedNames = Object.create(null);
 
 /* --- upload strategies -------------------------------------------------- */
@@ -619,6 +654,8 @@ async function runItem(item) {
     item.status = "done";
     everSucceeded = true;
     sessionSent++;
+    lifetimeSent++;
+    rememberSent();
     item.loaded = item.file.size;
     item.speed = null;
     paint(item, true);
@@ -875,7 +912,7 @@ function board() {
   $("pctBar").style.width = pct + "%";
   $("pctText").textContent = total.toLocaleString() + " of " +
                              COLLECTION.target.toLocaleString() + " clips collected";
-  $("yours").textContent = sessionSent ? "+" + sessionSent + " from you" : "";
+  $("yours").textContent = lifetimeSent ? "+" + lifetimeSent + " from you" : "";
   $("qcount").textContent = items.length ? sessionSent + " of " +
                             (sessionSent + items.length) + " sent" : "";
 }
@@ -955,6 +992,7 @@ function say(msg) { $("live").textContent = msg; }
   });
 
   board();
+  loadCount();
 })();
 </script>
 </body>
