@@ -7,3 +7,17 @@ Mobile app design scope.zip
 .env
 .env.local
 .env.*.local
+
+# Working scratch that must never reach a public repo. tokensas.md holds a
+# live container SAS; config.json names the Azure ML workspace. Neither was
+# ignored, so a stray `git add .` would have published them.
+tokensas.md
+config.json
+
+# Design source archives, same reasoning as the .pptx rule above. The
+# existing pattern only matched the original filename.
+scope.zip
+*design scope*.zip
+
+# Local scratch from the uploader work
+uploader/_site/
