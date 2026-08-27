@@ -547,6 +547,18 @@ function rememberSent() {
   try { localStorage.setItem("matobev.sent", String(lifetimeSent)); } catch (e) {}
 }
 
+// The highest total this device has ever been shown.
+//
+// The shared count refreshes on a schedule, so between an upload and the next
+// refresh it does not yet include what was just sent. Without a floor the
+// number drops back on reload and a contributor watches their own clips
+// disappear -- which reads as "it didn't save". Their clips are genuinely in
+// the container; the published figure just hasn't caught up yet.
+var countFloor = 0;
+try {
+  countFloor = parseInt(localStorage.getItem("matobev.floor") || "0", 10) || 0;
+} catch (e) { countFloor = 0; }
+
 // Pull the shared total. Failure is silent and harmless -- the fallback stands.
 async function loadCount() {
   if (!COLLECTION.countUrl) return;
@@ -905,7 +917,13 @@ function fmtPct(p) {
 }
 
 function board() {
-  var total = COLLECTION.alreadyCollected + sessionSent;
+  var live = COLLECTION.alreadyCollected + sessionSent;
+  var total = Math.max(live, countFloor);
+  if (total > countFloor) {
+    countFloor = total;
+    try { localStorage.setItem("matobev.floor", String(countFloor)); } catch (e) {}
+  }
+
   var pct = COLLECTION.target ? Math.min(100, total / COLLECTION.target * 100) : 0;
 
   $("pctNum").textContent = fmtPct(pct);

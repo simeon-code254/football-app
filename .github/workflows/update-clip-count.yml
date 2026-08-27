@@ -4,6 +4,12 @@ name: Update clip count
 # uploader page shows. Runs here rather than in the browser because counting
 # needs List permission, and a List-capable SAS in the page would let any
 # visitor enumerate every contributor's filenames.
+#
+# This job deploys Pages itself rather than committing and letting
+# deploy-uploader.yml pick the change up. That handoff cannot work: a push made
+# with the default GITHUB_TOKEN deliberately does not trigger other workflows,
+# so the commit landed on main and the site was never rebuilt -- main said 6,
+# Pages still served 0. Same reason there is no recursion risk here.
 
 on:
   schedule:
@@ -13,14 +19,20 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
-  group: clip-count
-  cancel-in-progress: true
+  # shared with deploy-uploader.yml so the two can never publish at once
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   count:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -35,11 +47,30 @@ jobs:
       - name: Commit if the number moved
         run: |
           if git diff --quiet -- uploader/count.json; then
-            echo "count unchanged, nothing to commit"
+            echo "count unchanged"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add uploader/count.json
-          git commit -m "Update clip count [skip ci]"
+          git commit -m "Update clip count"
           git push
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare site root
+        run: |
+          mkdir -p _site
+          cp uploader/index.html _site/index.html
+          cp uploader/count.json _site/count.json
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
