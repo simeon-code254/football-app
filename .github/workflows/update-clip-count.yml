@@ -1,0 +1,45 @@
+name: Update clip count
+
+# Counts what is actually in the container and publishes the number the
+# uploader page shows. Runs here rather than in the browser because counting
+# needs List permission, and a List-capable SAS in the page would let any
+# visitor enumerate every contributor's filenames.
+
+on:
+  schedule:
+    # every 20 minutes; GitHub delays cron under load, so treat it as "roughly"
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: clip-count
+  cancel-in-progress: true
+
+jobs:
+  count:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Count clips in the container
+        env:
+          AZ_ACCOUNT: ${{ secrets.AZ_ACCOUNT }}
+          AZ_CONTAINER: ${{ secrets.AZ_CONTAINER }}
+          AZ_LIST_SAS: ${{ secrets.AZ_LIST_SAS }}
+        run: node scripts/count-uploaded-clips.mjs
+
+      - name: Commit if the number moved
+        run: |
+          if git diff --quiet -- uploader/count.json; then
+            echo "count unchanged, nothing to commit"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uploader/count.json
+          git commit -m "Update clip count [skip ci]"
+          git push
