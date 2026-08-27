@@ -21,3 +21,6 @@ scope.zip
 
 # Local scratch from the uploader work
 uploader/_site/
+
+# transfer logs from scripts/sync-raw-to-drive.ps1
+.sync-logs/
