@@ -279,7 +279,7 @@ export default function TrialDetail() {
               <ImageBackground source={{ uri: coverUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             )}
             <LinearGradient
-              colors={['rgba(10,27,51,0.6)', 'rgba(10,27,51,0.2)', colors.background]}
+              colors={['rgba(29,45,61,0.6)', 'rgba(29,45,61,0.2)', colors.background]}
               locations={[0, 0.5, 1]}
               style={StyleSheet.absoluteFill}
             />

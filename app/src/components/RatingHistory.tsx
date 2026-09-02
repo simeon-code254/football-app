@@ -8,7 +8,6 @@ import {
   radii,
   spacing,
   useThemeColors,
-  useIsDark,
 } from '../theme';
 import type { RatingSnapshot } from '../repositories/communityRepository';
 
@@ -37,7 +36,6 @@ const PAD = 8;
 
 export function RatingHistory({ snapshots }: { snapshots: RatingSnapshot[] }) {
   const colors = useThemeColors();
-  const isDark = useIsDark();
   const styles = makeStyles(colors);
 
   const points = snapshots
@@ -82,7 +80,7 @@ export function RatingHistory({ snapshots }: { snapshots: RatingSnapshot[] }) {
   const first = points[0].value;
   const latest = points[points.length - 1].value;
   const change = latest - first;
-  const lineColor = isDark ? colors.gold : colors.goldDark;
+  const lineColor = colors.gold;
 
   return (
     <View style={styles.card}>

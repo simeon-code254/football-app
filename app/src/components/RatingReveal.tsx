@@ -20,7 +20,7 @@ import { Confetti } from './SuccessCheck';
 //   navy ground + radial gold glow at 50% 40%, .22, transparent 55%
 //   three confetti particles
 //   "OVERALL RATING"                    .mono 10px rgba(255,255,255,.55)
-//   190px ring: r=90 on a 200 box, stroke 5, track rgba(255,197,61,.15),
+//   190px ring: r=90 on a 200 box, stroke 5, track rgba(181,217,253,.15),
 //     gold arc, dasharray 565, progressRing 1.5s
 //   inner navy disc inset 16px, numeral 76px gold, letter-spacing -3,
 //     badgePop .8s
@@ -75,12 +75,12 @@ export function RatingReveal({
   return (
     <Modal visible={visible} animationType="fade" transparent={false} onRequestClose={onClose}>
       <View style={styles.root}>
-        {/* radial-gradient(circle at 50% 40%, rgba(255,197,61,.22), transparent 55%) */}
+        {/* radial-gradient(circle at 50% 40%, rgba(181,217,253,.22), transparent 55%) */}
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <RadialGradient id="revealGlow" cx="50%" cy="40%" r="55%">
-              <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.22} />
-              <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+              <Stop offset="0" stopColor="#b5d9fd" stopOpacity={0.22} />
+              <Stop offset="1" stopColor="#b5d9fd" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#revealGlow)" />
@@ -104,7 +104,7 @@ export function RatingReveal({
                 cy={VIEW / 2}
                 r={R}
                 fill="none"
-                stroke="rgba(255,197,61,0.15)"
+                stroke="rgba(181,217,253,0.15)"
                 strokeWidth={5}
               />
               <AnimatedCircle
@@ -189,7 +189,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       height: RING + cx(10) * 2,
       borderRadius: (RING + cx(10) * 2) / 2,
       borderWidth: 1,
-      borderColor: 'rgba(255,197,61,0.3)',
+      borderColor: 'rgba(181,217,253,0.3)',
     },
     disc: {
       position: 'absolute',

@@ -140,8 +140,8 @@ export default function Profile() {
               <Path d="M0 8h16M8 0v16" stroke={colors.accentOnNavy} strokeWidth={0.4} />
             </Pattern>
             <RadialGradient id="profileGlow" cx="85%" cy="0%" r="58%">
-              <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.22} />
-              <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+              <Stop offset="0" stopColor="#b5d9fd" stopOpacity={0.22} />
+              <Stop offset="1" stopColor="#b5d9fd" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#ppg)" opacity={0.08} />

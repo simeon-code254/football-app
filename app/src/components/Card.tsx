@@ -6,7 +6,7 @@ import { elevation, radii, spacing, useThemeColors, useIsDark } from '../theme';
 //   .card { background:#fff; border:1px solid #E7E2D3; border-radius:14px }
 //
 // plus the two lifted variants it draws by hand -- the rating card on player
-// home carries `box-shadow:0 14px 30px -14px rgba(10,27,51,.45)` and a larger
+// home carries `box-shadow:0 14px 30px -14px rgba(29,45,61,.45)` and a larger
 // 18px radius, and modals sit higher still.
 //
 // The shadow does not come from a hand-written boxShadow here: `elevation()`

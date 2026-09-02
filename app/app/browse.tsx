@@ -121,7 +121,7 @@ export default function Browse() {
                 resizeMode="cover"
               />
               <LinearGradient
-                colors={['rgba(10,27,51,0.25)', 'transparent', 'rgba(10,27,51,0.94)']}
+                colors={['rgba(29,45,61,0.25)', 'transparent', 'rgba(29,45,61,0.94)']}
                 locations={[0, 0.3, 1]}
                 style={StyleSheet.absoluteFill}
               />

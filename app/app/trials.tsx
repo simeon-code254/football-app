@@ -12,10 +12,25 @@ import { DeadlinePill } from '../src/components/DeadlinePill';
 import { IconButton } from '../src/components/IconButton';
 import { useSessionStore } from '../src/store/useSessionStore';
 import * as trialsRepository from '../src/repositories/trialsRepository';
+import * as profileRepository from '../src/repositories/profileRepository';
 import { QueryState } from '../src/components/QueryState';
 import { SkeletonCards } from '../src/components/Skeleton';
 
-const SEGMENTS = ['Open Trials', 'My Applications'] as const;
+// Canvas 18 (28 Aug) segments this screen NEARBY / MY POSITION / SAVED.
+//
+// -- ONLY ONE OF THE THREE HAS DATA BEHIND IT --
+//
+// `trials.positions` is a real column and players carry a primary and a
+// secondary position, so MY POSITION is a genuine filter and is built below.
+//
+// NEARBY is not: `trials.location` is free text with no coordinates anywhere in
+// the schema, so "nearby" could only ever be a string comparison dressed up as
+// proximity -- a player in Kisumu would be shown Nairobi trials labelled as
+// near them. SAVED is not either: there is no saved/bookmark table at all.
+//
+// Rather than ship two tabs that quietly lie, the screen keeps its own working
+// pair and adds the one the canvas contributed that the database can answer.
+const SEGMENTS = ['Open Trials', 'My Position', 'My Applications'] as const;
 
 // The player-side counterpart to (scout-tabs)/trials.tsx — previously there
 // was no way for a player to browse or apply to a trial anywhere in the app.
@@ -80,6 +95,23 @@ export default function PlayerTrials() {
   });
   const applicationByTrialId = new Map((myApplicationsForBadges?.items ?? []).map((a) => [a.trial_id, a]));
 
+  // The player's own positions, for the MY POSITION segment. A secondary
+  // position counts: scout search already treats it as an equally legitimate
+  // match (profileRepository), and a right-back who also plays centre-back
+  // should see both calls.
+  const { data: me } = useQuery({
+    queryKey: ['myPlayer', userId],
+    enabled: !!userId,
+    queryFn: () => profileRepository.getMyPlayer(userId!),
+  });
+  const myPositions = [me?.primary_position, me?.secondary_position].filter(Boolean) as string[];
+  const positionMatches = openTrials.filter(
+    (t) => !t.positions?.length || t.positions.some((p) => myPositions.includes(p))
+  );
+  // A trial that names no positions is open to everyone, so it stays in the
+  // filtered list rather than being hidden by a filter it does not answer.
+  const listedTrials = segment === 'My Position' ? positionMatches : openTrials;
+
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
@@ -109,17 +141,17 @@ export default function PlayerTrials() {
         })}
       </View>
 
-      {segment === 'Open Trials' ? (
+      {segment !== 'My Applications' ? (
         <QueryState
           isLoading={loadingOpen}
           error={openError}
           onRetry={refetchOpen} skeleton={<SkeletonCards />}
-          isEmpty={!openTrials.length}
+          isEmpty={!listedTrials.length}
           emptyIcon="calendar"
-          emptyMessage="No open trials right now."
+          emptyMessage={segment === 'My Position' ? 'No open trials for your position right now.' : 'No open trials right now.'}
         >
           <FlashList
-            data={openTrials}
+            data={listedTrials}
             keyExtractor={(trial) => trial.id}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}

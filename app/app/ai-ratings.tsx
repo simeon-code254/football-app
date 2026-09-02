@@ -140,7 +140,7 @@ export default function AiRatings() {
           <View style={styles.hero}>
             <Animated.View style={[styles.heroSheen, heroSheen]} pointerEvents="none">
               <LinearGradient
-                colors={['rgba(255,197,61,0)', 'rgba(255,197,61,0.16)', 'rgba(255,197,61,0)']}
+                colors={['rgba(181,217,253,0)', 'rgba(181,217,253,0.16)', 'rgba(181,217,253,0)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ flex: 1 }}

@@ -193,7 +193,7 @@ const ReelItem = memo(function ReelItem({
         which tinted the whole lower two thirds of the video.
       */}
       <LinearGradient
-        colors={['rgba(10,27,51,0.35)', 'transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+        colors={['rgba(29,45,61,0.35)', 'transparent', 'transparent', 'rgba(0,0,0,0.9)']}
         locations={[0, 0.35, 0.55, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"

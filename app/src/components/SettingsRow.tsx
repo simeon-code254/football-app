@@ -47,7 +47,7 @@ export function SettingsRow({
   const badgeTone = badge
     ? {
         success: { bg: colors.successTint, fg: colors.success },
-        warning: { bg: colors.warningTint, fg: colors.goldDark },
+        warning: { bg: colors.warningTint, fg: colors.warning },
         danger: { bg: colors.dangerTint, fg: colors.error },
       }[badge.tone]
     : null;

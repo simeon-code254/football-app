@@ -17,10 +17,11 @@ import { SkeletonHome } from '../../src/components/Skeleton';
 import { FirstWinCard } from '../../src/components/FirstWinCard';
 import { PlayerRatingCard } from '../../src/components/PlayerRatingCard';
 import { NewsPopup } from '../../src/components/NewsPopup';
-import { timeAgo } from '../../src/lib/time';
+import { timeAgo, daysUntil } from '../../src/lib/time';
 import Animated from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { Logo } from '../../src/components/Logo';
+import { Kicker } from '../../src/components/Kicker';
 import { usePulse, useSheen } from '../../src/lib/motion';
 
 function getGreeting() {
@@ -135,13 +136,13 @@ export default function Home() {
         >
           {/*
             The canvas's radial gold glow, drawn as an actual radial gradient:
-            `radial-gradient(circle at 85% 0%, rgba(255,197,61,.2), transparent 58%)`.
+            `radial-gradient(circle at 85% 0%, rgba(181,217,253,.2), transparent 58%)`.
           */}
           <Svg style={styles.headerGlow} pointerEvents="none">
             <Defs>
               <RadialGradient id="homeGlow" cx="85%" cy="0%" r="58%">
-                <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.2} />
-                <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+                <Stop offset="0" stopColor="#b5d9fd" stopOpacity={0.2} />
+                <Stop offset="1" stopColor="#b5d9fd" stopOpacity={0} />
               </RadialGradient>
             </Defs>
             <Rect x="0" y="0" width="100%" height="100%" fill="url(#homeGlow)" />
@@ -217,7 +218,7 @@ export default function Home() {
                 percentage translation is relative to the band's own width. */}
             <Animated.View style={[styles.bannerSheen, bannerSheen]} pointerEvents="none">
               <LinearGradient
-                colors={['rgba(255,197,61,0)', 'rgba(255,197,61,0.14)', 'rgba(255,197,61,0)']}
+                colors={['rgba(181,217,253,0)', 'rgba(181,217,253,0.14)', 'rgba(181,217,253,0)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{ flex: 1 }}
@@ -322,28 +323,53 @@ export default function Home() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Trials Near You</Text>
+            <Text style={styles.sectionTitle}>Nearby trials for you</Text>
             <Pressable onPress={() => router.push('/trials')}>
               <Text style={styles.sectionLink}>See all</Text>
             </Pressable>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-            {!trials?.length && (
-              <Text style={{ fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted }}>
-                No open trials right now.
-              </Text>
-            )}
-            {(trials ?? []).slice(0, 8).map((trial) => (
-              <Pressable key={trial.id} style={[styles.trialCard, elevation('raised', isDark)]} onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}>
-                <View style={styles.trialDateBadge}>
-                  <Text style={styles.trialDateText}>{trial.trial_date}</Text>
+          {/*
+            Canvas 10 (28 Aug) replaced the horizontal card rail here with a
+            stacked row: club and title on one line, "RB WANTED · CLOSES 9D"
+            beneath, and an APPLY affordance on the right.
+
+            "Nearby" is the canvas's word and is kept as a section heading
+            rather than as a claim about distance -- `trials.location` is free
+            text with no coordinates, so nothing here is actually sorted by
+            proximity. The heading names the intent; the rows state only what
+            the row knows.
+          */}
+          {!trials?.length && (
+            <Text style={{ fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted }}>
+              No open trials right now.
+            </Text>
+          )}
+          {(trials ?? []).slice(0, 2).map((trial) => {
+            const days = daysUntil(trial.application_deadline);
+            const wanted = trial.positions?.length ? `${trial.positions.join('/')} wanted` : null;
+            return (
+              <Pressable
+                key={trial.id}
+                style={[styles.trialRow, elevation('raised', isDark)]}
+                onPress={() => router.push({ pathname: '/trial/[id]', params: { id: trial.id } })}
+                accessibilityRole="button"
+                accessibilityLabel={`${trial.title}${wanted ? `, ${wanted}` : ''}${days != null ? `, closes in ${days} days` : ''}`}
+              >
+                <View style={styles.trialRowIcon}>
+                  <Feather name="clipboard" size={16} color={colors.primary} />
                 </View>
-                <Text style={styles.trialClub}>{trial.title}</Text>
-                <Text style={styles.trialLocation}>{trial.location}</Text>
-                <Text style={styles.trialSpots}>Deadline {trial.application_deadline}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.trialRowTitle} numberOfLines={1}>
+                    {[trial.title, trial.club].filter(Boolean).join(' · ')}
+                  </Text>
+                  <Kicker size={fontSize.caption} style={{ marginTop: 2 }}>
+                    {[wanted, days != null ? `closes ${days}d` : null].filter(Boolean).join(' · ')}
+                  </Kicker>
+                </View>
+                <Text style={styles.trialApply}>APPLY</Text>
               </Pressable>
-            ))}
-          </ScrollView>
+            );
+          })}
         </View>
 
         <View style={styles.section}>
@@ -475,7 +501,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     width: 36,
     height: 36,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255,197,61,0.16)',
+    backgroundColor: 'rgba(181,217,253,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -530,12 +556,10 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary, letterSpacing: -0.2 },
   sectionLink: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.primary },
-  trialCard: { width: 190, backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.lg },
-  trialDateBadge: { alignSelf: 'flex-start', backgroundColor: colors.infoTint, borderRadius: radii.sm, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 10 },
-  trialDateText: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.primary },
-  trialClub: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
-  trialLocation: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
-  trialSpots: { fontFamily: fontFamily.medium, fontSize: fontSize.xs, color: colors.success, marginTop: 8 },
+  trialRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.md, marginTop: spacing.sm },
+  trialRowIcon: { width: 32, height: 32, borderRadius: radii.sm, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
+  trialRowTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
+  trialApply: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.caption, letterSpacing: 1.2, color: colors.gold },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.md, padding: 12, marginBottom: 8 },
   activityIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
   activityText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },

@@ -28,3 +28,17 @@ export function timeAgo(iso: string, style: 'compact' | 'long' = 'long'): string
 
   return `${Math.floor(hours / 24)}d${suffix}`;
 }
+
+/**
+ * Whole days from now until an ISO date, or null when there is no date.
+ *
+ * Floors at 0 rather than going negative: a deadline that has passed is
+ * "closes 0d", not "closes -3d". Callers that need to distinguish expired
+ * from closing-today should check the date itself.
+ */
+export function daysUntil(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return null;
+  return Math.max(0, Math.ceil((then - Date.now()) / 86400000));
+}

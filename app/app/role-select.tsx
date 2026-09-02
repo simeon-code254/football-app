@@ -72,8 +72,8 @@ export default function RoleSelect() {
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <RadialGradient id="roleGlow" cx="88%" cy="6%" r="58%">
-              <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.22} />
-              <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+              <Stop offset="0" stopColor="#b5d9fd" stopOpacity={0.22} />
+              <Stop offset="1" stopColor="#b5d9fd" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#roleGlow)" />

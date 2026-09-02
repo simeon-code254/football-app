@@ -13,9 +13,9 @@ const SPLASH_DURATION_MS = 3000;
 // Canvas screen 01 SPLASH.
 //
 //   <div class="di" style="background:radial-gradient(circle at 50% 45%,
-//                          #123A6B,#0A1B33 60%,#050D1D)">
+//                          #416180,#1d2d3d 60%,#050D1D)">
 //     <div style="position:absolute;inset:-14px;border-radius:50%;
-//                 border:1px solid rgba(255,197,61,.25);animation:ping 2.4s"/>
+//                 border:1px solid rgba(181,217,253,.25);animation:ping 2.4s"/>
 //     <div class="logoG" style="width:110px;height:110px;animation:float 3.2s"/>
 //     MATOBEV        .h 32px w800 #fff letter-spacing:5px
 //     GET SEEN · GET RATED   .mono 9px var(--gold)
@@ -69,8 +69,8 @@ export default function SplashScreen() {
       <Svg style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="splash" cx="50%" cy="45%" r="75%">
-            <Stop offset="0" stopColor="#123A6B" />
-            <Stop offset="0.6" stopColor="#0A1B33" />
+            <Stop offset="0" stopColor="#416180" />
+            <Stop offset="0.6" stopColor="#1d2d3d" />
             <Stop offset="1" stopColor="#050D1D" />
           </RadialGradient>
         </Defs>
@@ -105,7 +105,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     // Canvas navy, and the same value app.json paints behind the native splash
     // -- so the handoff from the OS splash to this screen is seamless rather
     // than a visible colour jump. Change these together.
-    root: { flex: 1, backgroundColor: '#0A1B33' },
+    root: { flex: 1, backgroundColor: '#1d2d3d' },
     content: {
       flex: 1,
       alignItems: 'center',
@@ -125,7 +125,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       height: RING,
       borderRadius: RING / 2,
       borderWidth: 1,
-      borderColor: 'rgba(255,197,61,0.25)',
+      borderColor: 'rgba(181,217,253,0.25)',
     },
     wordmarkBlock: { alignItems: 'center' },
     wordmark: {

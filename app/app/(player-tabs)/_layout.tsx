@@ -50,11 +50,13 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           // The Matobev mark, per the brand deck's usage map: "Tab bar (Home
-          // icon) - logo-mask.png - Navy #0A1B33 - 16x16px". Canvas 10 draws a
+          // icon) - logo-mask.png - Navy #1d2d3d - 16x16px". Canvas 10 draws a
           // house glyph, but the deck is explicit and it is the same mark the
           // scout and club bars already carry -- one Home icon across all three
-          // roles rather than a house for one and the mark for the others.
-          tabBarIcon: ({ size }) => <Logo variant="navy" size={size - 2} />,
+          // roles rather than a house for one and the mark for the others. The
+          // deck names navy, but that is the light-theme ground only, so the
+          // mark takes the navigator's tint instead of a fixed colour.
+          tabBarIcon: ({ color, size }) => <Logo tint={color} size={size - 2} />,
         }}
       />
       <Tabs.Screen

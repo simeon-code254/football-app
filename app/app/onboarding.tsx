@@ -19,8 +19,8 @@ import { usePing } from '../src/lib/motion';
 // Canvas screen 09 ONBOARDING.
 //
 //   346px navy hero, centred:
-//     88x88 tile on rgba(255,197,61,.12), radius 20, gold glyph 38px
-//     ping ring inset -6px, radius 24, 1px rgba(255,197,61,.35)
+//     88x88 tile on rgba(181,217,253,.12), radius 20, gold glyph 38px
+//     ping ring inset -6px, radius 24, 1px rgba(181,217,253,.35)
 //     "Upload one clip."       .h 24px w800
 //     sub 12px rgba(255,255,255,.6), max-width 200, centred
 //   paper below:
@@ -125,7 +125,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       width: TILE,
       height: TILE,
       borderRadius: radii.xxl,
-      backgroundColor: 'rgba(255,197,61,0.12)',
+      backgroundColor: 'rgba(181,217,253,0.12)',
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: spacing.xl,
@@ -136,7 +136,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       height: RING,
       borderRadius: radii.xxl,
       borderWidth: 1,
-      borderColor: 'rgba(255,197,61,0.35)',
+      borderColor: 'rgba(181,217,253,0.35)',
     },
     title: {
       fontFamily: fontFamilyDisplay.extraBold,

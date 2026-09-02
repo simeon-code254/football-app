@@ -1,7 +1,7 @@
 import { View, Text, StyleProp, ViewStyle } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import Animated from 'react-native-reanimated';
-import { cx, fontFamilyDisplay, useThemeColors, useIsDark } from '../theme';
+import { cx, fontFamilyDisplay, useThemeColors } from '../theme';
 import { useProgressRing, useCountUp } from '../lib/motion';
 
 // The rating arc from the canvas -- a gold stroke sweeping around a warm track
@@ -15,13 +15,13 @@ import { useProgressRing, useCountUp } from '../lib/motion';
 //   <circle r="44" stroke="var(--gold)" stroke-dasharray="276"
 //           stroke-dashoffset="276" style="--off:61;animation:progressRing ...">
 //
-// -- WHY THE ARC COLOUR CHANGES WITH THEME --
+// -- THE ARC TAKES THE ACCENT TOKEN DIRECTLY --
 //
-// Gold on the light theme is goldDark #8A5A00, not #FFC53D. The bright gold is
-// 1.58:1 on a white card -- the arc would be there and unreadable. On the dark
-// theme the card is dark, so the bright gold is correct and is used. This is
-// the whole gold-on-light rule, and the ring is where it bites hardest because
-// the arc IS the number.
+// This used to branch on the theme, because the old gold measured 1.58:1 on a
+// white card and had to be swapped for a dark variant. The re-skinned palette
+// reverses that: the accent is 5.01:1 on paper and 4.54:1 on a muted card, and
+// the token already resolves to a lighter value on the dark theme. So one
+// reference serves both grounds, which is what the canvas draws.
 const VIEW = 100;
 const R = 44;
 const STROKE = 7;
@@ -41,7 +41,6 @@ export function RatingRing({
   style?: StyleProp<ViewStyle>;
 }) {
   const colors = useThemeColors();
-  const isDark = useIsDark();
 
   // Rounded for display for the same reason RatingChip rounds: the column is
   // numeric(5,2) and a rating reads as a whole number.
@@ -49,7 +48,7 @@ export function RatingRing({
   // A null rating draws an empty track and an em dash rather than a zero arc.
   // Zero is a verdict; "not measured" is not, and the two must not look alike.
   const fraction = value == null ? 0 : Math.max(0, Math.min(1, value / 99));
-  const arcColor = isDark ? colors.gold : colors.goldDark;
+  const arcColor = colors.gold;
 
   const animatedProps = useProgressRing(fraction, CIRCUMFERENCE);
   const numeralStyle = useCountUp(value);
