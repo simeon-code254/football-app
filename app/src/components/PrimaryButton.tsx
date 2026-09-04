@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle, StyleProp, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fontFamily, fontSize, radii, useThemeColors } from '../theme';
+import { fontFamilyDisplay, fontSize, useThemeColors } from '../theme';
 
 type Props = {
   label: string;
@@ -51,7 +51,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, style, height
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
     button: {
-      borderRadius: radii.lg,
+      borderRadius: 4,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: colors.primary,
@@ -62,8 +62,8 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     label: {
       color: colors.white,
-      fontFamily: fontFamily.semiBold,
-      fontSize: fontSize.bodyLg,
+      fontFamily: fontFamilyDisplay.bold,
+      fontSize: fontSize.bodySm,
     },
   });
 }

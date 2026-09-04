@@ -46,6 +46,8 @@ export default function SplashScreen() {
       if (status === 'signed-in') {
         if (role === 'scout') {
           router.replace('/(scout-tabs)/home');
+        } else if (role === 'club') {
+          router.replace('/(club-tabs)/home');
         } else if (role === 'player') {
           router.replace(player?.profile_completed ? '/(player-tabs)/home' : '/profile-complete');
         } else {

@@ -221,7 +221,7 @@ function makeStyles(colors: ThemeColors) {
     scopeChip: {
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.sm,
-      borderRadius: radii.pill,
+      borderRadius: 4,
       backgroundColor: colors.surfaceMuted,
     },
     scopeChipActive: { backgroundColor: colors.primary },
@@ -235,7 +235,7 @@ function makeStyles(colors: ThemeColors) {
       paddingBottom: spacing.md,
     },
     list: { paddingBottom: spacing.xxl },
-    rowMe: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark },
+    rowMe: { backgroundColor: colors.primaryDark, borderColor: colors.primaryDark, borderRadius: 4 },
   rankMe: { color: colors.gold },
   nameMe: { color: colors.white },
   youTag: { color: colors.accentOnNavy, fontSize: fontSize.caption },
@@ -247,6 +247,7 @@ function makeStyles(colors: ThemeColors) {
       gap: spacing.md,
       paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
+      borderRadius: 4,
     },
     rank: {
       width: 22,
@@ -256,7 +257,7 @@ function makeStyles(colors: ThemeColors) {
       color: colors.textMuted,
     },
     rankTop: { color: colors.gold },
-    avatar: { width: 40, height: 40, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted },
+    avatar: { width: 40, height: 40, borderRadius: 4, backgroundColor: colors.surfaceMuted },
     name: { fontFamily: fontFamily.semiBold, fontSize: fontSize.body, color: colors.textPrimary },
     meta: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
     delta: {

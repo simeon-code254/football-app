@@ -157,15 +157,13 @@ function RolePill({ role, label }: { role: Role; label: string }) {
   const tone =
     role === 'player'
       ? { backgroundColor: colors.gold, color: colors.primaryDark }
-      : role === 'scout'
-        ? { backgroundColor: colors.infoTint, color: colors.primary }
-        : { backgroundColor: colors.warningTint, color: colors.goldDark };
+      : { backgroundColor: '#eef6ff', color: colors.gold };
 
   return (
     <View
       style={{
         backgroundColor: tone.backgroundColor,
-        borderRadius: radii.sm,
+        borderRadius: 4,
         paddingHorizontal: spacing.sm,
         paddingVertical: 2,
       }}
@@ -198,15 +196,22 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       marginTop: 4,
     },
     body: { flex: 1, paddingHorizontal: cx(15) },
-    list: { paddingTop: spacing.md, gap: spacing.md, paddingBottom: spacing.md },
+    list: { paddingTop: spacing.md, gap: 9, paddingBottom: spacing.md },
     card: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
-      borderRadius: radii.xl,
+      borderRadius: 4,
       padding: spacing.lg,
     },
-    cardActive: { backgroundColor: colors.primaryDark },
+    cardActive: { 
+      backgroundColor: colors.primaryDark,
+      shadowColor: '#1d2d3d',
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      shadowOffset: { height: 6, width: 0 },
+      elevation: 6,
+    },
     cardBody: { flex: 1 },
     cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
     roleName: {
@@ -222,9 +227,9 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       marginTop: 3,
     },
     radio: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
+      width: 21,
+      height: 21,
+      borderRadius: 9999,
       borderWidth: 1.5,
       borderColor: colors.borderDashed,
       alignItems: 'center',
@@ -233,7 +238,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     radioOn: { backgroundColor: colors.gold, borderColor: colors.gold },
     note: {
       backgroundColor: colors.surfaceMuted,
-      borderRadius: radii.sm,
+      borderRadius: 4,
       padding: spacing.md,
       fontFamily: fontFamily.regular,
       fontSize: fontSize.sm,

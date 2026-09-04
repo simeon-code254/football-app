@@ -477,7 +477,7 @@ export default function ProfileComplete() {
 function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  progressTrack: { height: 4, backgroundColor: colors.track, borderRadius: 2, overflow: 'hidden', marginTop: 10 },
+  progressTrack: { height: 4, backgroundColor: '#e7e7ea', borderRadius: 4, overflow: 'hidden', marginTop: 10 },
   progressFill: { height: '100%', backgroundColor: colors.gold },
   minorNoteStrong: { fontFamily: fontFamily.bold },
   minorNote: {
@@ -487,6 +487,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     lineHeight: 17,
     marginTop: -4,
     marginBottom: 12,
+    borderRadius: 4,
   },
   finishLaterWrap: { alignItems: 'center', marginTop: 16 },
   finishLaterText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
@@ -520,7 +521,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   footPill: {
     flex: 1,
     height: 44,
-    borderRadius: radii.md,
+    borderRadius: 4,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.inputBackground,
@@ -530,11 +531,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   footPillSelected: { borderColor: colors.primary, backgroundColor: colors.infoTint },
   footPillText: { fontFamily: fontFamily.medium, fontSize: fontSize.bodySm, color: colors.textBody },
   footPillTextSelected: { fontFamily: fontFamily.semiBold, color: colors.primary },
-  bioBox: { borderRadius: radii.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 14, minHeight: 140 },
+  bioBox: { borderRadius: 4, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.inputBackground, padding: 14, minHeight: 140 },
   bioInput: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textPrimary, minHeight: 120, textAlignVertical: 'top' },
   charCount: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, textAlign: 'right' },
   socialHint: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.textMuted },
   navRow: { flexDirection: 'row', gap: 10, marginTop: spacing.xl, paddingTop: spacing.xl },
-  backBtn: { borderRadius: radii.lg },
+  backBtn: { borderRadius: 4 },
   });
 }

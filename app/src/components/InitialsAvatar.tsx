@@ -25,20 +25,23 @@ export function InitialsAvatar({
   name,
   uri,
   size = 36,
+  circular = false,
   style,
 }: {
   name: string | null | undefined;
   uri?: string | null;
   size?: number;
+  circular?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const colors = useThemeColors();
+  const radius = circular ? size / 2 : 4;
 
   if (uri) {
     return (
       <Image
         source={{ uri }}
-        style={[{ width: size, height: size, borderRadius: size / 2 }, style as object]}
+        style={[{ width: size, height: size, borderRadius: radius }, style as object]}
         contentFit="cover"
         // The name is already rendered beside every avatar in these lists, so
         // announcing it again here would just double up for screen readers.
@@ -54,7 +57,7 @@ export function InitialsAvatar({
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[
-        { width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' },
+        { width: size, height: size, borderRadius: radius, alignItems: 'center', justifyContent: 'center' },
         style as object,
       ]}
     >

@@ -50,7 +50,7 @@ export function NoticeBox({
           gap: spacing.sm,
           alignItems: 'flex-start',
           backgroundColor: palette.bg,
-          borderRadius: radii.sm,
+          borderRadius: 4,
           padding: spacing.md,
         },
         style,

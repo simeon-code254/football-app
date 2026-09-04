@@ -212,7 +212,7 @@ export default function AiRatings() {
           )}
 
           {!!recommendations.length && (
-            <View style={styles.section}>
+            <View style={[styles.section, { backgroundColor: '#eef6ff', borderRadius: 4, padding: 12 }]}>
               <Text style={styles.sectionLabel}>Ways to Improve</Text>
               <Text style={styles.recoSub}>Based on the movement data from your most recently analyzed highlight.</Text>
               <View style={styles.recoList}>
@@ -262,7 +262,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   sectionKicker: { marginBottom: spacing.md },
   hero: {
     backgroundColor: colors.primaryDark,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     paddingVertical: 14,
     paddingHorizontal: 16,
     // The sheen sweeps inside the card and must not bleed past its corners.
@@ -280,9 +280,9 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   },
   heroSub: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: 'rgba(255,255,255,0.6)', marginTop: 8 },
 
-  statusBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.warningTint, borderRadius: radii.md, padding: 12, alignItems: 'center' },
+  statusBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.warningTint, borderRadius: 4, padding: 12, alignItems: 'center' },
   statusBannerText: { flex: 1, fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.goldDark },
-  errorBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.dangerTint, borderRadius: radii.md, padding: 12, alignItems: 'flex-start' },
+  errorBanner: { flexDirection: 'row', gap: 8, backgroundColor: colors.dangerTint, borderRadius: 4, padding: 12, alignItems: 'flex-start' },
   errorBannerText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.sm, color: colors.error, lineHeight: 18 },
 
   section: { gap: 12 },

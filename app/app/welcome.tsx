@@ -66,7 +66,12 @@ export default function Welcome() {
           onPress={() => router.push('/login')}
           style={styles.secondary}
         />
-        <LinkButton label="Browse without an account" onPress={() => router.push('/browse')} />
+        <Text
+          style={styles.guestLink}
+          onPress={() => router.push('/browse')}
+        >
+          Browse without an account
+        </Text>
       </SafeAreaView>
     </View>
   );
@@ -102,5 +107,13 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     spacer: { flex: 1 },
     secondary: { marginTop: spacing.md, marginBottom: spacing.xs },
+    guestLink: {
+      fontFamily: fontFamily.medium,
+      fontSize: fontSize.bodySm,
+      color: '#b5d9fd',
+      textDecorationLine: 'underline',
+      textAlign: 'center',
+      paddingVertical: spacing.sm,
+    },
   });
 }

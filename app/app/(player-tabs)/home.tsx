@@ -162,6 +162,11 @@ export default function Home() {
               </Text>
             </View>
             <View style={styles.headerActions}>
+              <View style={{ flexDirection: 'row', gap: 4, marginRight: 8, alignItems: 'center' }}>
+                {[...Array(4)].map((_, i) => (
+                  <View key={i} style={{ width: 16, height: 16, borderRadius: 4, backgroundColor: i < 3 ? colors.gold : '#e7e7ea' }} />
+                ))}
+              </View>
               <Pressable style={styles.iconBtn} onPress={() => router.push('/news')} accessibilityRole="button" accessibilityLabel="News">
                 <Feather name="file-text" size={18} color={colors.white} />
               </Pressable>
@@ -473,13 +478,13 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   iconBtn: {
     width: 36,
     height: 36,
-    borderRadius: radii.sm,
+    borderRadius: 4,
     backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dot: { position: 'absolute', top: 5, right: 5, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold, borderWidth: 1.5, borderColor: colors.primaryDark },
-  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' },
+  avatar: { width: 36, height: 36, borderRadius: 4, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)' },
   // Lifts the rating card over the header's lower edge, as the canvas does.
   cardLift: { marginTop: -(spacing.huge + spacing.md) },
   // Navy, because this is the one row on the screen that is about somebody
@@ -492,7 +497,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
     padding: spacing.md,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     backgroundColor: colors.primaryDark,
     overflow: 'hidden',
   },
@@ -500,7 +505,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   viewBannerIcon: {
     width: 36,
     height: 36,
-    borderRadius: radii.md,
+    borderRadius: 4,
     backgroundColor: 'rgba(181,217,253,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -517,7 +522,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
   },
@@ -535,13 +540,16 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     marginHorizontal: spacing.xl,
     marginTop: spacing.xl,
     padding: spacing.lg,
-    borderRadius: radii.xl,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#C4B78E',
     backgroundColor: colors.surface,
   },
   primaryActionIcon: {
     width: 42,
     height: 42,
-    borderRadius: radii.md,
+    borderRadius: 4,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -549,19 +557,19 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   primaryActionLabel: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary },
   primaryActionSub: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textMuted, marginTop: 1 },
   quickActions: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl, marginTop: spacing.md },
-  actionCard: { flex: 1, backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.md, alignItems: 'center', gap: spacing.sm },
-  actionIcon: { width: 36, height: 36, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
+  actionCard: { flex: 1, backgroundColor: colors.surface, borderRadius: 4, padding: spacing.md, alignItems: 'center', gap: spacing.sm },
+  actionIcon: { width: 36, height: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   actionLabel: { fontFamily: fontFamily.semiBold, fontSize: fontSize.xs, color: colors.textPrimary },
   section: { paddingHorizontal: spacing.xl, marginTop: spacing.huge },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.bodyLg, color: colors.textPrimary, letterSpacing: -0.2 },
   sectionLink: { fontFamily: fontFamily.medium, fontSize: fontSize.sm, color: colors.primary },
-  trialRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radii.lg, padding: spacing.md, marginTop: spacing.sm },
-  trialRowIcon: { width: 32, height: 32, borderRadius: radii.sm, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
+  trialRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: 4, padding: spacing.md, marginTop: spacing.sm },
+  trialRowIcon: { width: 32, height: 32, borderRadius: 4, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
   trialRowTitle: { fontFamily: fontFamily.semiBold, fontSize: fontSize.bodySm, color: colors.textPrimary },
   trialApply: { fontFamily: fontFamilyDisplay.extraBold, fontSize: fontSize.caption, letterSpacing: 1.2, color: colors.gold },
-  activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.md, padding: 12, marginBottom: 8 },
-  activityIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
+  activityRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 4, padding: 12, marginBottom: 8 },
+  activityIcon: { width: 32, height: 32, borderRadius: 4, backgroundColor: colors.infoTint, alignItems: 'center', justifyContent: 'center' },
   activityText: { flex: 1, fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textBody },
   });
 }

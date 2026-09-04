@@ -124,7 +124,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     tile: {
       width: TILE,
       height: TILE,
-      borderRadius: radii.xxl,
+      borderRadius: 4,
       backgroundColor: 'rgba(181,217,253,0.12)',
       alignItems: 'center',
       justifyContent: 'center',
@@ -134,7 +134,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       position: 'absolute',
       width: RING,
       height: RING,
-      borderRadius: radii.xxl,
+      borderRadius: 4,
       borderWidth: 1,
       borderColor: 'rgba(181,217,253,0.35)',
     },
@@ -154,11 +154,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       maxWidth: cx(200),
     },
     footer: { flex: 1, paddingHorizontal: cx(26), paddingTop: cx(22) },
-    dots: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
-    dot: { width: 6, height: 4, borderRadius: 2, backgroundColor: colors.borderDashed },
+    dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', alignItems: 'center' },
+    dot: { width: 6, height: 6, borderRadius: 9999, backgroundColor: '#D5DEE9' },
     // The active dot stretches rather than changing colour alone, so the
     // position in the sequence is legible without relying on hue.
-    dotOn: { width: 24, backgroundColor: colors.gold },
+    dotOn: { width: 24, height: 4, borderRadius: 4, backgroundColor: colors.gold },
     footerRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',

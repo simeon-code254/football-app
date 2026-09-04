@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleProp, ViewStyle, TextInputProps } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
-import { fontFamily, fontSize, radii, spacing, useThemeColors } from '../theme';
+import { fontFamily, fontFamilyDisplay, fontSize, radii, spacing, useThemeColors } from '../theme';
 import { Kicker } from './Kicker';
 
 // The canvas's form field: an uppercase kicker label with a bordered card
@@ -32,11 +33,15 @@ export function Field({
 }) {
   const colors = useThemeColors();
 
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
     <View style={style}>
-      <Kicker style={{ marginBottom: 4 }}>{label}</Kicker>
+      <Text style={{ fontFamily: fontFamilyDisplay.bold, fontSize: fontSize.xs, textTransform: 'uppercase', letterSpacing: 1.2, color: colors.textMuted, marginBottom: 4 }}>{label}</Text>
       <TextInput
         {...input}
+        onFocus={(e) => { setIsFocused(true); input.onFocus?.(e); }}
+        onBlur={(e) => { setIsFocused(false); input.onBlur?.(e); }}
         style={{
           // A multiline field grows; a single-line one is a fixed touch target.
           minHeight: 48,
@@ -44,9 +49,9 @@ export function Field({
             ? { paddingTop: spacing.md, paddingBottom: spacing.md, textAlignVertical: 'top' as const }
             : { height: 48 }),
           paddingHorizontal: spacing.lg,
-          borderRadius: radii.lg,
-          borderWidth: 1,
-          borderColor: error ? colors.error : colors.border,
+          borderRadius: 4,
+          borderWidth: isFocused ? 1.5 : 1,
+          borderColor: error ? colors.error : isFocused ? colors.gold : colors.border,
           backgroundColor: colors.inputBackground,
           fontFamily: fontFamily.regular,
           fontSize: fontSize.body,

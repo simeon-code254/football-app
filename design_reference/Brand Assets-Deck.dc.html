@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-bbf1f540-2e59-4451-88bd-853aa835ed96/styles.css">
+<script src="_ds/industry-bbf1f540-2e59-4451-88bd-853aa835ed96/_ds_bundle.js"></script>
+<style>
+.mv{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}
+.mv-club{background:linear-gradient(150deg,#FFD873,#FFC53D 45%,#C79216)}
+.mv-scout{background:linear-gradient(150deg,#8FBFEA,#4F94D4 45%,#1D4E7A)}
+.mv-player{background:linear-gradient(150deg,#7FD8A4,#1E8449 55%,#125F34)}
+.mv-in{position:absolute;inset:1.5px;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);display:flex;align-items:center;justify-content:center}
+.mv-player .mv-in{background:#0E3B22}
+.mv-scout .mv-in{background:#12233D}
+.mv-club .mv-in{background:#3C2A08}
+.chk{background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/16px 16px}
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<section data-label="Cover" style="width:1920px;height:1080px;background:var(--color-bg);display:flex;flex-direction:column;justify-content:center;padding:0 140px">
+  <div class="nav-brand" style="font-family:var(--font-heading);font-size:22px;color:var(--color-accent-700)">Matobev · Brand Assets</div>
+  <h1 style="font-family:var(--font-heading);font-size:76px;font-weight:700;color:var(--color-text);margin:20px 0 16px">Logos &amp; verification badges</h1>
+  <p style="font-family:var(--font-body);font-size:22px;color:var(--color-accent-700);max-width:980px;line-height:1.5">Every mark is the same silhouette, recolored via a transparent PNG mask — nothing was redrawn. Sizes, colors, and every surface they ship on, in one deck.</p>
+</section>
+
+<section data-label="Source files" style="width:1920px;height:1080px;background:var(--color-bg);padding:90px 120px">
+  <div class="card-kicker" style="font-family:var(--font-heading);color:var(--color-accent-700);font-size:16px;letter-spacing:1px">SOURCE FILES</div>
+  <h2 style="font-family:var(--font-heading);font-size:44px;font-weight:700;color:var(--color-text);margin:8px 0 40px">The two PNGs everything is built from</h2>
+  <div style="display:flex;gap:80px;align-items:flex-start">
+    <div style="text-align:center">
+      <div class="chk" style="width:260px;height:260px;border:1px solid var(--color-neutral-300);display:flex;align-items:center;justify-content:center"><img src="app/assets/logofree.png" style="width:80%;height:80%;object-fit:contain"></div>
+      <div style="font-family:var(--font-heading);font-size:22px;margin-top:16px">logofree.png</div>
+      <div style="font-family:var(--font-body);font-size:16px;color:var(--color-accent-700);margin-top:4px">original, as supplied · 495×504px · PNG, alpha</div>
+    </div>
+    <div style="text-align:center">
+      <div class="chk" style="width:260px;height:260px;border:1px solid var(--color-neutral-300);display:flex;align-items:center;justify-content:center"><img src="app/assets/logo-mask.png" style="width:80%;height:80%;object-fit:contain"></div>
+      <div style="font-family:var(--font-heading);font-size:22px;margin-top:16px">logo-mask.png</div>
+      <div style="font-family:var(--font-body);font-size:16px;color:var(--color-accent-700);margin-top:4px;max-width:420px">495×504px · PNG, alpha — white fill stripped so it works as a CSS mask; the file every recolor reads from</div>
+    </div>
+    <div style="flex:1;font-family:var(--font-body);font-size:18px;color:var(--color-accent-700);line-height:1.6;padding-top:20px"><code>logofree.png</code> is never rendered live — kept only as untouched source. Everything on-screen reads <code>logo-mask.png</code> through a CSS <code>mask</code>, recolored per surface.</div>
+  </div>
+</section>
+
+<section data-label="Usage map" style="width:1920px;height:1080px;background:var(--color-bg);padding:90px 120px">
+  <div class="card-kicker" style="font-family:var(--font-heading);color:var(--color-accent-700);font-size:16px;letter-spacing:1px">USAGE MAP</div>
+  <h2 style="font-family:var(--font-heading);font-size:44px;font-weight:700;color:var(--color-text);margin:8px 0 32px">Which file and color runs where, at what size</h2>
+  <table class="table" style="width:100%;font-size:20px">
+    <thead><tr><th>Surface</th><th>File</th><th>Color</th><th>Rendered size</th></tr></thead>
+    <tbody>
+      <tr><td>Splash screen mark</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>110×110px</td></tr>
+      <tr><td>App icon / navy tile</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>56×56px tile, mark ≈35px</td></tr>
+      <tr><td>Tab bar (Home icon)</td><td>logo-mask.png</td><td>Navy #0A1B33</td><td>16×16px</td></tr>
+      <tr><td>Notification / alert chip</td><td>logo-mask.png</td><td>Gold on navy chip</td><td>18×18px mark in 32×32px chip</td></tr>
+      <tr><td>Header wordmark accent</td><td>logo-mask.png</td><td>Navy or Gold</td><td>18–24px</td></tr>
+      <tr><td>Verification badge core</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>13×15px inline → 64×72px hero</td></tr>
+      <tr><td>Premium / checkout chip</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>26×26px</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section data-label="Backgroundless" style="width:1920px;height:1080px;background:var(--color-bg);padding:90px 120px">
+  <div class="card-kicker" style="font-family:var(--font-heading);color:var(--color-accent-700);font-size:16px;letter-spacing:1px">BACKGROUNDLESS</div>
+  <h2 style="font-family:var(--font-heading);font-size:44px;font-weight:700;color:var(--color-text);margin:8px 0 40px">Recolored logo, transparent (CSS mask)</h2>
+  <div style="display:flex;gap:36px;flex-wrap:wrap;align-items:flex-end">
+    <div style="text-align:center" class="chk" style="padding:24px;border:1px solid var(--color-neutral-300)"><div style="width:100px;height:100px;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div><div style="font-family:var(--font-heading);font-size:18px;margin-top:12px">Gold #FFC53D</div></div>
+    <div style="text-align:center;padding:24px;border:1px solid var(--color-neutral-300)" class="chk"><div style="width:100px;height:100px;background:#0A1B33;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div><div style="font-family:var(--font-heading);font-size:18px;margin-top:12px">Navy #0A1B33</div></div>
+    <div style="text-align:center;padding:24px;border:1px solid var(--color-neutral-300)" class="chk"><div style="width:100px;height:100px;background:#B98A2E;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div><div style="font-family:var(--font-heading);font-size:18px;margin-top:12px">Premium #B98A2E</div></div>
+    <div style="text-align:center;padding:24px;border:1px solid var(--color-neutral-300)" class="chk"><div style="width:100px;height:100px;background:#5980A6;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div><div style="font-family:var(--font-heading);font-size:18px;margin-top:12px">Steel #5980A6</div></div>
+    <div style="text-align:center;padding:24px;border:1px solid var(--color-neutral-300)" class="chk"><div style="width:100px;height:100px;background:#fff;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div><div style="font-family:var(--font-heading);font-size:18px;margin-top:12px">White</div></div>
+  </div>
+
+  <div class="card-kicker" style="font-family:var(--font-heading);color:var(--color-accent-700);font-size:16px;letter-spacing:1px;margin-top:60px">WITH BACKGROUND</div>
+  <h2 style="font-family:var(--font-heading);font-size:32px;font-weight:700;color:var(--color-text);margin:8px 0 28px">On the tile it actually ships on</h2>
+  <div style="display:flex;gap:32px">
+    <div style="text-align:center"><div style="width:100px;height:100px;border-radius:22px;background:#0A1B33;display:flex;align-items:center;justify-content:center"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div><div style="font-family:var(--font-body);font-size:16px;margin-top:10px;color:var(--color-accent-700)">App icon tile</div></div>
+    <div style="text-align:center"><div style="width:100px;height:100px;border-radius:22px;background:#F4F2EC;border:1px solid var(--color-neutral-300);display:flex;align-items:center;justify-content:center"><div style="width:56%;height:56%;background:#0A1B33;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div><div style="font-family:var(--font-body);font-size:16px;margin-top:10px;color:var(--color-accent-700)">Light chip</div></div>
+    <div style="text-align:center"><div style="width:100px;height:100px;border-radius:22px;background:linear-gradient(135deg,#4A3410,#1B2E4A);display:flex;align-items:center;justify-content:center"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div><div style="font-family:var(--font-body);font-size:16px;margin-top:10px;color:var(--color-accent-700)">Premium gradient</div></div>
+  </div>
+</section>
+
+<section data-label="Verification badges" style="width:1920px;height:1080px;background:var(--color-bg);padding:90px 120px">
+  <div class="card-kicker" style="font-family:var(--font-heading);color:var(--color-accent-700);font-size:16px;letter-spacing:1px">IDENTITY MARKS</div>
+  <h2 style="font-family:var(--font-heading);font-size:44px;font-weight:700;color:var(--color-text);margin:8px 0 40px">The three verification badges</h2>
+  <div style="display:flex;gap:80px;background:#0A1B33;border-radius:20px;padding:56px;justify-content:center">
+    <div style="text-align:center">
+      <div class="mv mv-player" style="width:110px;height:124px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+      <div style="font-family:var(--font-heading);color:#7FD8A4;font-size:24px;font-weight:700;margin-top:18px">Player</div>
+      <div style="font-family:var(--font-body);color:rgba(255,255,255,.6);font-size:17px;margin-top:6px">green · identity + guardian consent · free</div>
+    </div>
+    <div style="text-align:center">
+      <div class="mv mv-scout" style="width:110px;height:124px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+      <div style="font-family:var(--font-heading);color:#7FB0F0;font-size:24px;font-weight:700;margin-top:18px">Scout</div>
+      <div style="font-family:var(--font-body);color:rgba(255,255,255,.6);font-size:17px;margin-top:6px">steel · govt ID + agency letter · $49/yr</div>
+    </div>
+    <div style="text-align:center">
+      <div class="mv mv-club" style="width:110px;height:124px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+      <div style="font-family:var(--font-heading);color:#FFC53D;font-size:24px;font-weight:700;margin-top:18px">Club</div>
+      <div style="font-family:var(--font-body);color:rgba(255,255,255,.6);font-size:17px;margin-top:6px">gold · league registration checked · $49/yr</div>
+    </div>
+  </div>
+</section>
+
+<section data-label="Photography" style="width:1920px;height:1080px;background:var(--color-bg);padding:90px 120px">
+  <div class="card-kicker" style="font-family:var(--font-heading);color:var(--color-accent-700);font-size:16px;letter-spacing:1px">IMAGERY</div>
+  <h2 style="font-family:var(--font-heading);font-size:44px;font-weight:700;color:var(--color-text);margin:8px 0 40px">The photograph used across the app screens</h2>
+  <div style="display:flex;gap:60px;align-items:flex-start">
+    <div class="duotone" style="width:640px;height:380px;overflow:hidden;flex-shrink:0"><img src="https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous"></div>
+    <div style="font-family:var(--font-body);font-size:19px;color:var(--color-accent-700);line-height:1.6;max-width:640px;padding-top:8px">Same source frame, reused at different crops/sizes: welcome screen hero (full-bleed, ~360×310px), browse/discover featured card (360×126px), player profile cover (360×104–126px), upload flow preview (360×132px), and trial full-screen alert thumbnail (150px tall).<br><br>It's a live Unsplash stock photo pulled at design time, not a file I can hand you as an owned asset — I can't generate or license photography. Give me your own match footage or headshots and I'll drop them into every one of those slots.</div>
+  </div>
+</section>
+
+</x-import>
+
+</x-dc>
+</body>
+</html>

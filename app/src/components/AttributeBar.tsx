@@ -62,9 +62,11 @@ export function AttributeBar({
   const belowColor = colors.gold;
   const fillColor = !scored
     ? colors.textDisabled
-    : value >= HIGH_VALUE
+    : value >= 70
       ? colors.success
-      : belowColor;
+      : value >= 60
+        ? colors.goldDark
+        : colors.error;
 
   const fillStyle = useBarGrow(fraction, 1000 + index * 100);
 
@@ -95,14 +97,14 @@ export function AttributeBar({
 
       <View
         style={{
-          height: 6,
+          height: 5,
           backgroundColor: colors.track,
-          borderRadius: 3,
+          borderRadius: 4,
           overflow: 'hidden',
         }}
       >
         {scored && (
-          <Animated.View style={[{ height: '100%', backgroundColor: fillColor }, fillStyle]} />
+          <Animated.View style={[{ height: '100%', backgroundColor: fillColor, borderRadius: 4 }, fillStyle]} />
         )}
       </View>
 

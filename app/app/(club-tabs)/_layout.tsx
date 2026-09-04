@@ -15,7 +15,8 @@ export default function ClubTabsLayout() {
   const styles = {
     tabBar: {
       backgroundColor: colors.surface,
-      borderTopColor: colors.track,
+      borderTopColor: '#EDE8D9',
+      borderTopWidth: 1,
       height: 60,
       paddingBottom: 8,
       paddingTop: 6,

@@ -45,7 +45,7 @@
     },
     "android": {
       "package": "com.matobev.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#1d2d3d",
         "foregroundImage": "./assets/android-icon-foreground.png",

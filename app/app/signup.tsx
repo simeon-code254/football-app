@@ -256,7 +256,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   roleBadge: {
     width: 48,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 4,
     backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -267,8 +267,8 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   sheet: {
     flex: 1,
     backgroundColor: colors.surface,
-    borderTopLeftRadius: radii.xxl,
-    borderTopRightRadius: radii.xxl,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
     marginTop: -18,
   },
   content: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 32, flexGrow: 1 },
@@ -276,7 +276,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   checksCard: {
     gap: 10,
     backgroundColor: colors.surfaceMuted,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     padding: 14,
     marginBottom: 20,
   },

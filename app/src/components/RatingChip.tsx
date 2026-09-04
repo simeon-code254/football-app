@@ -47,7 +47,7 @@ export function RatingChip({
       style={[
         {
           backgroundColor: variant === 'gold' ? colors.gold : colors.primaryDark,
-          borderRadius: radii.sm,
+          borderRadius: 4,
           paddingHorizontal: spacing.sm,
           paddingVertical: 4,
           alignSelf: 'flex-start',

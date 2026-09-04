@@ -353,7 +353,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     padding: 14,
     overflow: 'hidden',
   },
@@ -370,7 +370,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   markChip: {
     width: 32,
     height: 32,
-    borderRadius: radii.sm,
+    borderRadius: 4,
     backgroundColor: colors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
