@@ -47,7 +47,7 @@ export async function openLegal(doc: LegalDoc): Promise<void> {
       // the one place in the app it survived the re-skin -- it sets the
       // Chrome Custom Tab chrome, so it never appears in a screenshot of
       // the app itself.
-      controlsColor: '#123A6B',
+      controlsColor: '#416180',
       enableBarCollapsing: true,
     });
   } catch {

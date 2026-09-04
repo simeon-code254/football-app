@@ -31,7 +31,7 @@ export function SegmentedTabs<T extends string>({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: spacing.sm, paddingVertical: spacing.xs }}
+      contentContainerStyle={{ gap: spacing.sm, paddingVertical: spacing.xs, borderRadius: 4 }}
     >
       {tabs.map((tab) => {
         const active = tab.key === value;
@@ -42,7 +42,7 @@ export function SegmentedTabs<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             style={{
-              borderRadius: radii.lg,
+              borderRadius: 4,
               paddingVertical: spacing.sm,
               paddingHorizontal: spacing.lg,
               backgroundColor: active ? colors.primaryDark : colors.surfaceMuted,
@@ -54,7 +54,7 @@ export function SegmentedTabs<T extends string>({
                 fontSize: fontSize.xs,
                 letterSpacing: 0.6,
                 textTransform: 'uppercase',
-                color: active ? colors.white : colors.textBody,
+                color: active ? colors.gold : colors.textMuted,
               }}
               maxFontSizeMultiplier={1.4}
             >

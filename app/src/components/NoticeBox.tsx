@@ -36,7 +36,7 @@ export function NoticeBox({
   const colors = useThemeColors();
 
   const palette = {
-    warning: { bg: colors.warningTint, fg: colors.goldDark },
+    warning: { bg: colors.warningTint, fg: colors.warning },
     success: { bg: colors.successTint, fg: colors.success },
     danger: { bg: colors.dangerTint, fg: colors.error },
     info: { bg: colors.infoTint, fg: colors.primary },
@@ -50,7 +50,7 @@ export function NoticeBox({
           gap: spacing.sm,
           alignItems: 'flex-start',
           backgroundColor: palette.bg,
-          borderRadius: radii.sm,
+          borderRadius: 4,
           padding: spacing.md,
         },
         style,

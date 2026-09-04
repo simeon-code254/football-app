@@ -77,7 +77,7 @@ export function FullScreenAlert({
               resizeMode="cover"
             />
             <LinearGradient
-              colors={['rgba(10,27,51,0.25)', 'transparent', '#0A1B33']}
+              colors={['rgba(29,45,61,0.25)', 'transparent', '#1d2d3d']}
               locations={[0, 0.35, 1]}
               style={StyleSheet.absoluteFill}
             />
@@ -87,8 +87,8 @@ export function FullScreenAlert({
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <RadialGradient id="alertGlow" cx="50%" cy="15%" r="60%">
-              <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.14} />
-              <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+              <Stop offset="0" stopColor="#b5d9fd" stopOpacity={0.14} />
+              <Stop offset="1" stopColor="#b5d9fd" stopOpacity={0} />
             </RadialGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#alertGlow)" />

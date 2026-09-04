@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { View } from 'react-native';
 import { fontFamilyDisplay, fontSize, useThemeColors } from '../../src/theme';
 import { UploadTabButton } from '../../src/components/UploadTabButton';
 import { Logo } from '../../src/components/Logo';
@@ -15,7 +16,8 @@ export default function TabsLayout() {
   const styles = {
     tabBar: {
       backgroundColor: colors.surface,
-      borderTopColor: colors.track,
+      borderTopColor: '#EDE8D9',
+      borderTopWidth: 1,
       height: 64,
       paddingBottom: 8,
       paddingTop: 6,
@@ -35,6 +37,15 @@ export default function TabsLayout() {
     },
   } as const;
 
+  const TabIcon = ({ focused, children }: { focused: boolean; children: React.ReactNode }) => (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      {children}
+      {focused && (
+        <View style={{ position: 'absolute', bottom: -10, width: 4, height: 4, borderRadius: 2, backgroundColor: colors.gold }} />
+      )}
+    </View>
+  );
+
   return (
     <Tabs
       screenOptions={{
@@ -49,36 +60,28 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
-          // The Matobev mark, per the brand deck's usage map: "Tab bar (Home
-          // icon) - logo-mask.png - Navy #0A1B33 - 16x16px". Canvas 10 draws a
-          // house glyph, but the deck is explicit and it is the same mark the
-          // scout and club bars already carry -- one Home icon across all three
-          // roles rather than a house for one and the mark for the others.
-          tabBarIcon: ({ size }) => <Logo variant="navy" size={size - 2} />,
+          tabBarIcon: ({ color, size, focused }) => <TabIcon focused={focused}><Logo tint={color} size={size - 2} /></TabIcon>,
         }}
       />
       <Tabs.Screen
         name="reels"
-        options={{ title: 'Reels', tabBarIcon: ({ color, size }) => <Feather name="film" color={color} size={size} /> }}
+        options={{ title: 'Reels', tabBarIcon: ({ color, size, focused }) => <TabIcon focused={focused}><Feather name="film" color={color} size={size} /></TabIcon> }}
       />
       <Tabs.Screen
         name="upload"
         options={{
           title: 'Upload',
-          // Canvas 10 draws no label under the raised tile -- the other four
-          // are labelled, this one is not. With a label the 44px tile and the
-          // caption fought for the same 64px of bar and both were clipped.
           tabBarLabel: () => null,
-          tabBarIcon: () => <UploadTabButton />,
+          tabBarIcon: ({ focused }) => <UploadTabButton />,
         }}
       />
       <Tabs.Screen
         name="discover"
-        options={{ title: 'Search', tabBarIcon: ({ color, size }) => <Feather name="search" color={color} size={size} /> }}
+        options={{ title: 'Search', tabBarIcon: ({ color, size, focused }) => <TabIcon focused={focused}><Feather name="search" color={color} size={size} /></TabIcon> }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <Feather name="user" color={color} size={size} /> }}
+        options={{ title: 'Profile', tabBarIcon: ({ color, size, focused }) => <TabIcon focused={focused}><Feather name="user" color={color} size={size} /></TabIcon> }}
       />
     </Tabs>
   );

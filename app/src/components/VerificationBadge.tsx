@@ -42,10 +42,10 @@ const INNER_SCALE = 1 - 3 / 38;
 
 const ROLES = {
   club: {
-    gradient: ['#FFD873', '#FFC53D', '#C79216'] as const,
-    fill: '#3C2A08',
+    gradient: ['#94bce3', '#416180', '#2c455d'] as const,
+    fill: '#16232f',
     icon: 'home',
-    iconColor: '#FFC53D',
+    iconColor: '#b5d9fd',
     label: 'Verified club',
   },
   scout: {
@@ -54,14 +54,16 @@ const ROLES = {
     icon: 'search',
     // The badge is drawn on its own dark fill in both themes, so this is the
     // literal canvas value rather than a themed token -- see the note above.
-    iconColor: '#7FB0F0',
+    // All three roles now share this mark colour: the re-skin removed gold, so
+    // the mark is the on-navy light everywhere it sits on a dark fill.
+    iconColor: '#b5d9fd',
     label: 'Verified scout',
   },
   player: {
     gradient: ['#7FD8A4', '#1E8449', '#125F34'] as const,
     fill: '#0E3B22',
     icon: 'user',
-    iconColor: '#FFC53D',
+    iconColor: '#b5d9fd',
     label: 'Verified player',
   },
 } as const;
@@ -71,7 +73,7 @@ const ROLES = {
 // At the hero size (38x42) it draws a per-role glyph -- a person, a magnifier,
 // a building -- because there is room to read one. At the inline sizes it
 // actually ships at (12x14 beside a name, 16x18 clipped to an avatar corner) it
-// drops the glyph and draws the gold Matobev mark at 64% instead: a person icon
+// drops the glyph and draws the Matobev mark at 64% instead: a person icon
 // at 5px is mud, whereas the mark stays recognisable because it is the same
 // silhouette the user already knows from the app icon.
 //

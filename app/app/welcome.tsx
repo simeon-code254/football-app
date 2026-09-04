@@ -10,14 +10,14 @@ import { Button, LinkButton } from '../src/components/Button';
 //
 //   <div style="height:310px">                       full-bleed photo
 //     <img ... filter:grayscale(1) contrast(1.05)>
-//     <div background:linear-gradient(180deg,rgba(89,128,166,.3),
-//                    rgba(10,27,51,.6) 45%, var(--navy) 100%)>
+//     <div background:linear-gradient(180deg,rgba(27,102,196,.3),
+//                    rgba(29,45,61,.6) 45%, var(--navy) 100%)>
 //   <div style="margin-top:-46px">                   copy overlaps the photo
 //     "Get seen."            .h 36px w800 letter-spacing:-1px
 //     "Scouts are looking. Rated by AI, watched by humans."
 //     [Create account]  gold
 //     [Sign in]         outline
-//     Browse without an account   #7FB0F0 underlined
+//     Browse without an account   #b5d9fd underlined
 //
 // The photo is greyscaled and contrast-lifted so the navy wash over it reads as
 // one colour rather than fighting the subject's kit -- that filter is the
@@ -41,7 +41,7 @@ export default function Welcome() {
           full-colour under a transparent overlay.
         */}
         <LinearGradient
-          colors={['rgba(89,128,166,0.30)', 'rgba(10,27,51,0.60)', '#0A1B33']}
+          colors={['rgba(27,102,196,0.30)', 'rgba(29,45,61,0.60)', '#1d2d3d']}
           locations={[0, 0.45, 1]}
           style={StyleSheet.absoluteFill}
         />
@@ -66,7 +66,12 @@ export default function Welcome() {
           onPress={() => router.push('/login')}
           style={styles.secondary}
         />
-        <LinkButton label="Browse without an account" onPress={() => router.push('/browse')} />
+        <Text
+          style={styles.guestLink}
+          onPress={() => router.push('/browse')}
+        >
+          Browse without an account
+        </Text>
       </SafeAreaView>
     </View>
   );
@@ -76,7 +81,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   return StyleSheet.create({
     // The canvas paints the whole frame navy and lets the photo occupy the
     // top; below the photo the navy simply continues, so there is no seam.
-    root: { flex: 1, backgroundColor: '#0A1B33' },
+    root: { flex: 1, backgroundColor: '#1d2d3d' },
     hero: { height: 310 },
     body: {
       flex: 1,
@@ -102,5 +107,13 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     spacer: { flex: 1 },
     secondary: { marginTop: spacing.md, marginBottom: spacing.xs },
+    guestLink: {
+      fontFamily: fontFamily.medium,
+      fontSize: fontSize.bodySm,
+      color: '#b5d9fd',
+      textDecorationLine: 'underline',
+      textAlign: 'center',
+      paddingVertical: spacing.sm,
+    },
   });
 }

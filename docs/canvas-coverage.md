@@ -142,10 +142,70 @@ produce. Each is commented at the site.
 | Hardcoded build "2.4.1" (67) | Read from expo-constants, or it drifts on first ship |
 | Role row with a chevron (63) | `prevent_role_change` is a trigger; roles are fixed at signup |
 
-Two further deviations are ergonomic rather than evidential: touch targets keep
-platform sizes instead of scaling (rule 5 in `theme/canvas.ts`), and the
-`AttributeBar` track uses the warm `colors.track` rather than the canvas's one
-cool-grey outlier.
+One further deviation is ergonomic rather than evidential: touch targets keep
+platform sizes instead of scaling (rule 5 in `theme/canvas.ts`).
+
+## The 28 Aug 2026 canvas: what changed beyond colour
+
+Diffing the live canvas against the 22 Aug copy, with colour normalised out,
+found **six screens with copy changes** and two new sub-screens. The rest of the
+markup churn is the design-system swap (radii, borders), not design intent.
+
+| Screen | Change | Status |
+|---|---|---|
+| 20 Notifications | Grouped under TODAY / EARLIER | **Built** |
+| 18 Trials | Segmented NEARBY / MY POSITION / SAVED | **Partly built** — see below |
+| 10 Player home | 6-attribute grid in the identity card; "Nearby trials for you" card | Not built |
+| 17 Player profile | `SO RB · 78` relabelled `OVR 78 RB` | Not built |
+| 05B Log in | **New sub-screen** the canvas never drew before | Not built |
+| 20B Push notification | **New sub-screen** (lock screen) | Not an app screen — the OS draws it |
+
+Two of Trials' three new segments have nothing behind them, so only one shipped:
+
+| Segment | Verdict |
+|---|---|
+| MY POSITION | **Built.** `trials.positions` is a real column and players carry a primary and secondary position. |
+| NEARBY | `trials.location` is free text with no coordinates anywhere in the schema. "Nearby" would be a string match dressed as proximity. |
+| SAVED | No saved/bookmark table exists. |
+
+Screen 05B also draws a **"Continue with Google"** button. There is no Google
+OAuth provider configured in Supabase and no native sign-in module in the app, so
+that button would be decoration that fails on tap. It needs a decision before it
+is worth building.
+
+**Coverage caveat:** the live canvas was read through an API that caps at
+256 KiB against a ~304 KB file, so this diff covers screens 01–72 only. Anything
+that changed in **73–87** — including 80, the verification-badge explainer — is
+unexamined. Export the zip to close that gap.
+
+## The 28 Aug 2026 re-skin
+
+The canvas was re-skinned off navy/gold onto the `_ds/` "Industry" palette, and
+the app followed. Every canvas token kept its **name** and changed its value, so
+`--gold` now holds the blue `#1B66C4`. Read `src/theme/colors.ts` before
+touching colour anywhere — two rules inverted with the swap:
+
+- **Gold-on-light reversed.** The old `#FFC53D` was 1.58:1 on white and could
+  never sit on a light surface. The new accent is 5.01:1 on paper and 2.50:1 on
+  navy — the opposite constraint. Four components branched on the old rule
+  (`RatingRing`, `PlayerRatingCard`, `AttributeBar`, `RatingHistory`); all four
+  collapsed to a single theme-aware token.
+- **Gold and steel collapsed** into one value, so "gold means achievement and
+  nothing else" no longer holds in the source.
+
+Three things do not come from the canvas, and each is deliberate:
+
+| Token | Why |
+|---|---|
+| `textMuted` `#5d5d60` | Canvas `--muted` is 3.82:1 on paper, under AA |
+| `success` / `error` | Canvas values are 3.82:1 / 4.41:1 on `surfaceMuted`, under AA |
+| `warningTint` + `warning` | No amber survives the re-skin, and a blue warning is indistinguishable from an info notice |
+
+The icon set was repainted from the same mapping (`#FFC53D` → `#b5d9fd`,
+`#0A1B33` → `#1d2d3d`), preserving each file's alpha edge. While doing it,
+`android-icon-background.png` turned out to be **solid white**, which had been
+putting the mark at 1.58:1 in the Android launcher — the exact pairing the theme
+file warns about. It is now the field colour, matching `adaptiveIcon.backgroundColor`.
 
 ## Blocked on decisions
 

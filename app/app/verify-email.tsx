@@ -192,7 +192,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     envelope: {
       width: cx(60),
       height: cx(60),
-      borderRadius: radii.xl,
+      borderRadius: 4,
       backgroundColor: colors.infoTint,
       alignItems: 'center',
       justifyContent: 'center',
@@ -218,7 +218,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       flex: 1,
       minWidth: 0,
       height: 52,
-      borderRadius: radii.md,
+      borderRadius: 4,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,

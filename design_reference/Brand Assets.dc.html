@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-bbf1f540-2e59-4451-88bd-853aa835ed96/styles.css">
+<script src="_ds/industry-bbf1f540-2e59-4451-88bd-853aa835ed96/_ds_bundle.js"></script>
+<style>
+.mv{position:relative;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%)}
+.mv-club{background:linear-gradient(150deg,#FFD873,#FFC53D 45%,#C79216)}
+.mv-scout{background:linear-gradient(150deg,#8FBFEA,#4F94D4 45%,#1D4E7A)}
+.mv-player{background:linear-gradient(150deg,#7FD8A4,#1E8449 55%,#125F34)}
+.mv-in{position:absolute;inset:1.5px;clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);display:flex;align-items:center;justify-content:center}
+.mv-player .mv-in{background:#0E3B22}
+.mv-scout .mv-in{background:#12233D}
+.mv-club .mv-in{background:#3C2A08}
+.logoSwatch{width:56px;height:56px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--color-bg);padding:48px 56px 80px">
+  <nav class="nav" style="margin-bottom:40px">
+    <div class="nav-brand">Matobev · Brand Assets</div>
+  </nav>
+
+  <h1 style="font-family:var(--font-heading);font-size:38px;font-weight:700;color:var(--color-text);margin:0 0 8px">Logos &amp; verification badges</h1>
+  <p style="font-family:var(--font-body);color:var(--color-accent-700);max-width:640px;margin:0 0 40px;line-height:1.5">Every mark below is the same silhouette (<code>logofree.png</code>), recolored via a transparent PNG mask — nothing was redrawn. Backgroundless versions sit on checkerboard tiles so you can see the alpha; solid versions show the real on-navy usage.</p>
+
+  <!-- SOURCE FILES -->
+  <div class="card blueprint elev-sm" style="margin-bottom:32px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="card-kicker">Source files</div>
+    <div class="card-title">The two PNGs everything is built from</div>
+    <div class="card-body" style="display:flex;gap:32px;flex-wrap:wrap;margin-top:12px">
+      <div style="text-align:center">
+        <div style="width:120px;height:120px;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/16px 16px;border:1px solid var(--color-neutral-300);display:flex;align-items:center;justify-content:center">
+          <img src="app/assets/logofree.png" style="width:80%;height:80%;object-fit:contain">
+        </div>
+        <div style="font-family:var(--font-heading);font-size:13px;margin-top:8px;color:var(--color-text)">logofree.png</div>
+        <div style="font-family:var(--font-body);font-size:11px;color:var(--color-accent-700)">original, as supplied · 495×504px · PNG, alpha</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:120px;height:120px;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/16px 16px;border:1px solid var(--color-neutral-300);display:flex;align-items:center;justify-content:center">
+          <img src="app/assets/logo-mask.png" style="width:80%;height:80%;object-fit:contain">
+        </div>
+        <div style="font-family:var(--font-heading);font-size:13px;margin-top:8px;color:var(--color-text)">logo-mask.png</div>
+        <div style="font-family:var(--font-body);font-size:11px;color:var(--color-accent-700)">495×504px · PNG, alpha — white fill stripped so it works as a CSS mask; this is the file every recolor below reads from</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHERE EACH IS USED -->
+  <div class="card blueprint elev-sm" style="margin-bottom:32px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="card-kicker">Usage map</div>
+    <div class="card-title">Which logo file and color runs where, at what size</div>
+    <table class="table" style="margin-top:12px;width:100%">
+      <thead><tr><th>Surface</th><th>File</th><th>Color</th><th>Rendered size</th></tr></thead>
+      <tbody>
+        <tr><td>Splash screen mark</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>110×110px</td></tr>
+        <tr><td>App icon / navy tile</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>56×56px tile, mark at ~62% (≈35px)</td></tr>
+        <tr><td>Tab bar (Home icon)</td><td>logo-mask.png</td><td>Navy #0A1B33</td><td>16×16px</td></tr>
+        <tr><td>Notification / alert icon chip</td><td>logo-mask.png</td><td>Gold on navy chip</td><td>18×18px mark in 32×32px chip</td></tr>
+        <tr><td>Screen header wordmark accent</td><td>logo-mask.png</td><td>Navy or Gold, context-dependent</td><td>18–24px</td></tr>
+        <tr><td>Verification badge core (all 3 roles)</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>56–66% of badge box (badges run 13×15px inline up to 64×72px hero)</td></tr>
+        <tr><td>Premium / checkout gradient chip</td><td>logo-mask.png</td><td>Gold #FFC53D</td><td>26×26px</td></tr>
+      </tbody>
+    </table>
+    <p style="font-family:var(--font-body);font-size:11.5px;color:var(--color-accent-700);margin-top:10px;line-height:1.5"><code>logofree.png</code> itself is never rendered in the live app — it's kept only as the untouched source. Everything on-screen reads <code>logo-mask.png</code> through a CSS <code>mask</code>, recolored per surface.</p>
+  </div>
+
+  <!-- RECOLORED LOGO — backgroundless -->
+  <div class="card blueprint elev-sm" style="margin-bottom:32px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="card-kicker">Backgroundless</div>
+    <div class="card-title">Recolored logo, transparent PNG-equivalent (CSS mask)</div>
+    <div class="card-body" style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">
+      <div style="text-align:center;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/14px 14px;padding:16px;border:1px solid var(--color-neutral-300)">
+        <div class="logoSwatch" style="background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div>
+        <div style="font-family:var(--font-heading);font-size:12px;margin-top:8px">Gold #FFC53D</div>
+      </div>
+      <div style="text-align:center;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/14px 14px;padding:16px;border:1px solid var(--color-neutral-300)">
+        <div class="logoSwatch" style="background:#0A1B33;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div>
+        <div style="font-family:var(--font-heading);font-size:12px;margin-top:8px">Navy #0A1B33</div>
+      </div>
+      <div style="text-align:center;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/14px 14px;padding:16px;border:1px solid var(--color-neutral-300)">
+        <div class="logoSwatch" style="background:#B98A2E;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div>
+        <div style="font-family:var(--font-heading);font-size:12px;margin-top:8px">Premium #B98A2E</div>
+      </div>
+      <div style="text-align:center;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/14px 14px;padding:16px;border:1px solid var(--color-neutral-300)">
+        <div class="logoSwatch" style="background:#5980A6;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div>
+        <div style="font-family:var(--font-heading);font-size:12px;margin-top:8px">Steel #5980A6</div>
+      </div>
+      <div style="text-align:center;background:repeating-conic-gradient(#e2e2e2 0% 25%, #fff 0% 50%) 0 0/14px 14px;padding:16px;border:1px solid var(--color-neutral-300)">
+        <div class="logoSwatch" style="background:#fff;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div>
+        <div style="font-family:var(--font-heading);font-size:12px;margin-top:8px">White</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGO ON SOLID CHIPS — as used on-screen -->
+  <div class="card blueprint elev-sm" style="margin-bottom:32px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="card-kicker">With background</div>
+    <div class="card-title">On the tile it actually ships on</div>
+    <div class="card-body" style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px">
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:16px;background:#0A1B33;display:flex;align-items:center;justify-content:center"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div>
+        <div style="font-family:var(--font-body);font-size:11px;margin-top:6px;color:var(--color-accent-700)">App icon tile</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:16px;background:#F4F2EC;border:1px solid var(--color-neutral-300);display:flex;align-items:center;justify-content:center"><div style="width:56%;height:56%;background:#0A1B33;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div>
+        <div style="font-family:var(--font-body);font-size:11px;margin-top:6px;color:var(--color-accent-700)">Light chip</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#4A3410,#1B2E4A);display:flex;align-items:center;justify-content:center"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div>
+        <div style="font-family:var(--font-body);font-size:11px;margin-top:6px;color:var(--color-accent-700)">Premium gradient</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VERIFICATION BADGES -->
+  <div class="card blueprint elev-sm" style="margin-bottom:32px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="card-kicker">Identity marks</div>
+    <div class="card-title">The three verification badges</div>
+    <div class="card-body" style="margin-top:12px">
+      <div style="display:flex;gap:36px;flex-wrap:wrap;background:#0A1B33;border-radius:14px;padding:24px">
+        <div style="text-align:center">
+          <div class="mv mv-player" style="width:64px;height:72px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+          <div style="font-family:var(--font-heading);color:#7FD8A4;font-size:13px;font-weight:700;margin-top:10px">Player</div>
+          <div style="font-family:var(--font-body);color:rgba(255,255,255,.55);font-size:10.5px;margin-top:2px">green · identity + guardian consent · free</div>
+        </div>
+        <div style="text-align:center">
+          <div class="mv mv-scout" style="width:64px;height:72px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+          <div style="font-family:var(--font-heading);color:#7FB0F0;font-size:13px;font-weight:700;margin-top:10px">Scout</div>
+          <div style="font-family:var(--font-body);color:rgba(255,255,255,.55);font-size:10.5px;margin-top:2px">steel · govt ID + agency letter · $49/yr</div>
+        </div>
+        <div style="text-align:center">
+          <div class="mv mv-club" style="width:64px;height:72px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+          <div style="font-family:var(--font-heading);color:#FFC53D;font-size:13px;font-weight:700;margin-top:10px">Club</div>
+          <div style="font-family:var(--font-body);color:rgba(255,255,255,.55);font-size:10.5px;margin-top:2px">gold · league registration checked · $49/yr</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:36px;flex-wrap:wrap;margin-top:16px">
+        <div style="text-align:center">
+          <div class="mv mv-player" style="width:40px;height:45px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+          <div style="font-family:var(--font-body);font-size:10px;color:var(--color-accent-700);margin-top:6px">on light</div>
+        </div>
+        <div style="text-align:center">
+          <div class="mv mv-scout" style="width:40px;height:45px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+          <div style="font-family:var(--font-body);font-size:10px;color:var(--color-accent-700);margin-top:6px">on light</div>
+        </div>
+        <div style="text-align:center">
+          <div class="mv mv-club" style="width:40px;height:45px;margin:0 auto"><div class="mv-in"><div style="width:56%;height:56%;background:#FFC53D;-webkit-mask:url(app/assets/logo-mask.png) center/contain no-repeat;mask:url(app/assets/logo-mask.png) center/contain no-repeat"></div></div></div>
+          <div style="font-family:var(--font-body);font-size:10px;color:var(--color-accent-700);margin-top:6px">on light</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHOTO USED IN THE DESIGN -->
+  <div class="card blueprint elev-sm">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <div class="card-kicker">Imagery</div>
+    <div class="card-title">The photograph used across the app screens</div>
+    <div class="card-body" style="margin-top:12px">
+      <div class="duotone" style="width:100%;max-width:420px;height:240px;overflow:hidden">
+        <img src="https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800&q=80" style="width:100%;height:100%;object-fit:cover" crossorigin="anonymous">
+      </div>
+      <p style="font-family:var(--font-body);font-size:12.5px;color:var(--color-accent-700);margin-top:10px;max-width:480px;line-height:1.5">Same source frame, reused at different crops/sizes: welcome screen hero (full-bleed, ~360×310px), onboarding upload prompt (icon only, no photo), browse/discover featured card (360×126px), player profile cover (360×104–126px), upload flow preview (360×132px), and trial full-screen alert thumbnail (150px tall). It's a live Unsplash stock photo pulled at design time, not a file I can hand you as an owned asset — I can't generate or license photography. Give me your own match footage or headshots and I'll drop them into every one of those slots.</p>
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

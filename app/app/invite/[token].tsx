@@ -62,8 +62,8 @@ export default function TrialInvite() {
       <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
           <RadialGradient id="inviteGlow" cx="50%" cy="20%" r="60%">
-            <Stop offset="0" stopColor="#FFC53D" stopOpacity={0.18} />
-            <Stop offset="1" stopColor="#FFC53D" stopOpacity={0} />
+            <Stop offset="0" stopColor="#b5d9fd" stopOpacity={0.18} />
+            <Stop offset="1" stopColor="#b5d9fd" stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#inviteGlow)" />

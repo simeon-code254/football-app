@@ -49,7 +49,7 @@ export function Chip({
       style={[
         {
           alignSelf: 'flex-start',
-          borderRadius: radii.lg,
+          borderRadius: 4,
           paddingVertical: spacing.xs,
           paddingHorizontal: spacing.md,
         },

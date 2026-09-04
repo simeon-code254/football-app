@@ -197,8 +197,34 @@ export default function Notifications() {
     );
   };
 
+  // Canvas 20 groups the list under TODAY and EARLIER kickers rather than
+  // running it as one undifferentiated feed.
+  //
+  // The split is by calendar day, not by elapsed hours: something that arrived
+  // at 11pm last night is "earlier" at 8am even though it is nine hours old,
+  // because that is how a person reads their own morning. The rows already
+  // carry a relative timestamp, so the headers only have to answer "is this
+  // still today".
+  const rows = useMemo(() => {
+    const list = items ?? [];
+    if (!list.length) return [];
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const out: ({ kind: 'header'; label: string } | { kind: 'item'; n: NotificationRow })[] = [];
+    let section: 'today' | 'earlier' | null = null;
+    for (const n of list) {
+      const bucket = new Date(n.created_at).getTime() >= startOfToday.getTime() ? 'today' : 'earlier';
+      if (bucket !== section) {
+        section = bucket;
+        out.push({ kind: 'header', label: bucket === 'today' ? 'Today' : 'Earlier' });
+      }
+      out.push({ kind: 'item', n });
+    }
+    return out;
+  }, [items]);
+
   // Canvas screen 20. Every row is a white card with a coloured stripe down its
-  // left edge, a navy chip carrying the gold Matobev mark, a condensed title
+  // left edge, a navy chip carrying the Matobev mark, a condensed title
   // and an uppercase meta line.
   //
   // The mark rather than a per-type glyph is the canvas's call, and the brand
@@ -206,7 +232,15 @@ export default function Notifications() {
   // chip -- 18x18px mark in 32x32px chip, gold on navy chip". It costs some
   // at-a-glance type distinction, which the stripe colour carries instead.
   const renderItem = useCallback(
-    ({ item, index }: { item: NotificationRow; index: number }) => {
+    ({ item: row }: { item: (typeof rows)[number] }) => {
+      if (row.kind === 'header') {
+        return (
+          <Kicker size={fontSize.caption} style={styles.groupHeader}>
+            {row.label}
+          </Kicker>
+        );
+      }
+      const item = row.n;
       const read = !!item.read_at;
       // Gold marks "unread"; green marks a rating that moved, which is the one
       // notification type that is good news on its own. Everything else has no
@@ -274,8 +308,11 @@ export default function Notifications() {
 
       <QueryState isLoading={isLoading} error={error} onRetry={refetch} skeleton={<SkeletonRow />}>
       <FlashList
-        data={items ?? []}
-        keyExtractor={(n) => n.id}
+        data={rows}
+        keyExtractor={(row, i) => (row.kind === 'header' ? `h:${row.label}` : row.n.id)}
+        // Headers and rows have very different heights; telling FlashList which
+        // is which keeps it from recycling one as the other.
+        getItemType={(row) => row.kind}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[colors.primary]} tintColor={colors.primary} />}
@@ -306,6 +343,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   expiryHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, color: colors.textPlaceholder, paddingHorizontal: 20, paddingBottom: 10 },
   clearBtn: { padding: 4, marginLeft: 4 },
   list: { padding: 20, paddingTop: 8 },
+  groupHeader: { marginTop: 4, marginBottom: 2 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyTitle: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
   row: {
@@ -315,7 +353,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     padding: 14,
     overflow: 'hidden',
   },
@@ -332,7 +370,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
   markChip: {
     width: 32,
     height: 32,
-    borderRadius: radii.sm,
+    borderRadius: 4,
     backgroundColor: colors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',

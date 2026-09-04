@@ -11,7 +11,8 @@ export default function ScoutTabsLayout() {
   const styles = {
     tabBar: {
       backgroundColor: colors.surface,
-      borderTopColor: colors.track,
+      borderTopColor: '#EDE8D9',
+      borderTopWidth: 1,
       height: 60,
       paddingBottom: 8,
       paddingTop: 6,
@@ -44,10 +45,10 @@ export default function ScoutTabsLayout() {
         options={{
           title: 'Home',
           // Canvas 21/50 put the Matobev mark here rather than a house, and the
-          // brand deck's usage map says the same: navy mark at 16px in the tab
-          // bar. The player tab bar (canvas 10) genuinely does draw a house --
-          // the two navs differ on purpose.
-          tabBarIcon: ({ size }) => <Logo variant="navy" size={size - 2} />,
+          // brand deck's usage map says the same: the mark at 16px in the tab
+          // bar. It takes the navigator's tint, so it dims and lights with its
+          // siblings and stays legible on both themes' tab bars.
+          tabBarIcon: ({ color, size }) => <Logo tint={color} size={size - 2} />,
         }}
       />
       <Tabs.Screen

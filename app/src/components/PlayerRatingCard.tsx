@@ -40,18 +40,17 @@ import {
 // land on this app's 10-11pt caption sizes rather than being copied
 // literally. Copying them would have put text at 7pt on a real phone.
 //
-// -- THE RING COLOUR IS NOT THE CANVAS'S --
+// -- THE RING COLOUR --
 //
-// The canvas strokes the ring in gold #FFC53D on a #EDE8D9 track. Measured,
-// that is 1.29:1 -- the ring is very nearly invisible against its own track.
-// It reads in the mockup because the mockup is a small static image; on a
-// real screen at 92pt it disappears, and WCAG 1.4.11 asks 3:1 of a graphic
-// that carries meaning.
+// This used to deviate from the canvas. The old gold arc measured 1.29:1
+// against its own warm track -- very nearly invisible at 92pt, against the 3:1
+// WCAG 1.4.11 asks of a graphic that carries meaning -- so the light theme
+// substituted a darker tone.
 //
-// So in the light theme the arc is goldDark #8A5A00, which is 4.93:1 on the
-// track and still unmistakably the gold family. In the dark theme the canvas
-// gold is kept exactly as drawn, because on the dark card surface it measures
-// 9.24:1 -- it was authored for a dark ground and works there.
+// The re-skinned palette removes the need: the accent is 4.54:1 on the muted
+// track it now sits on, and the token resolves to a lighter value on the dark
+// theme by itself. So the arc takes `colors.gold` directly, which is what the
+// canvas draws.
 //
 // -- CONFIDENCE IS MARKED, NEVER HIDDEN --
 //
@@ -112,7 +111,11 @@ export function PlayerRatingCard({
   const isDark = useIsDark();
   const styles = makeStyles(colors);
 
-  const rated = attributes.filter((a) => a.value != null).slice(0, 3);
+  // Canvas 10 (28 Aug) widened this from three chips to the full six-across
+  // grid -- PAC DRI SHO DEF PAS PHY. Still capped rather than unbounded: the
+  // attribute set is table-driven (attribute_definitions), so a seventh row
+  // added there must not silently reflow the home card.
+  const rated = attributes.filter((a) => a.value != null).slice(0, 6);
   const provisional = assessedCount > 0 && assessedCount < totalCount;
 
   // The overall is a confidence- and position-weighted mean over whatever has
@@ -139,7 +142,7 @@ export function PlayerRatingCard({
   // still. Despite the name it is not a numeric counter in the canvas either.
   const numeralEntrance = useCountUp(rating);
 
-  const arcColor = isDark ? colors.gold : colors.goldDark;
+  const arcColor = colors.gold;
 
   return (
     <View style={[styles.card, elevation('raised', isDark)]}>
@@ -189,7 +192,7 @@ export function PlayerRatingCard({
 
         <View style={styles.details}>
           <Text style={styles.kicker} numberOfLines={1}>
-            {['Overall', position, countryCode?.toUpperCase()].filter(Boolean).join(' · ')}
+            {['OVR', position, countryCode?.toUpperCase()].filter(Boolean).join(' · ')}
           </Text>
           <Text style={styles.name} numberOfLines={1}>
             {name}
@@ -304,7 +307,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       fontSize: fontSize.headingLg,
       color: colors.textPrimary,
     },
-    chips: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.sm },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },
     chip: {
       flex: 1,
       alignItems: 'center',

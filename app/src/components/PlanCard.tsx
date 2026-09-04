@@ -48,7 +48,7 @@ export function PlanCard({
     <View
       style={[
         {
-          backgroundColor: highlighted ? 'rgba(255,197,61,0.10)' : 'rgba(255,255,255,0.06)',
+          backgroundColor: highlighted ? 'rgba(181,217,253,0.10)' : 'rgba(255,255,255,0.06)',
           borderRadius: radii.lg,
           borderWidth: 1,
           borderColor: highlighted ? colors.gold : 'rgba(255,255,255,0.12)',

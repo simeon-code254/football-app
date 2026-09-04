@@ -45,9 +45,9 @@
     },
     "android": {
       "package": "com.matobev.app",
-      "versionCode": 3,
+      "versionCode": 5,
       "adaptiveIcon": {
-        "backgroundColor": "#0A1B33",
+        "backgroundColor": "#1d2d3d",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -68,9 +68,9 @@
         {
           "image": "./assets/splash-icon.png",
           "imageWidth": 220,
-          "backgroundColor": "#0A1B33",
+          "backgroundColor": "#1d2d3d",
           "dark": {
-            "backgroundColor": "#0A1B33"
+            "backgroundColor": "#1d2d3d"
           }
         }
       ],

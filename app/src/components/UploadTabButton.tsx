@@ -57,12 +57,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 44,
     height: 44,
-    borderRadius: radii.lg,
+    borderRadius: 4,
   },
   tile: {
     width: 44,
     height: 44,
-    borderRadius: radii.lg,
+    borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
     // A ring of the bar's own ground, so the lifted tile reads as sitting on

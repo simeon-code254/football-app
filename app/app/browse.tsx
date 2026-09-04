@@ -121,7 +121,7 @@ export default function Browse() {
                 resizeMode="cover"
               />
               <LinearGradient
-                colors={['rgba(10,27,51,0.25)', 'transparent', 'rgba(10,27,51,0.94)']}
+                colors={['rgba(29,45,61,0.25)', 'transparent', 'rgba(29,45,61,0.94)']}
                 locations={[0, 0.3, 1]}
                 style={StyleSheet.absoluteFill}
               />
@@ -209,11 +209,11 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: radii.lg,
+      borderRadius: 4,
     },
     searchText: { fontFamily: fontFamily.regular, fontSize: fontSize.bodySm, color: colors.textMuted },
     filters: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-    filter: { paddingVertical: 6, paddingHorizontal: spacing.md, borderRadius: radii.lg },
+    filter: { paddingVertical: 6, paddingHorizontal: spacing.md, borderRadius: 4 },
     filterOn: { backgroundColor: colors.primaryDark },
     filterOff: { borderWidth: 1, borderColor: colors.border },
     filterText: {
@@ -225,7 +225,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     featured: {
       height: 126,
       marginTop: spacing.md,
-      borderRadius: radii.lg,
+      borderRadius: 4,
       overflow: 'hidden',
       backgroundColor: colors.primaryDark,
     },
@@ -234,7 +234,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       top: spacing.md,
       left: spacing.md,
       backgroundColor: colors.gold,
-      borderRadius: 5,
+      borderRadius: 4,
       paddingHorizontal: 7,
       paddingVertical: 3,
     },
@@ -264,7 +264,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: radii.lg,
+      borderRadius: 4,
     },
     rowName: {
       fontFamily: fontFamilyDisplay.extraBold,
@@ -278,7 +278,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
       margin: cx(15),
       marginTop: 0,
       padding: spacing.lg,
-      borderRadius: radii.lg,
+      borderRadius: 4,
       backgroundColor: colors.primaryDark,
     },
     joinTitle: {
@@ -293,7 +293,7 @@ function makeStyles(colors: ReturnType<typeof useThemeColors>) {
     },
     joinButton: {
       backgroundColor: colors.gold,
-      borderRadius: radii.sm,
+      borderRadius: 4,
       paddingHorizontal: spacing.lg,
       // Tall enough to be a real target; the canvas draws it smaller.
       minHeight: 40,

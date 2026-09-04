@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { fontFamilyDisplay, fontSize, spacing, useThemeColors, useIsDark } from '../theme';
+import { fontFamilyDisplay, fontSize, spacing, useThemeColors } from '../theme';
 import { useBarGrow } from '../lib/motion';
 import { Kicker } from './Kicker';
 
@@ -54,18 +54,19 @@ export function AttributeBar({
   index?: number;
 }) {
   const colors = useThemeColors();
-  const isDark = useIsDark();
 
   const scored = value != null;
   const fraction = scored ? value / 99 : 0;
-  // goldDark on light is #8A5A00, which is the readable gold; on dark the
-  // bright gold is correct. Same rule as everywhere else gold meets a surface.
-  const belowColor = isDark ? colors.gold : colors.goldDark;
+  // The accent token is theme-aware, so one value serves both grounds: the
+  // canvas draws this with var(--gold) and the token resolves per theme.
+  const belowColor = colors.gold;
   const fillColor = !scored
     ? colors.textDisabled
-    : value >= HIGH_VALUE
+    : value >= 70
       ? colors.success
-      : belowColor;
+      : value >= 60
+        ? colors.goldDark
+        : colors.error;
 
   const fillStyle = useBarGrow(fraction, 1000 + index * 100);
 
@@ -96,14 +97,14 @@ export function AttributeBar({
 
       <View
         style={{
-          height: 6,
+          height: 5,
           backgroundColor: colors.track,
-          borderRadius: 3,
+          borderRadius: 4,
           overflow: 'hidden',
         }}
       >
         {scored && (
-          <Animated.View style={[{ height: '100%', backgroundColor: fillColor }, fillStyle]} />
+          <Animated.View style={[{ height: '100%', backgroundColor: fillColor, borderRadius: 4 }, fillStyle]} />
         )}
       </View>
 

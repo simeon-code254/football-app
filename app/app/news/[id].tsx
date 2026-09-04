@@ -63,7 +63,7 @@ export default function NewsArticle() {
             <ImageBackground source={{ uri: cover }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           )}
           <LinearGradient
-            colors={['rgba(10,27,51,0.55)', 'transparent', 'rgba(10,27,51,0.35)']}
+            colors={['rgba(29,45,61,0.55)', 'transparent', 'rgba(29,45,61,0.35)']}
             style={StyleSheet.absoluteFill}
           />
           <SafeAreaView edges={['top']}>
